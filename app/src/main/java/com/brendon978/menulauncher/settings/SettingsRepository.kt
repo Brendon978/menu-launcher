@@ -7,6 +7,7 @@ import android.provider.MediaStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -26,6 +27,10 @@ class SettingsRepository(private val context: Context) {
         val overrides = stringSetPreferencesKey("icon_overrides")
         val showMusic = booleanPreferencesKey("show_music")
         val firstRunDone = booleanPreferencesKey("first_run_done")
+        val aiPackage = stringPreferencesKey("ai_package")
+        val aiActivity = stringPreferencesKey("ai_activity")
+        val aiX = floatPreferencesKey("ai_x")
+        val aiY = floatPreferencesKey("ai_y")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -39,6 +44,15 @@ class SettingsRepository(private val context: Context) {
             prefs[K.overrides] = next.iconOverrides.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
             prefs[K.showMusic] = next.showMusic
             prefs[K.firstRunDone] = next.firstRunDone
+            if (next.aiPackage != null && next.aiActivity != null) {
+                prefs[K.aiPackage] = next.aiPackage
+                prefs[K.aiActivity] = next.aiActivity
+            } else {
+                prefs.remove(K.aiPackage)
+                prefs.remove(K.aiActivity)
+            }
+            prefs[K.aiX] = next.aiX
+            prefs[K.aiY] = next.aiY
         }
     }
 
@@ -69,6 +83,10 @@ class SettingsRepository(private val context: Context) {
             }?.toMap() ?: d.iconOverrides,
             showMusic = this[K.showMusic] ?: d.showMusic,
             firstRunDone = this[K.firstRunDone] ?: d.firstRunDone,
+            aiPackage = this[K.aiPackage],
+            aiActivity = this[K.aiActivity],
+            aiX = this[K.aiX] ?: d.aiX,
+            aiY = this[K.aiY] ?: d.aiY,
         )
     }
 

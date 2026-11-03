@@ -12,4 +12,10 @@ data class LauncherSettings(
     val iconOverrides: Map<AppKey, String> = emptyMap(),
     val showMusic: Boolean = true,
     val firstRunDone: Boolean = false,
+    /** IA conectada (null = nenhuma). aiActivity é a que abre no toque. */
+    val aiPackage: String? = null,
+    val aiActivity: String? = null,
+    /** Posição do símbolo da IA, em fração da tela (zona do polegar, à esquerda da barra de letras). */
+    val aiX: Float = 0.70f,
+    val aiY: Float = 0.55f,
 )
