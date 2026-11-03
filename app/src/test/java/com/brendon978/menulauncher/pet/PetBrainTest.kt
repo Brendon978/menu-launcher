@@ -62,7 +62,17 @@ class PetBrainTest {
         val flee = reactions.indexOf(Reaction.FLEE)
         assertTrue("deve fugir", flee > 0)
         assertTrue(reactions.indexOf(Reaction.ANGRY) < flee)
-        assertEquals(Reaction.SERIOUS, afterFlee!!.levelReaction(afterFlee!!.at))
+        val menace = reactions.indexOf(Reaction.MENACE)
+        assertTrue("aponta a arma antes de fugir", menace in (reactions.indexOf(Reaction.ANGRY) + 1) until flee)
+        // reaparece ainda apontando a arma
+        assertEquals(Reaction.MENACE, afterFlee!!.levelReaction(afterFlee!!.at))
+    }
+
+    @Test fun ameacaContinuaEnquantoSeAcalma() {
+        val a = Annoyance(level = 5f, at = 0)
+        assertEquals(Reaction.MENACE, a.levelReaction(0))
+        assertEquals(Reaction.ANGRY, a.levelReaction(2_000))   // 4.0
+        assertEquals(Reaction.SERIOUS, a.levelReaction(4_000)) // 3.0
     }
 
     @Test fun irritacaoBaixaSozinha() {
@@ -72,22 +82,39 @@ class PetBrainTest {
         assertEquals(0f, a.levelAt(60_000), 0.001f)
     }
 
-    @Test fun chaoNaoPassaNaBarraNemNaIa() {
-        // tela 400 de largura, robô 60, margem 16, barra ocupa 330..400
-        assertEquals(16f..270f, floorRange(width = 400f, robotWidth = 60f, margin = 16f, barLeft = 330f, aiLeft = null))
-        // IA cruzando o chão em x=250: o robô para antes dela
-        assertEquals(16f..190f, floorRange(width = 400f, robotWidth = 60f, margin = 16f, barLeft = 330f, aiLeft = 250f))
-        // espaço impossível: fica parado na margem
-        assertEquals(16f..16f, floorRange(width = 100f, robotWidth = 60f, margin = 16f, barLeft = 60f, aiLeft = null))
+    // ---- tela toda ----
+    private val area = Area(0f, 0f, 400f, 800f)
+    private val top = Area(0f, 0f, 400f, 250f)       // relógio + música
+    private val list = Area(0f, 500f, 330f, 800f)    // favoritos
+    private val bar = Area(330f, 400f, 400f, 800f)   // letras
+
+    @Test fun destinoLivreNaoEncostaEmNada() {
+        val r = Random(7)
+        repeat(300) {
+            val p = freeSpot(r, area, 50f, 70f, listOf(top, list, bar), from = null, minDistance = 0f)!!
+            val me = Area(p.first, p.second, p.first + 50f, p.second + 70f)
+            assertTrue("dentro da tela", me.l >= 0f && me.t >= 0f && me.r <= 400f && me.b <= 800f)
+            assertTrue("fora dos obstáculos", listOf(top, list, bar).none { it.intersects(me) })
+        }
     }
 
-    @Test fun destinoDentroDaFaixaELongeDoAtual() {
-        val r = Random(42)
-        repeat(200) {
-            val t = nextTarget(r, 16f..270f, current = 100f, minDistance = 40f)
-            assertTrue(t in 16f..270f)
-            assertTrue(kotlin.math.abs(t - 100f) >= 40f)
+    @Test fun semEspacoNaoTemDestino() {
+        assertEquals(null, freeSpot(Random(1), area, 50f, 70f, listOf(area), from = null, minDistance = 0f))
+    }
+
+    @Test fun caminhoNaoAtravessaObstaculo() {
+        // de cima-esquerda para baixo-esquerda passando pela lista: bloqueado
+        assertEquals(false, pathClear(10f to 260f, 10f to 700f, 50f, 70f, listOf(list)))
+        // na mesma faixa livre: liberado
+        assertEquals(true, pathClear(10f to 300f, 250f to 380f, 50f, 70f, listOf(top, list, bar)))
+    }
+
+    @Test fun destinoComCaminhoLivreAPartirDeOndeEsta() {
+        val r = Random(3)
+        repeat(100) {
+            val from = 20f to 300f
+            val p = freeSpot(r, area, 50f, 70f, listOf(top, list, bar), from = from, minDistance = 40f)!!
+            assertTrue(pathClear(from, p, 50f, 70f, listOf(top, list, bar)))
         }
-        assertEquals(16f, nextTarget(r, 16f..16f, current = 16f, minDistance = 40f))
     }
 }

@@ -33,6 +33,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.unit.dp
 import com.brendon978.menulauncher.music.MediaListener
 import kotlinx.coroutines.delay
@@ -48,16 +51,17 @@ val ROBOT_HEIGHT = 72.dp
 private val TOUCH_PAD = 14.dp
 
 /**
- * O robozinho no chão invisível: anda por [range] (x do canto esquerdo, em px) com os pés em [floorY] (px).
- * Humor pelo celular (horário, bateria, [musicPlaying], notificações) e reação ao toque, tudo só visual.
+ * O robozinho andando pela tela inicial inteira, sem pisar no que é tocável ([obstacles]) e dentro de [area]
+ * (coordenadas do próprio container, em px). Humor pelo celular e reação ao toque, tudo só visual.
+ * Muito bravo, ele para e aponta a AK de brinquedo para você; guarda quando se acalma. Nunca atira.
  * As animações vivem do relógio de quadros do Compose, que para quando a tela inicial não está visível.
  */
 @Composable
 fun RobotPet(
     color: Color,
     musicPlaying: Boolean,
-    floorY: Float,
-    range: ClosedFloatingPointRange<Float>,
+    area: Area,
+    obstacles: List<Area>,
 ) {
     val density = LocalDensity.current
     val heightPx = with(density) { ROBOT_HEIGHT.toPx() }
@@ -92,65 +96,85 @@ fun RobotPet(
     var reaction by remember { mutableStateOf<Reaction?>(null) }
     var reactionUntil by remember { mutableLongStateOf(0L) }
     var fleeSignal by remember { mutableIntStateOf(0) }
+    val reacting = reaction != null && now < reactionUntil
+    val calming = annoyance.levelReaction(now)
+    val menacing = (reacting && reaction == Reaction.MENACE) || calming == Reaction.MENACE
 
     // ---- andar ----
-    val x = remember { Animatable(range.start) }
+    val pos = remember { Animatable(Offset.Unspecified, Offset.VectorConverter) }
+    var placed by remember { mutableStateOf(false) }
     var walking by remember { mutableStateOf(false) }
     var facingLeft by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }
     var visible by remember { mutableFloatStateOf(1f) }
-    val currentRange by rememberUpdatedState(range)
-    val stillMood = mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING
+    val currentArea by rememberUpdatedState(area)
+    val currentObstacles by rememberUpdatedState(obstacles)
+    val stillMood = mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || menacing
     val random = remember { Random(System.nanoTime()) }
 
-    suspend fun glitchTo(target: Float) {
-        // pisca, some, reaparece no outro lugar
-        repeat(3) { visible = .3f; delay(50); visible = 1f; delay(60) }
-        visible = 0f
-        delay(220)
-        x.snapTo(target)
-        visible = .5f; delay(60); visible = 1f
+    fun spot(from: Offset?, minDistance: Float): Offset? =
+        freeSpot(random, currentArea, widthPx, heightPx, currentObstacles, from?.let { it.x to it.y }, minDistance)
+            ?.let { Offset(it.first, it.second) }
+
+    suspend fun glitchTo(target: Offset) {
+        // pisca, some, reaparece no outro lugar. Se for cancelado no meio (a tela mudou), ele não pode ficar invisível.
+        try {
+            repeat(3) { visible = .3f; delay(50); visible = 1f; delay(60) }
+            visible = 0f
+            delay(220)
+            pos.snapTo(target)
+            visible = .5f; delay(60)
+        } finally {
+            visible = 1f
+        }
     }
 
-    // faixa mudou (girou a tela, IA mudou de lugar): fica dentro dela
-    LaunchedEffect(range) {
-        if (x.value !in range) x.snapTo(x.value.coerceIn(range.start, range.endInclusive))
+    // primeira posição, e fugir de onde a tela mudou (lista cresceu, IA veio para cá)
+    LaunchedEffect(area, obstacles) {
+        val p = pos.value
+        val me = if (p.isSpecified) Area(p.x, p.y, p.x + widthPx, p.y + heightPx) else null
+        val inside = me != null && me.l >= area.l && me.t >= area.t && me.r <= area.r && me.b <= area.b
+        if (me == null || !inside || obstacles.any { it.intersects(me) }) {
+            val target = spot(null, 0f) ?: return@LaunchedEffect
+            if (!placed) { pos.snapTo(target); placed = true } else glitchTo(target)
+        }
     }
 
-    LaunchedEffect(stillMood) {
-        if (stillMood) {
+    LaunchedEffect(stillMood, placed) {
+        if (stillMood || !placed) {
             walking = false
             return@LaunchedEffect
         }
         while (true) {
-            val r = currentRange
-            val target = nextTarget(random, r, x.value, minDistance = widthPx)
-            facingLeft = target < x.value
+            val target = spot(pos.value, minDistance = widthPx * 1.5f)
+            if (target == null) { delay(1_500); continue }
+            facingLeft = target.x < pos.value.x
             walking = true
             val speed = with(density) { 38.dp.toPx() } // px por segundo
-            val ms = (abs(target - x.value) / speed * 1000).roundToInt().coerceAtLeast(1)
-            x.animateTo(target, tween(ms, easing = LinearEasing))
+            val ms = ((target - pos.value).getDistance() / speed * 1000).roundToInt().coerceAtLeast(1)
+            pos.animateTo(target, tween(ms, easing = LinearEasing))
             walking = false
             delay(random.nextLong(1_500, 4_000))
             when (random.nextInt(100)) {
                 in 0..11 -> { scanning = true; delay(2_500); scanning = false }
-                in 12..15 -> glitchTo(nextTarget(random, currentRange, x.value, widthPx * 2))
+                in 12..15 -> spot(null, widthPx * 3)?.let { glitchTo(it) }
             }
         }
     }
 
-    // fugir de quem fica importunando: vai para a ponta oposta
+    // fugir de quem fica importunando: o lugar livre mais longe que achar
     LaunchedEffect(fleeSignal) {
         if (fleeSignal == 0) return@LaunchedEffect
-        val r = currentRange
-        val mid = (r.start + r.endInclusive) / 2
-        glitchTo(if (x.value < mid) r.endInclusive else r.start)
+        val here = pos.value
+        val far = (0 until 12).mapNotNull { spot(null, 0f) }.maxByOrNull { (it - here).getDistance() }
+        if (far != null) glitchTo(far)
     }
 
+    if (!placed) return
+
     // ---- rosto e pose ----
-    val reacting = reaction != null && now < reactionUntil
-    val calming = annoyance.levelReaction(now)
     val face = when {
+        menacing -> Face.ANGRY
         reacting && reaction == Reaction.GIGGLE -> Face.GIGGLE
         reacting && reaction == Reaction.ANGRY -> Face.ANGRY
         reacting -> Face.SERIOUS
@@ -166,6 +190,8 @@ fun RobotPet(
     val blinkCycle = t % 4f
     val blink = if (blinkCycle in 3.75f..3.9f) .1f else 1f
     val pose = when {
+        // de frente, braços fechados no meio segurando a arma apontada para você
+        menacing -> RobotPose(face, false, armL = -47f, armR = 47f, tilt = 1.5f * sin(t * 3f), antennaOn = (t * 6).toInt() % 2 == 0, phase = t, gun = true)
         reacting && reaction == Reaction.GIGGLE -> {
             val k = ((reactionUntil - now) / 900f).coerceIn(0f, 1f)
             RobotPose(face, facingLeft, armL = -30f, armR = 30f, lift = 10f * sin(k * Math.PI.toFloat()), blink = blink, phase = t)
@@ -196,7 +222,7 @@ fun RobotPet(
     Box(
         contentAlignment = androidx.compose.ui.Alignment.Center,
         modifier = Modifier
-            .offset { IntOffset((x.value - pad).roundToInt(), (floorY - heightPx - pad).roundToInt()) }
+            .offset { IntOffset((pos.value.x - pad).roundToInt(), (pos.value.y - pad).roundToInt()) }
             .size(with(density) { widthPx.toDp() } + TOUCH_PAD * 2, ROBOT_HEIGHT + TOUCH_PAD * 2)
             .alpha(visible)
             .pointerInput(Unit) {

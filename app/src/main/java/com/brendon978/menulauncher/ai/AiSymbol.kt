@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.brendon978.menulauncher.pet.petObstacle
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.roundToInt
 
@@ -80,6 +81,7 @@ fun AiSymbol(
             modifier = Modifier
                 .offset { IntOffset(pos.x.roundToInt(), pos.y.roundToInt()) }
                 .size(size)
+                .petObstacle("ai")
                 .graphicsLayer {
                     val s = if (listening) pulse else 1f
                     scaleX = s

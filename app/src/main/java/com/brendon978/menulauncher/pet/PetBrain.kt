@@ -1,13 +1,13 @@
 package com.brendon978.menulauncher.pet
 
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.random.Random
 
 /** Humor de fundo, pelo estado do celular. A reação ao toque aparece por cima por um instante. */
 enum class Mood { SLEEPING, TIRED, DANCING, HAPPY, NORMAL }
 
-enum class Reaction { GIGGLE, SERIOUS, ANGRY, FLEE }
+/** MENACE: muito bravo, aponta a AK de brinquedo (nunca atira). */
+enum class Reaction { GIGGLE, SERIOUS, ANGRY, MENACE, FLEE }
 
 const val SLEEP_FROM_HOUR = 23
 const val SLEEP_UNTIL_HOUR = 7
@@ -29,7 +29,7 @@ fun happyUntil(prev: Int?, new: Int, now: Long, current: Long): Long =
 
 /**
  * Irritação: cada toque soma 1, e ela cai [DECAY_PER_S] por segundo.
- * Faixas: < 2 risadinha, < 3.5 sério, < 5 bravo, a partir de 5 foge (e volta para "sério").
+ * Faixas: < 2 risadinha, < 3.5 sério, < 4.5 bravo, < 6 ameaça (aponta a arma), a partir de 6 foge (glitch e teleporte) e reaparece ainda apontando a arma, até se acalmar.
  */
 data class Annoyance(val level: Float = 0f, val at: Long = 0L) {
     fun levelAt(now: Long): Float = max(0f, level - (now - at).coerceAtLeast(0) / 1000f * DECAY_PER_S)
@@ -47,31 +47,66 @@ data class Annoyance(val level: Float = 0f, val at: Long = 0L) {
     private fun reactionFor(l: Float) = when {
         l < 2f -> Reaction.GIGGLE
         l < 3.5f -> Reaction.SERIOUS
-        l < 5f -> Reaction.ANGRY
+        l < 4.5f -> Reaction.ANGRY
+        l < 6f -> Reaction.MENACE
         else -> Reaction.FLEE
     }
 
     companion object {
         const val DECAY_PER_S = 0.5f
-        const val AFTER_FLEE = 2.5f
+        /** Depois de fugir: ainda no nível "ameaça" (~2 s), depois bravo, sério e calmo. */
+        const val AFTER_FLEE = 5.5f
     }
 }
 
-/** Faixa de x (canto esquerdo do robô) no chão: da margem até antes da barra de letras e do símbolo da IA. */
-fun floorRange(width: Float, robotWidth: Float, margin: Float, barLeft: Float, aiLeft: Float?): ClosedFloatingPointRange<Float> {
-    val rightLimit = minOf(barLeft, aiLeft ?: Float.MAX_VALUE, width)
-    val maxX = rightLimit - robotWidth
-    return if (maxX <= margin) margin..margin else margin..maxX
+// ---- andar pela tela toda ----
+
+/** Retângulo em px (esquerda, topo, direita, base). */
+data class Area(val l: Float, val t: Float, val r: Float, val b: Float) {
+    fun intersects(o: Area) = l < o.r && o.l < r && t < o.b && o.t < b
 }
 
-/** Próximo ponto do chão, a pelo menos [minDistance] do atual quando couber. */
-fun nextTarget(random: Random, range: ClosedFloatingPointRange<Float>, current: Float, minDistance: Float): Float {
-    val span = range.endInclusive - range.start
-    if (span <= 0f) return range.start
-    repeat(20) {
-        val t = range.start + random.nextFloat() * span
-        if (abs(t - current) >= minDistance) return t
+/** O robô (canto superior esquerdo em [p], tamanho [w]×[h]) não encosta em nenhum obstáculo ao longo do segmento. */
+fun pathClear(from: Pair<Float, Float>, to: Pair<Float, Float>, w: Float, h: Float, obstacles: List<Area>): Boolean {
+    val dx = to.first - from.first
+    val dy = to.second - from.second
+    val steps = (kotlin.math.hypot(dx, dy) / (minOf(w, h) / 3f)).toInt().coerceIn(1, 200)
+    for (i in 0..steps) {
+        val x = from.first + dx * i / steps
+        val y = from.second + dy * i / steps
+        val me = Area(x, y, x + w, y + h)
+        if (obstacles.any { it.intersects(me) }) return false
     }
-    // faixa estreita: vai para a ponta mais longe
-    return if (current - range.start > range.endInclusive - current) range.start else range.endInclusive
+    return true
+}
+
+/**
+ * Um lugar livre dentro de [area] para o robô (devolve o canto superior esquerdo), sem encostar nos obstáculos.
+ * Com [from], o caminho em linha reta até lá também precisa estar livre e ter ao menos [minDistance].
+ * null quando não acha (tela cheia): ele fica onde está.
+ */
+fun freeSpot(
+    random: Random,
+    area: Area,
+    w: Float,
+    h: Float,
+    obstacles: List<Area>,
+    from: Pair<Float, Float>?,
+    minDistance: Float,
+): Pair<Float, Float>? {
+    val maxX = area.r - w
+    val maxY = area.b - h
+    if (maxX < area.l || maxY < area.t) return null
+    repeat(80) {
+        val x = area.l + random.nextFloat() * (maxX - area.l)
+        val y = area.t + random.nextFloat() * (maxY - area.t)
+        val me = Area(x, y, x + w, y + h)
+        if (obstacles.any { it.intersects(me) }) return@repeat
+        if (from != null) {
+            if (kotlin.math.hypot(x - from.first, y - from.second) < minDistance) return@repeat
+            if (!pathClear(from, x to y, w, h, obstacles)) return@repeat
+        }
+        return x to y
+    }
+    return null
 }

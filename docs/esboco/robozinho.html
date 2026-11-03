@@ -106,6 +106,7 @@
   <button data-m="cansado">Bateria baixa</button>
   <button data-m="scan">Escaneando</button>
   <button data-m="glitch">Glitch / teleporte</button>
+  <button data-m="ameaca">Ameaça (muito bravo)</button>
 </div>
 <div class="bar" id="colors">
   <b>Traço</b>
@@ -145,6 +146,10 @@ function face(m) {
     case 'scan':
       return `<g><rect class="px" x="47" y="53" width="7" height="7" rx="1"/><rect class="px" x="66" y="53" width="7" height="7" rx="1"/></g>
               <g class="scan"><rect class="px" x="40" y="57" width="40" height="1.6" opacity=".8"/></g>`;
+    case 'ameaca':
+      return `<g><rect class="px" x="47" y="56" width="8" height="6" rx="1"/><rect class="px" x="65" y="56" width="8" height="6" rx="1"/></g>
+              <line class="ln" x1="45" y1="50" x2="56" y2="54" style="stroke-width:2.4"/><line class="ln" x1="75" y1="50" x2="64" y2="54" style="stroke-width:2.4"/>
+              <path class="ln" d="M53 72 L56.5 69 L60 72 L63.5 69 L67 72" style="stroke-width:1.8"/>`;
     default:
       return `<g class="blink"><rect class="px" x="47" y="52" width="8" height="9" rx="1.5"/><rect class="px" x="65" y="52" width="8" height="9" rx="1.5"/></g>
               <rect class="px" x="56" y="69" width="8" height="2" rx="1" opacity=".7"/>`;
@@ -182,7 +187,7 @@ const variants = {
     </g>`,
   corpo: m => {
     // dormindo/cansado: parado; música: dança no lugar; resto: anda.
-    const state = (m === 'dormindo' || m === 'cansado') ? 'parado' : (m === 'musica' ? 'dance' : '');
+    const state = (m === 'dormindo' || m === 'cansado' || m === 'ameaca') ? 'parado' : (m === 'musica' ? 'dance' : '');
     const walk = state === '' ? 'walk' : '';
     return `<line class="ln" x1="10" y1="154" x2="110" y2="154" style="opacity:.25"/>
     <g class="${walk} ${state}"><g class="step ${state === 'dance' ? '' : ''}">
@@ -190,8 +195,12 @@ const variants = {
       <rect class="ln" x="44" y="80" width="32" height="44" rx="8"/>
       <circle class="px" cx="53" cy="94" r="1.6"/><circle class="px" cx="59" cy="94" r="1.6" opacity=".5"/>
       <line class="ln" x1="52" y1="106" x2="68" y2="106" style="opacity:.5"/>
-      <g class="armL"><g transform="rotate(10 40 90)"><path class="ln" d="M37 90 L37 112 M43 90 L43 112" style="stroke-width:2"/><line class="ln" x1="37" y1="94" x2="43" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="98" x2="43" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="102" x2="43" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="106" x2="43" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="110" x2="43" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="35.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M36.5 117 L34.5 121.5 M40 117 L40 122.5 M43.5 117 L45.5 121.5" style="stroke-width:1.8"/></g></g>
-      <g class="armR"><g transform="rotate(-10 80 90)"><path class="ln" d="M77 90 L77 112 M83 90 L83 112" style="stroke-width:2"/><line class="ln" x1="77" y1="94" x2="83" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="98" x2="83" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="102" x2="83" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="106" x2="83" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="110" x2="83" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="75.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M76.5 117 L74.5 121.5 M80 117 L80 122.5 M83.5 117 L85.5 121.5" style="stroke-width:1.8"/></g></g>
+      ${m === 'ameaca' ? `<g class="gun"><rect class="ln" x="53" y="97" width="14" height="12" rx="3" style="stroke-width:1.8"/>
+      <line class="ln" x1="60" y1="92.5" x2="60" y2="97" style="stroke-width:1.8"/><line class="ln" x1="58" y1="92.5" x2="62" y2="92.5" style="stroke-width:1.6"/>
+      <circle class="ln" cx="60" cy="102.5" r="3.6" style="stroke-width:1.8"/><circle class="px" cx="60" cy="102.5" r="1.3"/>
+      <path class="ln" d="M57 109 Q56 116 58 122 L63 121 Q62 115 63 109" style="stroke-width:1.8"/></g>` : ''}
+      <g class="armL" ${m === 'ameaca' ? 'style="animation:none;transform:rotate(-47deg)"' : ''}><g transform="rotate(10 40 90)"><path class="ln" d="M37 90 L37 112 M43 90 L43 112" style="stroke-width:2"/><line class="ln" x1="37" y1="94" x2="43" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="98" x2="43" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="102" x2="43" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="106" x2="43" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="110" x2="43" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="35.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M36.5 117 L34.5 121.5 M40 117 L40 122.5 M43.5 117 L45.5 121.5" style="stroke-width:1.8"/></g></g>
+      <g class="armR" ${m === 'ameaca' ? 'style="animation:none;transform:rotate(47deg)"' : ''}><g transform="rotate(-10 80 90)"><path class="ln" d="M77 90 L77 112 M83 90 L83 112" style="stroke-width:2"/><line class="ln" x1="77" y1="94" x2="83" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="98" x2="83" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="102" x2="83" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="106" x2="83" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="110" x2="83" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="75.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M76.5 117 L74.5 121.5 M80 117 L80 122.5 M83.5 117 L85.5 121.5" style="stroke-width:1.8"/></g></g>
       <g class="legL"><path class="ln" d="M48 124 L48 146 M56 124 L56 146"/><line class="ln" x1="48" y1="129" x2="56" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="133" x2="56" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="137" x2="56" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="141" x2="56" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="145" x2="56" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M44 153 Q44 145 52 145 Q60 145 60 153 Z"/></g>
       <g class="legR"><path class="ln" d="M64 124 L64 146 M72 124 L72 146"/><line class="ln" x1="64" y1="129" x2="72" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="133" x2="72" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="137" x2="72" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="141" x2="72" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="145" x2="72" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M60 153 Q60 145 68 145 Q76 145 76 153 Z"/></g>
     </g></g>`;

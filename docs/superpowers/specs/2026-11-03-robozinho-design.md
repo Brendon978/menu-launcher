@@ -20,7 +20,8 @@ Esboço aprovado: `docs/esboco/robozinho.html`, variante **D · Corpinho complet
 ## Comportamento
 
 ### Onde vive
-- **Anda num "chão" invisível** na faixa livre do meio da tela inicial do modo uma mão: abaixo do relógio e do cartão de música, acima da lista de favoritos. Decidido pelo Brendon. Andar pela tela toda fica para depois.
+- **Atualização (pedido do Brendon, mesmo dia): anda pela tela inicial inteira**, em qualquer espaço livre, sem pisar no relógio, na música, na lista, na barra de letras nem no símbolo da IA. Quando a tela muda e ele fica em cima de algo, dá um glitch para um lugar livre. O texto abaixo sobre o "chão" foi a primeira versão.
+- (primeira versão) **Anda num "chão" invisível** na faixa livre do meio da tela inicial do modo uma mão: abaixo do relógio e do cartão de música, acima da lista de favoritos. Decidido pelo Brendon. Andar pela tela toda fica para depois.
 - Anda só para a esquerda e para a direita. O chão vai da margem esquerda até antes da barra de letras e do símbolo da IA, sem passar por cima deles.
 - O chão fica numa altura fixa, a uma fração da tela, e não acompanha a lista. A lista de favoritos ocupa no máximo a metade de baixo, então não chega até ele.
 - Escolhe um ponto do chão, anda até lá, para um pouco (pisca, olha em volta) e escolhe outro.
@@ -50,7 +51,8 @@ As notificações e a música usam o acesso às notificações que o launcher j�
   - Vários toques em pouco tempo sobem a irritação:
     1. **Sério**: olhos retos, sem risadinha.
     2. **Bravo**: sobrancelhas na telinha, bate o pé e a antena pisca.
-    3. **Foge**: glitch e reaparece no canto oposto. A irritação baixa para "sério".
+    3. **Ameaça** (muito bravo): para, saca uma **AK-47 de brinquedo** e aponta para você, com a arma de frente e o cano para fora da tela, segura no meio do peito pelas duas mãos. **Nunca atira.** Ele não anda com ela: guarda quando se acalma.
+    4. **Foge**: se você continuar importunando, ele dá um glitch e reaparece longe, **ainda apontando a arma**, até se acalmar.
   - Sem toques, ele se acalma em poucos segundos e volta ao humor normal.
 - O toque nele não abre os Ajustes nem passa para o que está por baixo.
 

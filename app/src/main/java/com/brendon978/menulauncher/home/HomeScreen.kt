@@ -9,6 +9,21 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import com.brendon978.menulauncher.pet.Area
+import com.brendon978.menulauncher.pet.LocalPetObstacles
+import com.brendon978.menulauncher.pet.PetObstacles
+import com.brendon978.menulauncher.pet.RobotPet
+import com.brendon978.menulauncher.pet.petObstacle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -35,6 +50,8 @@ fun HomeScreen(
     overlay: @Composable () -> Unit = {},
 ) {
     val color = Color(settings.strokeColor)
+    val obstacles = remember { PetObstacles() }
+    CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
         Modifier
             .fillMaxSize()
@@ -44,7 +61,7 @@ fun HomeScreen(
     ) {
         when (settings.mode) {
             HomeMode.ONE_HAND -> {
-                Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp)) {
+                Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp).petObstacle("top")) {
                     TopInfo(color)
                     musicSlotTop()
                 }
@@ -57,7 +74,6 @@ fun HomeScreen(
                     onAppLongPress = onAppLongPress,
                     musicSlotBottom = musicSlotBottom,
                     onSearch = onSearch,
-                    musicPlaying = musicPlaying,
                 )
             }
             // Grade: player ao lado do relógio; a grade começa logo abaixo do que for mais alto.
@@ -78,6 +94,35 @@ fun HomeScreen(
                 )
             }
         }
+        if (settings.mode == HomeMode.ONE_HAND && settings.showPet) PetLayer(color, musicPlaying)
         overlay()
+    }
+    }
+}
+
+/** Camada do robozinho: a tela inteira, menos o que está marcado como obstáculo (com folga). */
+@Composable
+private fun PetLayer(color: Color, musicPlaying: Boolean) {
+    val reg = LocalPetObstacles.current ?: return
+    val density = LocalDensity.current
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { origin = it.positionInRoot(); size = it.size },
+    ) {
+        if (size == IntSize.Zero) return@Box
+        val gap = with(density) { 8.dp.toPx() }
+        val margin = with(density) { 12.dp.toPx() }
+        val obstacles = reg.rects.values.map {
+            Area(it.left - origin.x - gap, it.top - origin.y - gap, it.right - origin.x + gap, it.bottom - origin.y + gap)
+        }
+        RobotPet(
+            color = color,
+            musicPlaying = musicPlaying,
+            area = Area(margin, margin, size.width - margin, size.height - margin),
+            obstacles = obstacles,
+        )
     }
 }

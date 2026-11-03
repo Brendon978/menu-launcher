@@ -34,6 +34,8 @@ data class RobotPose(
     val blink: Float = 1f,
     val antennaOn: Boolean = true,
     val phase: Float = 0f,
+    /** Muito bravo: segura a AK de brinquedo apontando para a frente (nunca atira). */
+    val gun: Boolean = false,
 )
 
 /** Proporção do desenho (viewBox do esboço: 120 × 170). */
@@ -55,7 +57,8 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     drawCircle(color, 1.6f, Offset(53f, 94f))
                     drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
                     drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
-                    // braços sanfonados (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
+                    if (pose.gun) ak47(color)
+                    // braços sanfonados (por cima da arma: as garrinhas seguram ela) (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
                     // cabeça (no esboço: translate(9 2) scale(.85) sobre o desenho da cabeça)
@@ -86,6 +89,24 @@ private fun DrawScope.leg(x: Float, angle: Float, color: Color, line: Stroke) {
         }
         drawPath(foot, color, style = line)
     }
+}
+
+/**
+ * AK-47 de brinquedo vista de frente, com o cano apontado para quem olha a tela (para você), segurada
+ * no meio do peito pelas duas mãos. Em contorno, como o resto. Ele nunca atira.
+ */
+private fun DrawScope.ak47(c: Color) {
+    val st = Stroke(1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    // guarda-mão (o "corpo" da arma visto de frente)
+    drawRoundRect(c, Offset(53f, 97f), Size(14f, 12f), CornerRadius(3f), style = st)
+    // massa de mira em cima do cano
+    drawLine(c, Offset(60f, 92.5f), Offset(60f, 97f), 1.8f, StrokeCap.Round)
+    drawLine(c, Offset(58f, 92.5f), Offset(62f, 92.5f), 1.6f, StrokeCap.Round)
+    // boca do cano olhando para você: anel + furo
+    drawCircle(c, 3.6f, Offset(60f, 102.5f), style = Stroke(1.8f))
+    drawCircle(c, 1.3f, Offset(60f, 102.5f))
+    // carregador curvo descendo à frente
+    drawPath(Path().apply { moveTo(57f, 109f); quadraticTo(56f, 116f, 58f, 122f); lineTo(63f, 121f); quadraticTo(62f, 115f, 63f, 109f) }, c, style = st)
 }
 
 /** Braço de tubo com anéis, girando no ombro (topo), e mão de três garrinhas. */
