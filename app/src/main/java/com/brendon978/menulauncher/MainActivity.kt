@@ -12,6 +12,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +39,16 @@ import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
 import com.brendon978.menulauncher.settingsui.SettingsScreen
 import kotlinx.coroutines.launch
+
+/** Tema escuro neutro para as telas internas (ajustes, seletor): branco sobre quase preto. */
+private val LAUNCHER_COLORS = darkColorScheme(
+    primary = Color.White,
+    onPrimary = Color.Black,
+    surface = Color(0xFF0C0C0E),
+    onSurface = Color.White,
+    onSurfaceVariant = Color.White.copy(alpha = 0.6f),
+    outline = Color.White.copy(alpha = 0.3f),
+)
 
 private sealed interface Screen {
     data object Home : Screen
@@ -73,7 +85,12 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        setContent {
+        setContent { MaterialTheme(colorScheme = LAUNCHER_COLORS) { Content() } }
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun Content() {
+        run {
             val apps by appRepo.apps.collectAsState()
             val loaded by settingsRepo.settings.collectAsState(initial = null)
             val settings = loaded ?: LauncherSettings(firstRunDone = true)
@@ -90,7 +107,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            if (loaded == null) return@setContent // evita piscar a primeira abertura antes de ler os ajustes
+            if (loaded == null) return@run // evita piscar a primeira abertura antes de ler os ajustes
 
             if (!settings.firstRunDone) {
                 FirstRunScreen(
@@ -107,7 +124,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                 )
-                return@setContent
+                return@run
             }
 
             when (val s = screen.value) {

@@ -47,7 +47,10 @@ fun AlphabetBar(
 
     BoxWithConstraints(modifier) {
         val itemHeight = min(15.5.dp, maxHeight / letters.size)
-        val itemPx = with(LocalDensity.current) { itemHeight.toPx() }
+        val density = LocalDensity.current
+        val itemPx = with(density) { itemHeight.toPx() }
+        // Altura de cada letra é fixa em dp: a fonte não pode crescer com a escala do sistema.
+        val letterSize = with(density) { (itemHeight * 0.65f).toSp() }
 
         fun pick(y: Float) {
             val i = (y / itemPx).toInt().coerceIn(0, letters.lastIndex)
@@ -80,8 +83,8 @@ fun AlphabetBar(
                 ) {
                     Text(
                         letter.toString(),
-                        fontSize = 10.sp,
-                        lineHeight = 10.sp,
+                        fontSize = letterSize,
+                        lineHeight = letterSize,
                         color = when {
                             isSel -> if (color.luminance() > 0.5f) Color.Black else Color.White
                             enabled -> color.copy(alpha = 0.8f)
