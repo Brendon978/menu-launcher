@@ -64,6 +64,8 @@ import kotlin.random.Random
 /** Altura do robozinho na tela. */
 val ROBOT_HEIGHT = 72.dp
 private val TOUCH_PAD = 14.dp
+/** Segurar parado este tempo pega no colo; antes disso, mexer o dedo é carinho. */
+private const val PICKUP_HOLD_MS = 650L
 
 /**
  * O robozinho andando pela tela inicial inteira, sem pisar no que é tocável ([obstacles]) e dentro de [area]
@@ -756,8 +758,8 @@ fun RobotPet(
                     val grab = down.position
                     val xs = mutableListOf(placedAt.x + down.position.x)
                     var travel = 0f
-                    // até ~0,3 s: soltou rápido = toque; vai-e-volta = carinho; parado = pegar no colo
-                    val early = withTimeoutOrNull(280) {
+                    // soltou logo = toque; mexeu o dedo = carinho (quando vai e volta); parado ~0,65 s = pegar no colo
+                    val early = withTimeoutOrNull(PICKUP_HOLD_MS) {
                         while (true) {
                             val ch = awaitPointerEvent().changes.first()
                             ch.consume()
@@ -765,12 +767,13 @@ fun RobotPet(
                             xs += placedAt.x + ch.position.x
                             travel += ch.positionChange().getDistance()
                             if (countReversals(xs, minRub) >= 2) return@withTimeoutOrNull "rub"
+                            if (travel >= slop) return@withTimeoutOrNull "move"
                         }
                         @Suppress("UNREACHABLE_CODE") ""
                     }
                     when {
                         early == "up" -> if (travel < slop) onTap()
-                        early == "rub" || travel >= slop * 2 -> {
+                        early == "rub" || early == "move" -> {
                             // mexendo: vira carinho quando vai e volta
                             if (early == "rub") startPetting()
                             while (true) {
