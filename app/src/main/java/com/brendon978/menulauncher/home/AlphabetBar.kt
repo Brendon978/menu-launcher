@@ -11,7 +11,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +44,7 @@ import kotlin.math.sin
 /**
  * Barra ★ A–Z # na borda direita, curva para dentro no meio (como no esboço).
  * Tocar ou arrastar seleciona; letra sem apps fica apagada.
+ * Enquanto o dedo está na barra, um balão cresce para a esquerda mostrando a letra (o dedo cobre a barra).
  */
 @Composable
 fun AlphabetBar(
@@ -52,6 +66,9 @@ fun AlphabetBar(
         // Altura de cada letra é fixa em dp: a fonte não pode crescer com a escala do sistema.
         val letterSize = with(density) { (itemHeight * 0.65f).toSp() }
 
+        var pressed by remember { mutableStateOf(false) }
+        var dragging by remember { mutableStateOf(false) }
+
         fun pick(y: Float) {
             val i = (y / itemPx).toInt().coerceIn(0, letters.lastIndex)
             if (letters[i] != currentSelected.value) {
@@ -64,13 +81,24 @@ fun AlphabetBar(
             horizontalAlignment = Alignment.End,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .pointerInput(itemPx) { detectTapGestures { pick(it.y) } }
                 .pointerInput(itemPx) {
-                    detectVerticalDragGestures(onDragStart = { pick(it.y) }) { change, _ -> pick(change.position.y) }
+                    detectTapGestures(onPress = {
+                        pick(it.y)
+                        pressed = true
+                        tryAwaitRelease()
+                        pressed = false
+                    })
+                }
+                .pointerInput(itemPx) {
+                    detectVerticalDragGestures(
+                        onDragStart = { dragging = true; pick(it.y) },
+                        onDragEnd = { dragging = false },
+                        onDragCancel = { dragging = false },
+                    ) { change, _ -> pick(change.position.y) }
                 },
         ) {
             letters.forEachIndexed { i, letter ->
-                val curve = (sin(i / (letters.size - 1).toFloat() * PI) * 22).roundToInt().dp
+                val curve = curveOf(i, letters.size)
                 val isSel = letter == selected
                 val enabled = letter == LetterIndex.STAR || letter in available
                 Box(
@@ -94,5 +122,56 @@ fun AlphabetBar(
                 }
             }
         }
+
+        LetterBubble(
+            letter = selected,
+            visible = pressed || dragging,
+            index = letters.indexOf(selected).coerceAtLeast(0),
+            count = letters.size,
+            itemHeight = itemHeight,
+            color = color,
+            modifier = Modifier.align(Alignment.BottomEnd),
+        )
+    }
+}
+
+private fun curveOf(i: Int, count: Int) = (sin(i / (count - 1).toFloat() * PI) * 22).roundToInt().dp
+
+/** Balão à esquerda da letra escolhida; cresce da direita para a esquerda ao encostar e some ao soltar. */
+@Composable
+private fun LetterBubble(
+    letter: Char,
+    visible: Boolean,
+    index: Int,
+    count: Int,
+    itemHeight: Dp,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val size = 56.dp
+    val scale by animateFloatAsState(if (visible) 1f else 0f, tween(140), label = "bubble-scale")
+    // Centro vertical da letra, medido de baixo (a coluna está ancorada embaixo).
+    val targetY = size / 2 - itemHeight * (count - index - 0.5f)
+    val y by animateDpAsState(targetY, tween<Dp>(90), label = "bubble-y")
+    // longe o bastante para o polegar não cobrir
+    val x = -(curveOf(index, count) + 52.dp)
+    if (scale == 0f) return
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .offset(x = x, y = y)
+            .requiredSize(size)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                transformOrigin = TransformOrigin(1f, 0.5f)
+            }
+            .background(color, CircleShape),
+    ) {
+        Text(
+            letter.toString(),
+            color = if (color.luminance() > 0.5f) Color.Black else Color.White,
+            fontSize = with(LocalDensity.current) { 26.dp.toSp() },
+        )
     }
 }
