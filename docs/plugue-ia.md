@@ -11,6 +11,8 @@ O que o usuário vê:
 
 A IA não lida com áudio, só com texto. Se ela não implementar a parte de comandos, segurar faz o mesmo que tocar.
 
+**3a ou 3b?** O Android 15+ não deixa app em segundo plano abrir tela. Se a IA só responde (fala, notifica, anota), use **3a**: ela recebe o texto sem aparecer. Se os comandos dela abrem outros apps ("abre o YouTube", "toca X no Spotify"), use **3b**: o launcher, que está em primeiro plano, abre a IA com o texto, e a partir daí ela pode abrir o que quiser. Com as duas declaradas, o launcher usa a 3a. A IRIS usa a 3b.
+
 ## As três peças
 
 Todas são declaradas no `AndroidManifest.xml` da IA.
@@ -19,7 +21,8 @@ Todas são declaradas no `AndroidManifest.xml` da IA.
 |---|---|---|
 | 1. Descoberta e toque | sim | uma **Activity** exportada com `<action android:name="com.brendon978.menulauncher.action.ASSISTANT"/>` e `<category android:name="android.intent.category.DEFAULT"/>` |
 | 2. Símbolo | recomendada | na mesma Activity, um `<meta-data android:name="com.brendon978.menulauncher.symbol" android:resource="@drawable/..."/>` |
-| 3. Comandos de voz | opcional | um **BroadcastReceiver** exportado com `<action android:name="com.brendon978.menulauncher.action.COMMAND"/>`. O texto chega no extra `android.intent.extra.TEXT` (`Intent.EXTRA_TEXT`) |
+| 3a. Comandos sem abrir | opcional | um **BroadcastReceiver** exportado com `<action android:name="com.brendon978.menulauncher.action.COMMAND"/>`. O texto chega no extra `android.intent.extra.TEXT` (`Intent.EXTRA_TEXT`) |
+| 3b. Comandos abrindo a IA | opcional | uma **Activity** exportada com a mesma action `COMMAND` + categoria `DEFAULT`; o launcher abre a IA já com o texto em `EXTRA_TEXT` |
 
 Detalhes:
 
@@ -62,13 +65,16 @@ class CommandReceiver : BroadcastReceiver() {
 No MAUI, os intent-filters saem dos atributos C#. Esta é uma sugestão para `Platforms/Android/`; quem decide a implementação é o repositório da IA.
 
 ```csharp
-// Na MainActivity existente: some um IntentFilter e o MetaData do símbolo.
+// Na MainActivity existente: IntentFilters do toque (ASSISTANT) e do comando abrindo a IA (3b),
+// mais o MetaData do símbolo. O texto chega em OnCreate/OnNewIntent: Intent.GetStringExtra(Intent.ExtraText).
 [IntentFilter(new[] { "com.brendon978.menulauncher.action.ASSISTANT" },
+    Categories = new[] { Android.Content.Intent.CategoryDefault })]
+[IntentFilter(new[] { "com.brendon978.menulauncher.action.COMMAND" },
     Categories = new[] { Android.Content.Intent.CategoryDefault })]
 [MetaData("com.brendon978.menulauncher.symbol", Resource = "@drawable/simbolo_iris")]
 public class MainActivity : MauiAppCompatActivity { /* ... */ }
 
-// Novo arquivo: ReceptorComandoLauncher.cs
+// Alternativa 3a (sem abrir a IA), para quem só responde: ReceptorComandoLauncher.cs
 [BroadcastReceiver(Exported = true)]
 [IntentFilter(new[] { "com.brendon978.menulauncher.action.COMMAND" })]
 public class ReceptorComandoLauncher : BroadcastReceiver

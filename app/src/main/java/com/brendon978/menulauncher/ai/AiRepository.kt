@@ -32,9 +32,17 @@ class AiRepository(private val context: Context) {
 
     fun isInstalled(pkg: String): Boolean = runCatching { pm.getPackageInfo(pkg, 0) }.isSuccess
 
-    /** A IA tem o receiver de comando? Sem ele, segurar só abre a IA. */
-    fun acceptsCommands(pkg: String): Boolean =
-        pm.queryBroadcastReceivers(Intent(AiContract.ACTION_COMMAND).setPackage(pkg), 0).isNotEmpty()
+    /** A IA recebe comando (por receiver, sem abrir, ou por Activity, abrindo)? Sem nenhum, segurar só abre a IA. */
+    fun acceptsCommands(pkg: String): Boolean = commandReceiver(pkg) != null || commandActivity(pkg) != null
+
+    private fun commandReceiver(pkg: String) =
+        pm.queryBroadcastReceivers(Intent(AiContract.ACTION_COMMAND).setPackage(pkg), 0).firstOrNull()?.activityInfo
+
+    private fun commandActivity(pkg: String) =
+        pm.queryIntentActivities(
+            Intent(AiContract.ACTION_COMMAND).addCategory(Intent.CATEGORY_DEFAULT).setPackage(pkg),
+            PackageManager.MATCH_DEFAULT_ONLY,
+        ).firstOrNull()?.activityInfo
 
     /** Símbolo declarado no meta-data, pintado numa cor só; null se a IA não declarou. */
     fun symbol(pkg: String, activity: String, sizePx: Int, color: Int): Bitmap? = runCatching {
@@ -62,16 +70,30 @@ class AiRepository(private val context: Context) {
         }
     }
 
-    /** Entrega o comando por broadcast explícito; a IA responde do jeito dela. */
+    /**
+     * Entrega o comando. Receiver (sem abrir o app) tem preferência; senão abre a Activity de comando com o texto.
+     * Precisa ser chamado com o launcher em primeiro plano (o Android só deixa abrir tela a partir dele).
+     */
     fun sendCommand(pkg: String, text: String): Boolean {
-        val receiver = pm.queryBroadcastReceivers(Intent(AiContract.ACTION_COMMAND).setPackage(pkg), 0)
-            .firstOrNull()?.activityInfo ?: return false
-        context.sendBroadcast(
-            Intent(AiContract.ACTION_COMMAND)
-                .setComponent(ComponentName(receiver.packageName, receiver.name))
-                .putExtra(Intent.EXTRA_TEXT, text)
-                .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES),
-        )
-        return true
+        commandReceiver(pkg)?.let { r ->
+            context.sendBroadcast(
+                Intent(AiContract.ACTION_COMMAND)
+                    .setComponent(ComponentName(r.packageName, r.name))
+                    .putExtra(Intent.EXTRA_TEXT, text)
+                    .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES),
+            )
+            return true
+        }
+        commandActivity(pkg)?.let { a ->
+            return runCatching {
+                context.startActivity(
+                    Intent(AiContract.ACTION_COMMAND)
+                        .setComponent(ComponentName(a.packageName, a.name))
+                        .putExtra(Intent.EXTRA_TEXT, text)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            }.isSuccess
+        }
+        return false
     }
 }
