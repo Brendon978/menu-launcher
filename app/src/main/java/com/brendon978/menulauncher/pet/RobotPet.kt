@@ -1,5 +1,12 @@
 package com.brendon978.menulauncher.pet
 
+import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -236,6 +243,14 @@ fun RobotPet(
         }
     }
 
+    // ---- carinho, colo, voo e tontura ----
+    var petting by remember { mutableStateOf(false) }
+    var held by remember { mutableStateOf(false) }
+    var flying by remember { mutableStateOf(false) }
+    var flyVx by remember { mutableFloatStateOf(0f) }
+    var dizzyUntil by remember { mutableLongStateOf(0L) }
+    val dizzy = now < dizzyUntil
+
     // ---- andar ----
     val pos = remember { Animatable(Offset.Unspecified, Offset.VectorConverter) }
     var placed by remember { mutableStateOf(false) }
@@ -246,7 +261,7 @@ fun RobotPet(
     val currentArea by rememberUpdatedState(area)
     val currentObstacles by rememberUpdatedState(obstacles)
     // marchando, ele anda mesmo que estivesse dormindo, cansado ou dançando
-    val stillMood = menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
+    val stillMood = petting || held || flying || dizzy || menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -284,6 +299,7 @@ fun RobotPet(
 
     // primeira posição, e fugir de onde a tela mudou (lista cresceu, IA veio para cá)
     LaunchedEffect(area, obstacles) {
+        if (held || flying) return@LaunchedEffect
         val p = pos.value
         val me = if (p.isSpecified) Area(p.x, p.y, p.x + widthPx, p.y + heightPx) else null
         val inside = me != null && me.l >= area.l && me.t >= area.t && me.r <= area.r && me.b <= area.b
@@ -377,6 +393,9 @@ fun RobotPet(
 
     // ---- rosto e pose ----
     val face = when {
+        petting -> Face.BLISS
+        held || flying -> Face.SURPRISED
+        dizzy -> Face.DIZZY
         menacing -> Face.ANGRY
         marching -> Face.SERIOUS
         reacting && reaction == Reaction.GIGGLE -> Face.GIGGLE
@@ -394,6 +413,16 @@ fun RobotPet(
     val blinkCycle = t % 4f
     val blink = if (blinkCycle in 3.75f..3.9f) .1f else 1f
     val pose = when {
+        // carinho: inclina para o lado do dedo, todo mole
+        petting -> RobotPose(face, facingLeft, armL = 12f, armR = -12f, tilt = 5f * sin(t * 6f), phase = t)
+        // no colo: esperneia com os braços para cima
+        held -> {
+            val k = sin(t * 14f)
+            RobotPose(face, facingLeft, legL = 18f * sin(t * 10f), legR = -18f * sin(t * 10f + 1f), armL = 120f + 20f * k, armR = -120f - 20f * k, phase = t)
+        }
+        // voando: inclina para onde vai, braços para cima
+        flying -> RobotPose(face, flyVx < 0f, armL = 140f, armR = -140f, legL = 10f, legR = -10f, tilt = (flyVx / 60f).coerceIn(-25f, 25f), phase = t)
+        dizzy -> RobotPose(face, facingLeft, armL = 15f, armR = -15f, tilt = 7f * sin(t * 3f), phase = t)
         // de frente, braços fechados no meio segurando a arma apontada para você
         menacing -> RobotPose(face, false, armL = -47f, armR = 47f, tilt = 1.5f * sin(t * 3f), antennaOn = (t * 6).toInt() % 2 == 0, phase = t, gun = GunHold.AIM)
         // marcha: joelho alto, passo duro, arma atravessada no peito segura pelas duas mãos
@@ -430,28 +459,141 @@ fun RobotPet(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     // área de toque maior que o desenho: ele é pequeno e está andando
     val pad = with(density) { TOUCH_PAD.toPx() }
+    var placedAt by remember { mutableStateOf(Offset.Zero) }
+
+    fun onTap() {
+        val tapNow = System.currentTimeMillis()
+        val (next, r) = annoyance.tap(tapNow, bond)
+        annoyance = next
+        bond = bondAfter(bond, r)
+        save() // o vínculo é o que mais importa não perder
+        if (r == Reaction.GIGGLE) {
+            drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
+            // deu atenção a quem estava pedindo: missão cumprida
+            if (activity == Activity.SEEK_ATTENTION) activity = Activity.WANDER
+        }
+        reaction = r
+        reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
+        angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
+        if (r == Reaction.FLEE) scope.launch { fleeSignal++ }
+    }
+
+    // carinho perdoa: zera a irritação, mata tédio e carência e aproxima
+    fun startPetting() {
+        val wasMad = annoyance.levelAt(System.currentTimeMillis()) >= 2f
+        petting = true
+        annoyance = Annoyance()
+        reaction = null
+        marchUntil = 0L
+        drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
+        bond = bondAfterPetting(bond)
+        save()
+        say((if (wasMad) FORGIVE_LINES else PET_LINES).random(brainRandom))
+        if (activity == Activity.SEEK_ATTENTION || activity == Activity.SULK) activity = Activity.WANDER
+    }
+
+    fun pickUp() {
+        held = true
+        say(PICKUP_LINES.random(brainRandom), 1_600)
+    }
+
+    // solta: voa com a velocidade do dedo, cai, quica e pousa (no chão ou em cima de algo); jogado forte fica tonto
+    fun throwWith(v: Offset) {
+        held = false
+        scope.launch {
+            flying = true
+            var b = Body(pos.value.x, pos.value.y, v.x.coerceIn(-4_000f, 4_000f), v.y.coerceIn(-4_000f, 4_000f))
+            var impact = 0f
+            var last = 0L
+            try {
+                while (true) {
+                    var settled = false
+                    androidx.compose.runtime.withFrameNanos { nanos ->
+                        val dt = if (last == 0L) 1f / 60f else ((nanos - last) / 1e9f).coerceIn(0f, 1f / 20f)
+                        last = nanos
+                        val a = currentArea
+                        val supports = currentObstacles.filter { it.t - heightPx >= a.t }
+                        val (nb, s2) = physicsStep(b, dt, a, supports, widthPx, heightPx)
+                        if (b.vy > 0f && nb.vy <= 0f) impact = maxOf(impact, b.vy)
+                        b = nb
+                        settled = s2
+                    }
+                    flyVx = b.vx
+                    pos.snapTo(Offset(b.x, b.y))
+                    if (settled) break
+                }
+            } finally {
+                flying = false
+            }
+            if (impact > 1_500f) {
+                dizzyUntil = System.currentTimeMillis() + 2_500
+                say(LAND_LINES.random(brainRandom))
+                bond = (bond - .01f).coerceIn(0f, 1f)
+            }
+        }
+    }
     Box(
         contentAlignment = androidx.compose.ui.Alignment.Center,
         modifier = Modifier
             .offset { IntOffset((pos.value.x - pad).roundToInt(), (pos.value.y - pad).roundToInt()) }
             .size(with(density) { widthPx.toDp() } + TOUCH_PAD * 2, ROBOT_HEIGHT + TOUCH_PAD * 2)
             .alpha(visible)
+            .onPlaced { placedAt = it.positionInParent() }
             .pointerInput(Unit) {
-                detectTapGestures {
-                    val tapNow = System.currentTimeMillis()
-                    val (next, r) = annoyance.tap(tapNow, bond)
-                    annoyance = next
-                    bond = bondAfter(bond, r)
-                    save() // o vínculo é o que mais importa não perder
-                    if (r == Reaction.GIGGLE) {
-                        drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
-                        // deu atenção a quem estava pedindo: missão cumprida
-                        if (activity == Activity.SEEK_ATTENTION) activity = Activity.WANDER
+                val slop = viewConfiguration.touchSlop
+                val minRub = 12.dp.toPx()
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    down.consume()
+                    val grab = down.position
+                    val xs = mutableListOf(placedAt.x + down.position.x)
+                    var travel = 0f
+                    // até ~0,3 s: soltou rápido = toque; vai-e-volta = carinho; parado = pegar no colo
+                    val early = withTimeoutOrNull(280) {
+                        while (true) {
+                            val ch = awaitPointerEvent().changes.first()
+                            ch.consume()
+                            if (!ch.pressed) return@withTimeoutOrNull "up"
+                            xs += placedAt.x + ch.position.x
+                            travel += ch.positionChange().getDistance()
+                            if (countReversals(xs, minRub) >= 2) return@withTimeoutOrNull "rub"
+                        }
+                        @Suppress("UNREACHABLE_CODE") ""
                     }
-                    reaction = r
-                    reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
-                    angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
-                    if (r == Reaction.FLEE) scope.launch { fleeSignal++ }
+                    when {
+                        early == "up" -> if (travel < slop) onTap()
+                        early == "rub" || travel >= slop * 2 -> {
+                            // mexendo: vira carinho quando vai e volta
+                            if (early == "rub") startPetting()
+                            while (true) {
+                                val ch = awaitPointerEvent().changes.first()
+                                ch.consume()
+                                if (!ch.pressed) break
+                                xs += placedAt.x + ch.position.x
+                                if (!petting && countReversals(xs, minRub) >= 2) startPetting()
+                            }
+                            petting = false
+                        }
+                        else -> {
+                            // segurou parado: pega no colo, arrasta e, ao soltar, joga
+                            pickUp()
+                            val tracker = VelocityTracker()
+                            while (true) {
+                                val ch = awaitPointerEvent().changes.first()
+                                ch.consume()
+                                val finger = placedAt + ch.position
+                                tracker.addPosition(ch.uptimeMillis, finger)
+                                if (!ch.pressed) break
+                                val p = finger - grab + Offset(pad, pad)
+                                val a = currentArea
+                                scope.launch {
+                                    pos.snapTo(Offset(p.x.coerceIn(a.l, a.r - widthPx), p.y.coerceIn(a.t, a.b - heightPx)))
+                                }
+                            }
+                            val v = tracker.calculateVelocity()
+                            throwWith(Offset(v.x, v.y))
+                        }
+                    }
                 }
             },
     ) {

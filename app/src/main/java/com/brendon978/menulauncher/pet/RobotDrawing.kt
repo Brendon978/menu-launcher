@@ -16,7 +16,8 @@ import androidx.compose.ui.graphics.drawscope.translate
 import kotlin.math.sin
 
 /** Rosto na telinha quadrada. */
-enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY }
+/** SURPRISED: pego no colo/voando; DIZZY: tonto depois do arremesso; BLISS: derretendo de carinho. */
+enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS }
 
 /**
  * Pose de um quadro. Ângulos em graus; [phase] é um relógio em segundos para as animações do rosto.
@@ -227,6 +228,29 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
             drawPath(Path().apply { moveTo(46f, 60f); lineTo(50.5f, 54f); lineTo(55f, 60f) }, c, style = Stroke(2.4f, cap = StrokeCap.Round, join = StrokeJoin.Round))
             drawPath(Path().apply { moveTo(65f, 60f); lineTo(69.5f, 54f); lineTo(74f, 60f) }, c, style = Stroke(2.4f, cap = StrokeCap.Round, join = StrokeJoin.Round))
             drawArc(c, 0f, 180f, false, Offset(55f, 64f), Size(10f, 8f), style = Stroke(2f, cap = StrokeCap.Round))
+        }
+        Face.SURPRISED -> {
+            drawCircle(c, 4.2f, Offset(51f, 56f), style = Stroke(2f)); drawCircle(c, 1.4f, Offset(51f, 56f))
+            drawCircle(c, 4.2f, Offset(69f, 56f), style = Stroke(2f)); drawCircle(c, 1.4f, Offset(69f, 56f))
+            drawCircle(c, 2.6f, Offset(60f, 70f), style = Stroke(1.8f))
+        }
+        Face.DIZZY -> {
+            // espirais girando nos olhos
+            for (cx in listOf(51f, 69f)) {
+                for (k in 0 until 3) {
+                    val r = 1.5f + k * 1.6f
+                    drawArc(c, t * 400f + k * 120f, 220f, false, Offset(cx - r, 56f - r), Size(r * 2, r * 2), style = Stroke(1.4f, cap = StrokeCap.Round))
+                }
+            }
+            drawPath(Path().apply { moveTo(52f, 70f); quadraticTo(55f, 67f, 58f, 70f); quadraticTo(61f, 73f, 64f, 70f); quadraticTo(66f, 68f, 68f, 70f) }, c, style = Stroke(1.6f, cap = StrokeCap.Round))
+        }
+        Face.BLISS -> {
+            // olhos fechados de felicidade, bochechas e sorrisão
+            drawArc(c, 180f, 180f, false, Offset(46f, 53f), Size(10f, 8f), style = Stroke(2.2f, cap = StrokeCap.Round))
+            drawArc(c, 180f, 180f, false, Offset(64f, 53f), Size(10f, 8f), style = Stroke(2.2f, cap = StrokeCap.Round))
+            drawLine(c.copy(alpha = c.alpha * .6f), Offset(43f, 64f), Offset(47f, 62f), 1.4f, StrokeCap.Round)
+            drawLine(c.copy(alpha = c.alpha * .6f), Offset(73f, 62f), Offset(77f, 64f), 1.4f, StrokeCap.Round)
+            drawArc(c, 0f, 180f, false, Offset(54f, 64f), Size(12f, 8f), style = Stroke(2f, cap = StrokeCap.Round))
         }
         Face.SERIOUS -> { px(46f, 56f, 9f, 3f); px(65f, 56f, 9f, 3f); ln(55f, 70f, 65f, 70f) }
         Face.ANGRY -> {

@@ -108,3 +108,11 @@ val ATTENTION_LINES = listOf("Ei!", "Psiu!", "Tô aqui, mané!", "Ninguém brinc
 val SULK_LINES = listOf("Hmpf.", "Não tô falando com você.", "...", "Me deixa.")
 val REFUSE_DANCE_LINES = listOf("Não tô no clima.", "Dança você.", "Hmpf, nem vem.")
 val EXPLORE_LINES = listOf("Hmm, que é isso?", "Deixa eu ver...", "Interessante...", "Escaneando.")
+
+/** Carinho aproxima mais que uma risadinha (uma vez por sessão de carinho). */
+fun bondAfterPetting(bond: Float): Float = (bond + .04f).coerceIn(0f, 1f)
+
+val PET_LINES = listOf("Hmmm...", "Isso, aí mesmo...", "Que delícia...", "Pode continuar.", "Ronronando em binário...")
+val FORGIVE_LINES = listOf("Tá... tá bom.", "Hmpf... desculpo.", "Só dessa vez, hein.")
+val PICKUP_LINES = listOf("Ei! Me solta!", "Opa, opa!", "Pra onde a gente vai?", "Tô voando!", "Me bota no chão!")
+val LAND_LINES = listOf("Aiii...", "Tudo girando...", "Quem me jogou?!", "Bati a antena...", "Uou...")
