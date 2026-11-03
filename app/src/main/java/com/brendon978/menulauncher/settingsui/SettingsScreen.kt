@@ -111,6 +111,9 @@ fun SettingsScreen(
             }
         }
 
+        Section("Papel de parede")
+        WallpaperSection()
+
         Section("Sistema")
         Text(
             "Definir como tela inicial padrão",
