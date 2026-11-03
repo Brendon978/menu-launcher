@@ -55,13 +55,9 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     drawCircle(color, 1.6f, Offset(53f, 94f))
                     drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
                     drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
-                    // braços
-                    rotate(pose.armL, pivot = Offset(44f, 98f)) {
-                        drawPath(Path().apply { moveTo(44f, 98f); lineTo(36f, 112f); lineTo(37f, 120f) }, color, style = line)
-                    }
-                    rotate(pose.armR, pivot = Offset(76f, 98f)) {
-                        drawPath(Path().apply { moveTo(76f, 98f); lineTo(84f, 112f); lineTo(83f, 120f) }, color, style = line)
-                    }
+                    // braços sanfonados (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
+                    arm(40f, 10f + pose.armL, color, line)
+                    arm(80f, -10f + pose.armR, color, line)
                     // cabeça (no esboço: translate(9 2) scale(.85) sobre o desenho da cabeça)
                     translate(9f, 2f) {
                         scale(.85f, .85f, pivot = Offset.Zero) { head(color, pose, line) }
@@ -89,6 +85,26 @@ private fun DrawScope.leg(x: Float, angle: Float, color: Color, line: Stroke) {
             close()
         }
         drawPath(foot, color, style = line)
+    }
+}
+
+/** Braço de tubo com anéis, girando no ombro (topo), e mão de três garrinhas. */
+private fun DrawScope.arm(x: Float, angle: Float, color: Color, line: Stroke) {
+    rotate(angle, pivot = Offset(x, 90f)) {
+        drawLine(color, Offset(x - 3, 90f), Offset(x - 3, 112f), 2f, StrokeCap.Round)
+        drawLine(color, Offset(x + 3, 90f), Offset(x + 3, 112f), 2f, StrokeCap.Round)
+        val ring = color.copy(alpha = color.alpha * .8f)
+        var y = 94f
+        while (y <= 110f) {
+            drawLine(ring, Offset(x - 3, y), Offset(x + 3, y), 1.1f, StrokeCap.Round)
+            y += 4f
+        }
+        // palma + 3 garrinhas abertas
+        drawRoundRect(color, Offset(x - 4.5f, 112f), Size(9f, 5f), CornerRadius(2f), style = Stroke(1.8f))
+        val claw = Stroke(1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        drawPath(Path().apply { moveTo(x - 3.5f, 117f); lineTo(x - 5.5f, 121.5f) }, color, style = claw)
+        drawPath(Path().apply { moveTo(x, 117f); lineTo(x, 122.5f) }, color, style = claw)
+        drawPath(Path().apply { moveTo(x + 3.5f, 117f); lineTo(x + 5.5f, 121.5f) }, color, style = claw)
     }
 }
 

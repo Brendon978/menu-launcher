@@ -57,8 +57,8 @@
   .legL, .legR, .armL, .armR { transform-box: view-box; }
   .legL { transform-origin: 52px 124px; animation: swing .5s ease-in-out infinite alternate; }
   .legR { transform-origin: 68px 124px; animation: swing .5s ease-in-out infinite alternate-reverse; }
-  .armL { transform-origin: 44px 98px;  animation: swing .5s ease-in-out infinite alternate-reverse; }
-  .armR { transform-origin: 76px 98px;  animation: swing .5s ease-in-out infinite alternate; }
+  .armL { transform-origin: 40px 90px;  animation: swing .5s ease-in-out infinite alternate-reverse; }
+  .armR { transform-origin: 80px 90px;  animation: swing .5s ease-in-out infinite alternate; }
   @keyframes swing { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
   .parado .legL, .parado .legR, .parado .armL, .parado .armR, .parado .step, .parado.walk { animation: none; }
   .dance { animation: dance .45s ease-in-out infinite alternate; transform-origin: 60px 150px; }
@@ -190,8 +190,8 @@ const variants = {
       <rect class="ln" x="44" y="80" width="32" height="44" rx="8"/>
       <circle class="px" cx="53" cy="94" r="1.6"/><circle class="px" cx="59" cy="94" r="1.6" opacity=".5"/>
       <line class="ln" x1="52" y1="106" x2="68" y2="106" style="opacity:.5"/>
-      <g class="armL"><path class="ln" d="M44 98 L36 112 L37 120"/></g>
-      <g class="armR"><path class="ln" d="M76 98 L84 112 L83 120"/></g>
+      <g class="armL"><g transform="rotate(10 40 90)"><path class="ln" d="M37 90 L37 112 M43 90 L43 112" style="stroke-width:2"/><line class="ln" x1="37" y1="94" x2="43" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="98" x2="43" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="102" x2="43" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="106" x2="43" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="37" y1="110" x2="43" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="35.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M36.5 117 L34.5 121.5 M40 117 L40 122.5 M43.5 117 L45.5 121.5" style="stroke-width:1.8"/></g></g>
+      <g class="armR"><g transform="rotate(-10 80 90)"><path class="ln" d="M77 90 L77 112 M83 90 L83 112" style="stroke-width:2"/><line class="ln" x1="77" y1="94" x2="83" y2="94" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="98" x2="83" y2="98" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="102" x2="83" y2="102" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="106" x2="83" y2="106" style="stroke-width:1.1;opacity:.8"/><line class="ln" x1="77" y1="110" x2="83" y2="110" style="stroke-width:1.1;opacity:.8"/><rect class="ln" x="75.5" y="112" width="9" height="5" rx="2" style="stroke-width:1.8"/><path class="ln" d="M76.5 117 L74.5 121.5 M80 117 L80 122.5 M83.5 117 L85.5 121.5" style="stroke-width:1.8"/></g></g>
       <g class="legL"><path class="ln" d="M48 124 L48 146 M56 124 L56 146"/><line class="ln" x1="48" y1="129" x2="56" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="133" x2="56" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="137" x2="56" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="141" x2="56" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="145" x2="56" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M44 153 Q44 145 52 145 Q60 145 60 153 Z"/></g>
       <g class="legR"><path class="ln" d="M64 124 L64 146 M72 124 L72 146"/><line class="ln" x1="64" y1="129" x2="72" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="133" x2="72" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="137" x2="72" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="141" x2="72" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="145" x2="72" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M60 153 Q60 145 68 145 Q76 145 76 153 Z"/></g>
     </g></g>`;
