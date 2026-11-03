@@ -112,6 +112,12 @@ fun SettingsScreen(
             }
         }
 
+        Section("Robozinho")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Robozinho na tela inicial", color = Color.White, modifier = Modifier.weight(1f))
+            Switch(settings.showPet, onCheckedChange = { v -> onChange { it.copy(showPet = v) } })
+        }
+
         Section("IA")
         aiSection()
 

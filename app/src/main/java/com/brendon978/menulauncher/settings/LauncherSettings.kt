@@ -18,4 +18,6 @@ data class LauncherSettings(
     /** Posição do símbolo da IA, em fração da tela (zona do polegar, à esquerda da barra de letras). */
     val aiX: Float = 0.70f,
     val aiY: Float = 0.55f,
+    /** Robozinho na tela inicial (modo uma mão). */
+    val showPet: Boolean = true,
 )
