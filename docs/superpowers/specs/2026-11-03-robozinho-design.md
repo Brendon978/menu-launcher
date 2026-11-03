@@ -93,3 +93,13 @@ Nome escolhido pelo Brendon: **Glitch**. Inspirado nas ideias do projeto Pestinh
 - **Volta depois de sumir** (mais de 2 h sem ver a tela inicial): ele cumprimenta com saudade ou emburrado, conforme o vínculo.
 - **Ajustes → Glitch**: liga e desliga, e mostra ao vivo o que ele está fazendo e as barras das vontades e do vínculo.
 - Noite e bateria baixa continuam mandando (dorme ou fica cansado); a raiva, a AK e a marcha passam por cima de tudo.
+
+## Brincadeiras (2026-11-03, ideias inspiradas no Pestinha)
+
+- **Carinho**: passar o dedo indo e voltando em cima dele. Fecha os olhinhos, perdoa tudo (raiva, AK, marcha, protesto, castigo), aumenta o vínculo.
+- **Colo e arremesso**: segurar parado pega no colo; soltar arrastando joga, com gravidade, quique e pouso em cima da lista, do cartão da música ou da IA. Jogado forte fica tonto.
+- **Cantinho do castigo**: a placa aparece num canto quando você pega ele no colo; soltar ele em cima dela deixa ele 25 s de costas, levantando cartazes ("INJUSTIÇA!", "TÔ DE MAL"). Cutucar muito faz ele fugir; carinho perdoa.
+- **Tristeza**: carente e entediado há muito tempo, vai para um canto, cara triste com lágrima e "Ninguém liga pra mim...".
+- **Bolinha**: entediado e com energia, solta uma bola do alto e corre atrás chutando; você pode pegar e jogar a bola também ("Ei, devolve a bola!").
+- **Protesto**: três raivas em 10 minutos e ele marcha 30 s com um cartaz ("ABAIXO O DEDO!", "GREVE!").
+- **Fogos**: quando o vínculo chega a 85%, comemora com fogos e "Melhor humano!".

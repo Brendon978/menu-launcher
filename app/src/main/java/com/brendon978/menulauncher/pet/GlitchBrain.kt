@@ -28,7 +28,8 @@ data class TickCtx(
 )
 
 /** O que ele escolhe fazer quando não está dormindo de noite nem cansado pela bateria. */
-enum class Activity { WANDER, NAP, SEEK_ATTENTION, EXPLORE, SULK, DANCE }
+/** SAD: carente e ignorado há muito tempo, vai para um canto. PLAY: entediado e com energia, joga bola. */
+enum class Activity { WANDER, NAP, SEEK_ATTENTION, EXPLORE, SULK, DANCE, SAD, PLAY }
 
 enum class GlitchEvent { GENTLE_TAP, NOTIFICATION, MUSIC_START }
 
@@ -73,6 +74,8 @@ fun decide(d: Drives, bond: Float, music: Boolean, random: Random): Activity {
         Activity.EXPLORE to max(0f, d.curiosity - .3f) * 1.1f,
         Activity.DANCE to if (dances) .9f else 0f,
         Activity.SULK to if (bond < .3f) (.3f - bond) / .3f + (if (music) .3f else 0f) else 0f,
+        Activity.SAD to if (d.longing > .75f && d.boredom > .5f) (d.longing - .75f) * 3f + (if (bond < .5f) .15f else 0f) else 0f,
+        Activity.PLAY to if (d.energy > .5f && d.longing < .6f) (d.boredom - .25f) * 1.2f + (d.energy - .5f) * .3f else 0f,
         Activity.WANDER to .45f,
     )
     return weights.filterValues { it > 0f }
@@ -116,3 +119,37 @@ val PET_LINES = listOf("Hmmm...", "Isso, aí mesmo...", "Que delícia...", "Pode
 val FORGIVE_LINES = listOf("Tá... tá bom.", "Hmpf... desculpo.", "Só dessa vez, hein.")
 val PICKUP_LINES = listOf("Ei! Me solta!", "Opa, opa!", "Pra onde a gente vai?", "Tô voando!", "Me bota no chão!")
 val LAND_LINES = listOf("Aiii...", "Tudo girando...", "Quem me jogou?!", "Bati a antena...", "Uou...")
+
+/** Fogos quando o vínculo chega no topo. */
+const val CELEBRATE_BOND = .85f
+fun celebrates(prevBond: Float, newBond: Float): Boolean = prevBond < CELEBRATE_BOND && newBond >= CELEBRATE_BOND
+
+/** Três raivas em 10 minutos: ele entra em protesto (cartaz, greve). Depois zera. */
+data class ProtestMeter(val times: List<Long> = emptyList()) {
+    fun angry(now: Long): Pair<ProtestMeter, Boolean> {
+        val recent = times.filter { now - it < PROTEST_WINDOW_MS } + now
+        return if (recent.size >= 3) ProtestMeter() to true else ProtestMeter(recent) to false
+    }
+}
+const val PROTEST_WINDOW_MS = 10 * 60_000L
+const val PROTEST_MS = 30_000L
+
+/** Castigo: fica de costas no cantinho por [PUNISH_MS]. Carinho perdoa; importunar muito faz fugir. */
+const val PUNISH_MS = 25_000L
+data class Punishment(val start: Long, val pokes: List<Long> = emptyList(), val over: Boolean = false) {
+    fun active(now: Long) = !over && now - start < PUNISH_MS
+    fun forgiven() = copy(over = true)
+    /** Cutucou de castigo: quatro cutucadas em 3 s e ele foge (devolve true). */
+    fun poke(now: Long): Pair<Punishment, Boolean> {
+        val recent = pokes.filter { now - it < 3_000 } + now
+        return if (recent.size >= 4) copy(pokes = recent, over = true) to true else copy(pokes = recent) to false
+    }
+    companion object { fun start(now: Long) = Punishment(now) }
+}
+
+val SAD_LINES = listOf("Ninguém liga pra mim...", "Tô aqui sozinho...", "Snif.", "Esqueceram de mim.", "Tudo bem, eu me viro...")
+val PLAY_LINES = listOf("Bora jogar!", "Olha o drible!", "Gooool!", "Toma essa!", "Chuta, chuta!")
+val CELEBRATE_LINES = listOf("Você é demais!", "Melhor humano!", "Eba!!", "Te curto, mané!")
+val PROTEST_SIGNS = listOf("ABAIXO O DEDO!", "GREVE!", "RESPEITO PROS ROBÔS!", "CHEGA DE CUTUCADA!", "DIREITOS JÁ!")
+val PUNISH_SIGNS = listOf("INJUSTIÇA!", "EU NÃO FIZ NADA!", "TÔ DE MAL", "VOU FUGIR", "PQP")
+val PUNISH_LINES = listOf("Isso é injusto!", "Tá bom, fico aqui...", "Hmpf.", "Vou lembrar disso.", "Que palhaçada.")

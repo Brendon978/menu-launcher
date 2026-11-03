@@ -17,7 +17,7 @@ import kotlin.math.sin
 
 /** Rosto na telinha quadrada. */
 /** SURPRISED: pego no colo/voando; DIZZY: tonto depois do arremesso; BLISS: derretendo de carinho. */
-enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS }
+enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD }
 
 /**
  * Pose de um quadro. Ângulos em graus; [phase] é um relógio em segundos para as animações do rosto.
@@ -251,6 +251,14 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
             drawLine(c.copy(alpha = c.alpha * .6f), Offset(43f, 64f), Offset(47f, 62f), 1.4f, StrokeCap.Round)
             drawLine(c.copy(alpha = c.alpha * .6f), Offset(73f, 62f), Offset(77f, 64f), 1.4f, StrokeCap.Round)
             drawArc(c, 0f, 180f, false, Offset(54f, 64f), Size(12f, 8f), style = Stroke(2f, cap = StrokeCap.Round))
+        }
+        Face.SAD -> {
+            // olhos caídos, boca para baixo e uma lágrima escorrendo
+            px(47f, 56f, 8f, 6f); px(65f, 56f, 8f, 6f)
+            ln(46f, 53f, 56f, 51f, 1.6f); ln(74f, 53f, 64f, 51f, 1.6f)
+            drawArc(c, 180f, 180f, false, Offset(54f, 68f), Size(12f, 7f), style = Stroke(2f, cap = StrokeCap.Round))
+            val drop = (t * .8f) % 1f
+            drawCircle(c.copy(alpha = c.alpha * (1f - drop)), 1.3f, Offset(50f, 63f + drop * 12f))
         }
         Face.SERIOUS -> { px(46f, 56f, 9f, 3f); px(65f, 56f, 9f, 3f); ln(55f, 70f, 65f, 70f) }
         Face.ANGRY -> {
