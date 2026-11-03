@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Robozinho — rascunhos</title>
+<style>
+  :root { --c: #ffffff; }
+  html, body { margin: 0; background: #0c0c0e; color: #ddd; font-family: system-ui, sans-serif; }
+  h1 { font-weight: 300; font-size: 22px; margin: 24px 24px 4px; }
+  p.sub { margin: 0 24px 18px; color: #888; font-size: 14px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 24px 20px; align-items: center; }
+  .bar b { font-weight: 500; font-size: 13px; color: #999; margin-right: 4px; }
+  .bar button { background: #1b1b1f; border: 1px solid #333; color: #ddd; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+  .bar button.on { background: #eee; color: #111; border-color: #eee; }
+  .sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #333; cursor: pointer; padding: 0 !important; }
+  .sw.on { border-color: #fff; }
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 0 24px 32px; }
+  .card { width: 260px; height: 360px; border-radius: 28px; position: relative; overflow: hidden;
+          background: radial-gradient(120% 80% at 30% 15%, #26262c, #08080a 70%); border: 1px solid #222; }
+  .card .name { position: absolute; left: 18px; bottom: 14px; font-size: 13px; color: #888; }
+  .card .name strong { display: block; color: #ddd; font-weight: 500; font-size: 15px; }
+  svg.bot { position: absolute; left: 50%; top: 50%; width: 150px; height: 175px; margin: -110px 0 0 -75px;
+            color: var(--c); overflow: visible; }
+  .ln { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .px { fill: currentColor; }
+
+  /* jeitos de se mover */
+  .float { animation: float 3s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-9px); } }
+  .shadow { animation: shadow 3s ease-in-out infinite; transform-origin: 60px 160px; }
+  @keyframes shadow { 50% { transform: scaleX(.75); opacity: .35; } }
+  .roll { animation: roll 6s ease-in-out infinite; }
+  @keyframes roll { 0%,100% { transform: translateX(-22px); } 50% { transform: translateX(22px); } }
+  .spin { animation: spin 1.2s linear infinite; transform-origin: 60px 136px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .roll .spin { animation-duration: 6s; animation-timing-function: ease-in-out; animation-name: wheel; }
+  @keyframes wheel { 0%,100% { transform: rotate(-120deg); } 50% { transform: rotate(120deg); } }
+  .prop { animation: prop .18s linear infinite; transform-origin: 60px 14px; }
+  @keyframes prop { 50% { transform: scaleX(.15); } }
+  .bob { animation: bob 2.2s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+  .tilt { animation: tilt 5s ease-in-out infinite; transform-origin: 60px 70px; }
+  @keyframes tilt { 0%,70%,100% { transform: rotate(0); } 78%,90% { transform: rotate(-9deg); } }
+
+  /* corpinho completo: anda de um lado pro outro, virando nas pontas */
+  .walk { animation: walkx 9s linear infinite; }
+  @keyframes walkx {
+    0%   { transform: translateX(-34px) scaleX(1); }
+    45%  { transform: translateX(34px)  scaleX(1); }
+    50%  { transform: translateX(34px)  scaleX(-1); }
+    95%  { transform: translateX(-34px) scaleX(-1); }
+    100% { transform: translateX(-34px) scaleX(1); }
+  }
+  .walk { transform-origin: 60px 0; }
+  .step { animation: step .5s ease-in-out infinite; }
+  @keyframes step { 50% { transform: translateY(-2.5px); } }
+  .legL, .legR, .armL, .armR { transform-box: view-box; }
+  .legL { transform-origin: 52px 124px; animation: swing .5s ease-in-out infinite alternate; }
+  .legR { transform-origin: 68px 124px; animation: swing .5s ease-in-out infinite alternate-reverse; }
+  .armL { transform-origin: 44px 98px;  animation: swing .5s ease-in-out infinite alternate-reverse; }
+  .armR { transform-origin: 76px 98px;  animation: swing .5s ease-in-out infinite alternate; }
+  @keyframes swing { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+  .parado .legL, .parado .legR, .parado .armL, .parado .armR, .parado .step, .parado.walk { animation: none; }
+  .dance { animation: dance .45s ease-in-out infinite alternate; transform-origin: 60px 150px; }
+  @keyframes dance { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(6deg) translateY(-4px); } }
+  .dance .armL { animation: wave .45s ease-in-out infinite alternate; }
+  .dance .armR { animation: wave .45s ease-in-out infinite alternate-reverse; }
+  @keyframes wave { from { transform: rotate(-60deg); } to { transform: rotate(10deg); } }
+
+  /* rosto (telinha quadrada) */
+  .blink { animation: blink 4s infinite; transform-origin: 60px 58px; }
+  @keyframes blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+  .eq rect { animation: eq .5s ease-in-out infinite alternate; transform-origin: center bottom; transform-box: fill-box; }
+  .eq rect:nth-child(2) { animation-delay: -.2s; } .eq rect:nth-child(3) { animation-delay: -.35s; }
+  .eq rect:nth-child(4) { animation-delay: -.1s; } .eq rect:nth-child(5) { animation-delay: -.4s; }
+  @keyframes eq { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+  .zz text { fill: currentColor; font: 600 11px system-ui; animation: zz 2.4s ease-in infinite; opacity: 0; }
+  .zz text:nth-child(2) { animation-delay: .8s; } .zz text:nth-child(3) { animation-delay: 1.6s; }
+  @keyframes zz { 0% { opacity: 0; transform: translate(0,0); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(14px,-22px); } }
+  .scan { animation: scan 1.6s ease-in-out infinite alternate; }
+  @keyframes scan { from { transform: translateY(-14px); } to { transform: translateY(14px); } }
+  .ant { animation: ant 1.4s steps(2) infinite; }
+  @keyframes ant { 50% { opacity: .15; } }
+  .glitch { animation: glitch 2.6s steps(1) infinite; }
+  @keyframes glitch {
+    0%,60%,100% { transform: none; opacity: 1; }
+    62% { transform: translate(-4px,1px) skewX(8deg); opacity: .6; }
+    64% { transform: translate(5px,-2px); opacity: .2; }
+    66% { transform: translate(0,0); opacity: 0; }
+    74% { transform: translate(40px,-30px); opacity: 0; }
+    76% { transform: translate(40px,-30px); opacity: .5; }
+    78% { transform: translate(-3px,2px); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<h1>Robozinho — quatro jeitos de existir</h1>
+<p class="sub">Mesmo rosto em telinha quadrada; muda só como ele se move. Troque o humor e a cor do traço.</p>
+
+<div class="bar" id="moods">
+  <b>Humor</b>
+  <button data-m="normal" class="on">Normal</button>
+  <button data-m="dormindo">Dormindo (noite)</button>
+  <button data-m="musica">Música tocando</button>
+  <button data-m="feliz">Feliz (zerou notificações)</button>
+  <button data-m="cansado">Bateria baixa</button>
+  <button data-m="scan">Escaneando</button>
+  <button data-m="glitch">Glitch / teleporte</button>
+</div>
+<div class="bar" id="colors">
+  <b>Traço</b>
+  <button class="sw on" data-c="#ffffff" style="background:#fff"></button>
+  <button class="sw" data-c="#e6e1d6" style="background:#e6e1d6"></button>
+  <button class="sw" data-c="#7fb7a4" style="background:#7fb7a4"></button>
+  <button class="sw" data-c="#c9a27e" style="background:#c9a27e"></button>
+  <button class="sw" data-c="#a0c4ff" style="background:#a0c4ff"></button>
+</div>
+
+<div class="grid">
+  <div class="card"><svg class="bot" viewBox="0 0 120 170" data-v="corpo"></svg>
+    <div class="name"><strong>D · Corpinho completo</strong>anda, dança com música, para quando cansa</div></div>
+  <div class="card"><svg class="bot" viewBox="0 0 120 170" data-v="flutua"></svg>
+    <div class="name"><strong>A · Flutuante</strong>cabeça + corpinho, paira no ar</div></div>
+  <div class="card"><svg class="bot" viewBox="0 0 120 170" data-v="roda"></svg>
+    <div class="name"><strong>B · Rodinha</strong>corpo quadrado numa roda só</div></div>
+  <div class="card"><svg class="bot" viewBox="0 0 120 170" data-v="helice"></svg>
+    <div class="name"><strong>C · Hélice</strong>só a cabeça, voando</div></div>
+</div>
+
+<script>
+// Rosto dentro da telinha quadrada (x 38..82, y 36..80; centro 60,58).
+function face(m) {
+  switch (m) {
+    case 'dormindo':
+      return `<g><rect class="px" x="45" y="57" width="10" height="2.6" rx="1"/><rect class="px" x="65" y="57" width="10" height="2.6" rx="1"/></g>
+`;
+    case 'musica':
+      return `<g class="eq">${[44,51,58,65,72].map(x=>`<rect class="px" x="${x}" y="48" width="4.5" height="26" rx="1"/>`).join('')}</g>`;
+    case 'feliz':
+      return `<path class="px" d="M60 70 L49 59 A5.5 5.5 0 0 1 60 51 A5.5 5.5 0 0 1 71 59 Z"/>`;
+    case 'cansado':
+      return `<g><rect class="px" x="46" y="58" width="8" height="5" rx="1"/><rect class="px" x="66" y="58" width="8" height="5" rx="1"/>
+              <rect class="ln" x="44" y="54" width="12" height="1" style="stroke-width:1.6"/><rect class="ln" x="64" y="54" width="12" height="1" style="stroke-width:1.6"/></g>
+              <rect class="ln" x="55" y="70" width="10" height="5" rx="1" style="stroke-width:1.4"/><rect class="px" x="56.5" y="71.5" width="2" height="2"/>`;
+    case 'scan':
+      return `<g><rect class="px" x="47" y="53" width="7" height="7" rx="1"/><rect class="px" x="66" y="53" width="7" height="7" rx="1"/></g>
+              <g class="scan"><rect class="px" x="40" y="57" width="40" height="1.6" opacity=".8"/></g>`;
+    default:
+      return `<g class="blink"><rect class="px" x="47" y="52" width="8" height="9" rx="1.5"/><rect class="px" x="65" y="52" width="8" height="9" rx="1.5"/></g>
+              <rect class="px" x="56" y="69" width="8" height="2" rx="1" opacity=".7"/>`;
+  }
+}
+
+// Cabeça comum: caixa arredondada, telinha QUADRADA, antena.
+function head(m) {
+  const antBlink = (m === 'scan' || m === 'dormindo') ? 'ant' : '';
+  return `<g class="tilt">
+    <line class="ln" x1="60" y1="26" x2="60" y2="16"/><circle class="ln ${antBlink}" cx="60" cy="13" r="3"/>
+    <rect class="ln" x="30" y="26" width="60" height="62" rx="14"/>
+    <rect class="ln" x="38" y="36" width="44" height="44" rx="4"/>
+    <line class="ln" x1="30" y1="52" x2="25" y2="52"/><line class="ln" x1="90" y1="52" x2="95" y2="52"/>
+    <defs><clipPath id="tela"><rect x="39" y="37" width="42" height="42" rx="3"/></clipPath></defs>
+    <g clip-path="url(#tela)">${face(m)}</g>
+    ${m === 'dormindo' ? '<g class="zz"><text x="84" y="30">z</text><text x="90" y="24">z</text><text x="96" y="18">Z</text></g>' : ''}
+  </g>`;
+}
+
+const variants = {
+  flutua: m => `<ellipse class="ln shadow" cx="60" cy="160" rx="22" ry="3" style="stroke-width:1.4;opacity:.5"/>
+    <g class="float">${head(m)}
+      <rect class="ln" x="44" y="94" width="32" height="30" rx="9"/>
+      <path class="ln" d="M44 104 q-10 4 -12 14"/><path class="ln" d="M76 104 q10 4 12 14"/>
+      <path class="ln" d="M52 128 l8 8 l8 -8" style="opacity:.6"/>
+    </g>`,
+  roda: m => `<g class="roll">${head(m)}
+      <line class="ln" x1="60" y1="88" x2="60" y2="96"/>
+      <rect class="ln" x="40" y="96" width="40" height="28" rx="6"/>
+      <circle class="px" cx="50" cy="110" r="1.6"/><circle class="px" cx="56" cy="110" r="1.6" opacity=".5"/>
+      <circle class="ln" cx="60" cy="136" r="12"/>
+      <g class="spin"><line class="ln" x1="60" y1="126" x2="60" y2="146"/><line class="ln" x1="50" y1="136" x2="70" y2="136"/></g>
+      <line class="ln" x1="30" y1="149" x2="90" y2="149" style="opacity:.3"/>
+    </g>`,
+  corpo: m => {
+    // dormindo/cansado: parado; música: dança no lugar; resto: anda.
+    const state = (m === 'dormindo' || m === 'cansado') ? 'parado' : (m === 'musica' ? 'dance' : '');
+    const walk = state === '' ? 'walk' : '';
+    return `<line class="ln" x1="10" y1="154" x2="110" y2="154" style="opacity:.25"/>
+    <g class="${walk} ${state}"><g class="step ${state === 'dance' ? '' : ''}">
+      <g transform="translate(9 2) scale(.85)">${head(m)}</g>
+      <rect class="ln" x="44" y="80" width="32" height="44" rx="8"/>
+      <circle class="px" cx="53" cy="94" r="1.6"/><circle class="px" cx="59" cy="94" r="1.6" opacity=".5"/>
+      <line class="ln" x1="52" y1="106" x2="68" y2="106" style="opacity:.5"/>
+      <g class="armL"><path class="ln" d="M44 98 L36 112 L37 120"/></g>
+      <g class="armR"><path class="ln" d="M76 98 L84 112 L83 120"/></g>
+      <g class="legL"><path class="ln" d="M48 124 L48 146 M56 124 L56 146"/><line class="ln" x1="48" y1="129" x2="56" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="133" x2="56" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="137" x2="56" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="141" x2="56" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="48" y1="145" x2="56" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M44 153 Q44 145 52 145 Q60 145 60 153 Z"/></g>
+      <g class="legR"><path class="ln" d="M64 124 L64 146 M72 124 L72 146"/><line class="ln" x1="64" y1="129" x2="72" y2="129" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="133" x2="72" y2="133" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="137" x2="72" y2="137" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="141" x2="72" y2="141" style="stroke-width:1.2;opacity:.8"/><line class="ln" x1="64" y1="145" x2="72" y2="145" style="stroke-width:1.2;opacity:.8"/><path class="ln" d="M60 153 Q60 145 68 145 Q76 145 76 153 Z"/></g>
+    </g></g>`;
+  },
+  helice: m => `<g class="bob">
+      <g class="prop"><line class="ln" x1="36" y1="9" x2="84" y2="9"/></g>
+      <line class="ln" x1="60" y1="9" x2="60" y2="14"/>
+      ${head(m).replace('<circle class="ln', '<circle style="display:none" class="ln')}
+    </g>`,
+};
+
+let mood = 'normal';
+function render() {
+  document.querySelectorAll('svg.bot').forEach(svg => {
+    svg.innerHTML = variants[svg.dataset.v](mood);
+    svg.classList.toggle('glitch', mood === 'glitch');
+  });
+}
+document.getElementById('moods').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#moods button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); mood = b.dataset.m; render();
+});
+document.getElementById('colors').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#colors button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); document.documentElement.style.setProperty('--c', b.dataset.c);
+});
+// #musica, #dormindo... abre já naquele humor
+const h = location.hash.slice(1);
+if (h) document.querySelector(`#moods button[data-m="${h}"]`)?.click(); else render();
+</script>
+</body>
+</html>
