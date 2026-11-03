@@ -1,0 +1,71 @@
+<!doctype html><html><head><style>
+html,body{margin:0;background:#141416;color:#eee;font-family:system-ui,sans-serif}
+.wrap{display:flex;gap:24px;justify-content:center;align-items:flex-start;padding:20px 0;flex-wrap:wrap}
+.ctl{display:flex;flex-direction:column;gap:8px;width:200px}
+.ctl b{font-size:13px;color:#aaa;font-weight:500;margin-top:8px}
+.ctl button{background:#222;border:1px solid #333;color:#ddd;padding:8px 10px;border-radius:10px;cursor:pointer;text-align:left;font-size:13px}
+.ctl button.on{background:#eee;color:#111;border-color:#eee}
+.note{font-size:12px;color:#888;line-height:1.4}
+.phone{width:300px;height:620px;border-radius:36px;border:8px solid #2a2a2e;position:relative;overflow:hidden;background:radial-gradient(120% 80% at 20% 10%,#3a3a40,#0c0c0e 70%)}
+.phone.claro{background:radial-gradient(120% 80% at 20% 10%,#f4f1ea,#cfcac0 80%);color:#111}
+.sb{display:flex;justify-content:space-between;font-size:11px;padding:10px 18px;opacity:.8}
+.top{padding:24px 22px 0}
+.clock{font-size:52px;font-weight:200;letter-spacing:1px}
+.date{font-size:13px;opacity:.7;margin-top:2px}
+.music{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px;border:1px solid rgba(127,127,127,.35);border-radius:14px;font-size:12px}
+.music .art{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#777,#333)}
+.list{position:absolute;left:0;right:46px;bottom:28px;padding:0 22px}
+.app{display:flex;align-items:center;gap:14px;padding:9px 0;font-size:15px;cursor:pointer}
+.app svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.hdr{font-size:12px;opacity:.6;margin-bottom:4px;height:14px}
+.az{position:absolute;right:6px;bottom:16px;display:flex;flex-direction:column;align-items:flex-end;font-size:9.5px;line-height:12.5px}
+.az span{cursor:pointer;padding:0 6px;opacity:.75;border-radius:6px}
+.az span.sel{background:currentColor;opacity:1}
+.az span.sel i{color:#111;font-style:normal}
+.az i{font-style:normal}
+.phone.claro .az span.sel i{color:#eee}
+.grid{position:absolute;left:0;right:0;top:200px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px 0;padding:0 14px;justify-items:center;font-size:10px}
+.grid div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.grid svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.hide{display:none!important}
+</style></head><body><div class="wrap">
+<div class="phone" id="ph">
+ <div class="sb"><span>10:43</span><span>78%</span></div>
+ <div class="top"><div class="clock">10:43</div><div class="date">ter., 3 de novembro · 24°</div>
+  <div class="music" id="mus"><div class="art"></div><div style="flex:1">Castle in the Mist<br><span style="opacity:.6">YT Music</span></div><span>⏮ ⏯ ⏭</span></div></div>
+ <div class="list" id="list"><div class="hdr" id="hdr">Favoritos</div><div id="apps"></div></div>
+ <div class="az" id="az"></div>
+ <div class="grid hide" id="grid"></div>
+</div>
+<div class="ctl">
+ <b>Modo</b>
+ <button class="on" data-m="mao">Uma mão</button>
+ <button data-m="padrao">Padrão (grade)</button>
+ <b>Fundo</b>
+ <button class="on" data-f="escuro">Escuro</button>
+ <button data-f="claro">Claro</button>
+ <b>Música</b>
+ <button class="on" data-x="1">Mostrar</button>
+ <button data-x="0">Esconder</button>
+ <p class="note">No modo uma mão, toque numa letra à direita para ver os apps dela, e em ★ para voltar aos favoritos.</p>
+</div></div>
+<script>
+const I={cam:'<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',tel:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/>',msg:'<path d="M4 5h16v11H9l-5 4z"/>',map:'<path d="M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',mus:'<circle cx="7" cy="17" r="3"/><path d="M10 17V5l10-2v12"/><circle cx="17" cy="15" r="3"/>',gal:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',clk:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',web:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',note:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/>',calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/>',ppl:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',bag:'<path d="M5 8h14l-1 13H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'};
+const A=[['Agenda','cal'],['Calculadora','calc'],['Câmera','cam'],['Chrome','web'],['Contatos','ppl'],['Galeria','gal'],['Gemini','web'],['Instagram','cam'],['Maps','map'],['Mensagens','msg'],['Notes','note'],['Play Store','bag'],['Relógio','clk'],['Spotify','mus'],['Telefone','tel'],['WhatsApp','msg'],['YT Music','mus']];
+const fav=['Telefone','Mensagens','Câmera','Spotify','Maps'];
+const svg=k=>`<svg viewBox="0 0 24 24">${I[k]}</svg>`;
+const get=n=>A.find(a=>a[0]===n);
+function show(list,h){hdr.textContent=h;apps.innerHTML=list.map(a=>`<div class="app">${svg(a[1])}<span>${a[0]}</span></div>`).join('')}
+const L='★ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+az.innerHTML=L.map((l,i)=>`<span data-l="${l}" style="margin-right:${Math.round(Math.sin(i/(L.length-1)*Math.PI)*22)}px"><i>${l}</i></span>`).join('');
+az.onclick=e=>{const s=e.target.closest('span');if(!s)return;az.querySelectorAll('span').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');const l=s.dataset.l;
+ if(l==='★')show(fav.map(get),'Favoritos');else{const r=A.filter(a=>a[0].normalize('NFD')[0].toUpperCase()===l);show(r,r.length?l:l+' · nenhum app')}};
+grid.innerHTML=A.slice(0,16).map(a=>`<div>${svg(a[1])}<span>${a[0]}</span></div>`).join('');
+show(fav.map(get),'Favoritos');az.querySelector('span').classList.add('sel');
+document.querySelectorAll('.ctl button').forEach(b=>b.onclick=()=>{
+ b.parentNode.querySelectorAll(`button[data-${Object.keys(b.dataset)[0]}]`).forEach(x=>x.classList.remove('on'));b.classList.add('on');
+ if(b.dataset.m){const g=b.dataset.m==='padrao';grid.classList.toggle('hide',!g);list.classList.toggle('hide',g);az.classList.toggle('hide',g);mus.classList.toggle('hide',g||document.querySelector('[data-x].on').dataset.x==='0')}
+ if(b.dataset.f)ph.classList.toggle('claro',b.dataset.f==='claro');
+ if(b.dataset.x)mus.classList.toggle('hide',b.dataset.x==='0'||!grid.classList.contains('hide'));
+});
+</script></body></html>
