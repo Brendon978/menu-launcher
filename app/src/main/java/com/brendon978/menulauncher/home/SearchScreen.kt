@@ -118,7 +118,6 @@ private fun SearchField(
     onGo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(28.dp)
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -129,45 +128,76 @@ private fun SearchField(
         keyboardActions = KeyboardActions(onGo = { onGo() }),
         modifier = modifier.fillMaxWidth(),
         decorationBox = { inner ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(shape)
-                    .background(Color.White.copy(alpha = 0.08f))
-                    .border(1.dp, color.copy(alpha = 0.3f), shape)
-                    .padding(start = 18.dp, end = 6.dp),
-            ) {
-                Canvas(Modifier.size(18.dp)) {
-                    val w = size.width
-                    val stroke = w * 0.1f
-                    val c = color.copy(alpha = 0.7f)
-                    drawCircle(c, radius = w * 0.33f, center = Offset(w * 0.42f, w * 0.42f), style = Stroke(stroke))
-                    drawLine(c, Offset(w * 0.67f, w * 0.67f), Offset(w * 0.92f, w * 0.92f), stroke, StrokeCap.Round)
-                }
-                Spacer(Modifier.width(12.dp))
-                Box(Modifier.weight(1f)) {
-                    if (value.isEmpty()) Text("Buscar app", color = color.copy(alpha = 0.45f), fontSize = 17.sp)
-                    inner()
-                }
-                if (value.isNotEmpty()) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .clickable { onValueChange("") },
-                    ) {
-                        Canvas(Modifier.size(12.dp)) {
-                            val w = size.width
-                            val c = color.copy(alpha = 0.7f)
-                            drawLine(c, Offset(0f, 0f), Offset(w, w), w * 0.14f, StrokeCap.Round)
-                            drawLine(c, Offset(w, 0f), Offset(0f, w), w * 0.14f, StrokeCap.Round)
-                        }
-                    }
-                }
-            }
+            SearchPillFrame(
+                color = color,
+                showPlaceholder = value.isEmpty(),
+                onClear = if (value.isNotEmpty()) ({ onValueChange("") }) else null,
+                inner = inner,
+            )
         },
     )
+}
+
+/** A mesma pílula, só para tocar e abrir o buscador (barra fixa no fim do modo grade). */
+@Composable
+fun SearchPillButton(color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    SearchPillFrame(
+        color = color,
+        showPlaceholder = true,
+        onClear = null,
+        onClick = onClick,
+        modifier = modifier,
+    ) {}
+}
+
+@Composable
+private fun SearchPillFrame(
+    color: Color,
+    showPlaceholder: Boolean,
+    onClear: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    inner: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(28.dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = "Buscar app", onClick = onClick) else Modifier)
+            .background(Color.White.copy(alpha = 0.08f))
+            .border(1.dp, color.copy(alpha = 0.3f), shape)
+            .padding(start = 18.dp, end = 6.dp),
+    ) {
+        Canvas(Modifier.size(18.dp)) {
+            val w = size.width
+            val stroke = w * 0.1f
+            val c = color.copy(alpha = 0.7f)
+            drawCircle(c, radius = w * 0.33f, center = Offset(w * 0.42f, w * 0.42f), style = Stroke(stroke))
+            drawLine(c, Offset(w * 0.67f, w * 0.67f), Offset(w * 0.92f, w * 0.92f), stroke, StrokeCap.Round)
+        }
+        Spacer(Modifier.width(12.dp))
+        Box(Modifier.weight(1f)) {
+            if (showPlaceholder) Text("Buscar app", color = color.copy(alpha = 0.45f), fontSize = 17.sp)
+            inner()
+        }
+        if (onClear != null) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onClear),
+            ) {
+                Canvas(Modifier.size(12.dp)) {
+                    val w = size.width
+                    val c = color.copy(alpha = 0.7f)
+                    drawLine(c, Offset(0f, 0f), Offset(w, w), w * 0.14f, StrokeCap.Round)
+                    drawLine(c, Offset(w, 0f), Offset(0f, w), w * 0.14f, StrokeCap.Round)
+                }
+            }
+        }
+    }
 }

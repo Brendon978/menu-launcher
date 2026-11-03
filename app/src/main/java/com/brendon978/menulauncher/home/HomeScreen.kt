@@ -71,6 +71,7 @@ fun HomeScreen(
                     onLaunch = onLaunch,
                     onAppLongPress = onAppLongPress,
                     musicSlotBottom = musicSlotBottom,
+                    onSearch = onSearch,
                     modifier = Modifier.weight(1f),
                 )
             }

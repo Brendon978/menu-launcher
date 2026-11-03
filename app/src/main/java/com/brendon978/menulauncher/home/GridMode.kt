@@ -36,6 +36,7 @@ fun GridMode(
     onLaunch: (AppEntry) -> Unit,
     onAppLongPress: (AppEntry) -> Unit,
     musicSlotBottom: @Composable () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sorted = remember(apps) { LetterIndex.sorted(apps) }
@@ -67,6 +68,12 @@ fun GridMode(
             }
         }
         musicSlotBottom()
+        // Na grade não há barra de letras: a busca fica fixa embaixo, na zona do polegar.
+        SearchPillButton(
+            color = Color(settings.strokeColor),
+            onClick = onSearch,
+            modifier = Modifier.padding(horizontal = 22.dp).padding(top = 8.dp),
+        )
         Spacer(Modifier.height(8.dp))
     }
 }
