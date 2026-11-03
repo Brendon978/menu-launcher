@@ -37,6 +37,12 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.layout
 import com.brendon978.menulauncher.music.MediaListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,6 +106,28 @@ fun RobotPet(
     val calming = annoyance.levelReaction(now)
     val menacing = (reacting && reaction == Reaction.MENACE) || calming == Reaction.MENACE
 
+    // depois de guardar a mira, sai marchando com a arma por um tempo
+    var marchUntil by remember { mutableLongStateOf(0L) }
+    var wasMenacing by remember { mutableStateOf(false) }
+    LaunchedEffect(menacing) {
+        marchUntil = marchUntil(wasMenacing, menacing, System.currentTimeMillis(), marchUntil)
+        wasMenacing = menacing
+    }
+    val marching = !menacing && now < marchUntil
+
+    // balão de fala (só raiva e marcha)
+    var speech by remember { mutableStateOf<String?>(null) }
+    var speechUntil by remember { mutableLongStateOf(0L) }
+    val speechRandom = remember { Random(System.nanoTime() + 1) }
+    LaunchedEffect(marching) {
+        if (!marching) return@LaunchedEffect
+        while (true) {
+            delay(speechRandom.nextLong(2_500, 5_000))
+            speech = MARCH_LINES.random(speechRandom)
+            speechUntil = System.currentTimeMillis() + 2_000
+        }
+    }
+
     // ---- andar ----
     val pos = remember { Animatable(Offset.Unspecified, Offset.VectorConverter) }
     var placed by remember { mutableStateOf(false) }
@@ -109,7 +137,8 @@ fun RobotPet(
     var visible by remember { mutableFloatStateOf(1f) }
     val currentArea by rememberUpdatedState(area)
     val currentObstacles by rememberUpdatedState(obstacles)
-    val stillMood = mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || menacing
+    // marchando, ele anda mesmo que estivesse dormindo, cansado ou dançando
+    val stillMood = menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -140,7 +169,7 @@ fun RobotPet(
         }
     }
 
-    LaunchedEffect(stillMood, placed) {
+    LaunchedEffect(stillMood, placed, marching) {
         if (stillMood || !placed) {
             walking = false
             return@LaunchedEffect
@@ -150,11 +179,11 @@ fun RobotPet(
             if (target == null) { delay(1_500); continue }
             facingLeft = target.x < pos.value.x
             walking = true
-            val speed = with(density) { 38.dp.toPx() } // px por segundo
+            val speed = with(density) { (if (marching) 48.dp else 38.dp).toPx() } // px por segundo
             val ms = ((target - pos.value).getDistance() / speed * 1000).roundToInt().coerceAtLeast(1)
             pos.animateTo(target, tween(ms, easing = LinearEasing))
             walking = false
-            delay(random.nextLong(1_500, 4_000))
+            delay(if (marching) random.nextLong(300, 700) else random.nextLong(1_500, 4_000))
             when (random.nextInt(100)) {
                 in 0..11 -> { scanning = true; delay(2_500); scanning = false }
                 in 12..15 -> spot(null, widthPx * 3)?.let { glitchTo(it) }
@@ -175,6 +204,7 @@ fun RobotPet(
     // ---- rosto e pose ----
     val face = when {
         menacing -> Face.ANGRY
+        marching -> Face.SERIOUS
         reacting && reaction == Reaction.GIGGLE -> Face.GIGGLE
         reacting && reaction == Reaction.ANGRY -> Face.ANGRY
         reacting -> Face.SERIOUS
@@ -191,7 +221,12 @@ fun RobotPet(
     val blink = if (blinkCycle in 3.75f..3.9f) .1f else 1f
     val pose = when {
         // de frente, braços fechados no meio segurando a arma apontada para você
-        menacing -> RobotPose(face, false, armL = -47f, armR = 47f, tilt = 1.5f * sin(t * 3f), antennaOn = (t * 6).toInt() % 2 == 0, phase = t, gun = true)
+        menacing -> RobotPose(face, false, armL = -47f, armR = 47f, tilt = 1.5f * sin(t * 3f), antennaOn = (t * 6).toInt() % 2 == 0, phase = t, gun = GunHold.AIM)
+        // marcha: joelho alto, passo duro, arma atravessada no peito segura pelas duas mãos
+        marching -> {
+            val s = sin(t * 9f)
+            RobotPose(face, facingLeft, legL = 24f * s, legR = -24f * s, armL = -38f, armR = 22f, lift = 3.5f * abs(s), phase = t, gun = GunHold.MARCH)
+        }
         reacting && reaction == Reaction.GIGGLE -> {
             val k = ((reactionUntil - now) / 900f).coerceIn(0f, 1f)
             RobotPose(face, facingLeft, armL = -30f, armR = 30f, lift = 10f * sin(k * Math.PI.toFloat()), blink = blink, phase = t)
@@ -232,11 +267,56 @@ fun RobotPet(
                     annoyance = next
                     reaction = r
                     reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
+                    angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
                     if (r == Reaction.FLEE) scope.launch { fleeSignal++ }
                 }
             },
     ) {
         Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, pose) }
+    }
+
+    val line = speech
+    if (line != null && now < speechUntil && visible > 0f) {
+        val cx = pos.value.x + widthPx / 2
+        val top = pos.value.y - with(density) { 2.dp.toPx() }
+        SpeechBubble(
+            text = line,
+            color = color,
+            modifier = Modifier.layout { m, c ->
+                val p = m.measure(c.copy(minWidth = 0, minHeight = 0))
+                layout(p.width, p.height) {
+                    // centralizado em cima da cabeça, sem sair da tela
+                    val x = (cx - p.width / 2).coerceIn(area.l, (area.r - p.width).coerceAtLeast(area.l))
+                    val y = (top - p.height).coerceAtLeast(0f)
+                    p.place(x.roundToInt(), y.roundToInt())
+                }
+            },
+        )
+    }
+}
+
+/** Balãozinho com rabinho apontando para a cabeça dele; na cor do traço, fundo escuro para dar leitura. */
+@Composable
+private fun SpeechBubble(text: String, color: Color, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.Column(modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+        androidx.compose.material3.Text(
+            text,
+            color = color,
+            fontSize = 13.sp,
+            maxLines = 1,
+            modifier = Modifier
+                .background(Color(0xE60C0C0E), RoundedCornerShape(12.dp))
+                .border(1.dp, color.copy(alpha = .6f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+        Canvas(Modifier.size(12.dp, 6.dp)) {
+            val tail = androidx.compose.ui.graphics.Path().apply {
+                moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(size.width / 2, size.height); close()
+            }
+            drawPath(tail, Color(0xE60C0C0E))
+            drawLine(color.copy(alpha = .6f), Offset(0f, 0f), Offset(size.width / 2, size.height), 1.dp.toPx())
+            drawLine(color.copy(alpha = .6f), Offset(size.width, 0f), Offset(size.width / 2, size.height), 1.dp.toPx())
+        }
     }
 }
 

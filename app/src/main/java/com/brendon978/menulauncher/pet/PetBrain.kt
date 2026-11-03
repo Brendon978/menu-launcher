@@ -110,3 +110,23 @@ fun freeSpot(
     }
     return null
 }
+
+/** Quanto tempo ele marcha com a arma depois de guardar a mira. */
+const val MARCH_MS = 20_000L
+
+/** Ao sair da ameaça (estava apontando e parou), marcha por [MARCH_MS]. */
+fun marchUntil(wasMenacing: Boolean, menacing: Boolean, now: Long, current: Long): Long =
+    if (wasMenacing && !menacing) now + MARCH_MS else current
+
+/** Falas no balão, por nível de raiva. A risadinha não fala. */
+val ANGER_LINES: Map<Reaction, List<String>> = mapOf(
+    Reaction.SERIOUS to listOf("Ei.", "Hm.", "Que foi?", "Para."),
+    Reaction.ANGRY to listOf("Para com isso!", "Tá me tirando?", "Me erra!", "Sai pra lá!", "Chega!"),
+    Reaction.MENACE to listOf("Mais um toque...", "Tá avisado!", "Vai encarar?", "Não testa.", "Mão pra cima!"),
+    Reaction.FLEE to listOf("Pra mim chega!", "Fui!", "Me deixa!"),
+)
+
+/** Falas enquanto marcha com a arma. */
+val MARCH_LINES: List<String> = listOf("Esquerda, direita!", "Tô de olho.", "Um, dois! Um, dois!", "Patrulha.", "Hmpf.")
+
+fun angerLine(reaction: Reaction, random: Random): String? = ANGER_LINES[reaction]?.random(random)

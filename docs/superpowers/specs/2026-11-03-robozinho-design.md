@@ -52,6 +52,8 @@ As notificações e a música usam o acesso às notificações que o launcher j�
     1. **Sério**: olhos retos, sem risadinha.
     2. **Bravo**: sobrancelhas na telinha, bate o pé e a antena pisca.
     3. **Ameaça** (muito bravo): para, saca uma **AK-47 de brinquedo** e aponta para você, com a arma de frente e o cano para fora da tela, segura no meio do peito pelas duas mãos. **Nunca atira.** Ele não anda com ela: guarda quando se acalma.
+    - Depois de guardar a mira, ele **marcha com a arma** atravessada no peito por 20 s, com cara séria e passo duro (pedido do Brendon).
+    - **Balão de fala** com frases de raiva em cada nível ("Para com isso!", "Vai encarar?", "Fui!") e frases de marcha ("Esquerda, direita!"). A risadinha não fala.
     4. **Foge**: se você continuar importunando, ele dá um glitch e reaparece longe, **ainda apontando a arma**, até se acalmar.
   - Sem toques, ele se acalma em poucos segundos e volta ao humor normal.
 - O toque nele não abre os Ajustes nem passa para o que está por baixo.

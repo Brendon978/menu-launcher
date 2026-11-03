@@ -34,9 +34,11 @@ data class RobotPose(
     val blink: Float = 1f,
     val antennaOn: Boolean = true,
     val phase: Float = 0f,
-    /** Muito bravo: segura a AK de brinquedo apontando para a frente (nunca atira). */
-    val gun: Boolean = false,
+    /** AK de brinquedo (nunca atira): apontando para você, ou atravessada no peito marchando. */
+    val gun: GunHold = GunHold.NONE,
 )
+
+enum class GunHold { NONE, AIM, MARCH }
 
 /** Proporção do desenho (viewBox do esboço: 120 × 170). */
 const val ROBOT_ASPECT = 120f / 170f
@@ -57,7 +59,11 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     drawCircle(color, 1.6f, Offset(53f, 94f))
                     drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
                     drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
-                    if (pose.gun) ak47(color)
+                    when (pose.gun) {
+                        GunHold.AIM -> ak47(color)
+                        GunHold.MARCH -> rotate(-42f, pivot = Offset(60f, 101f)) { ak47Side(color) }
+                        GunHold.NONE -> Unit
+                    }
                     // braços sanfonados (por cima da arma: as garrinhas seguram ela) (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
@@ -107,6 +113,23 @@ private fun DrawScope.ak47(c: Color) {
     drawCircle(c, 1.3f, Offset(60f, 102.5f))
     // carregador curvo descendo à frente
     drawPath(Path().apply { moveTo(57f, 109f); quadraticTo(56f, 116f, 58f, 122f); lineTo(63f, 121f); quadraticTo(62f, 115f, 63f, 109f) }, c, style = st)
+}
+
+/** AK de lado (para marchar com ela atravessada no peito), centrada em (60, 101). */
+private fun DrawScope.ak47Side(c: Color) {
+    val st = Stroke(1.6f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    // coronha
+    drawPath(Path().apply { moveTo(40f, 99f); lineTo(30f, 100.5f); lineTo(29f, 106f); lineTo(40f, 103f); close() }, c, style = st)
+    // caixa da culatra
+    drawRoundRect(c, Offset(40f, 97.5f), Size(22f, 6f), CornerRadius(1.2f), style = st)
+    // empunhadura e carregador curvo
+    drawPath(Path().apply { moveTo(46f, 103.5f); lineTo(44.5f, 109f); lineTo(48f, 109f); lineTo(49f, 103.5f) }, c, style = st)
+    drawPath(Path().apply { moveTo(53f, 103.5f); quadraticTo(53f, 110f, 56f, 114f); lineTo(59.5f, 112.5f); quadraticTo(57.5f, 108f, 57.5f, 103.5f) }, c, style = st)
+    // guarda-mão, tubo de gás e cano
+    drawRoundRect(c, Offset(62f, 98f), Size(11f, 4.5f), CornerRadius(1f), style = st)
+    drawLine(c, Offset(62f, 96.5f), Offset(76f, 96.5f), 1.2f, StrokeCap.Round)
+    drawLine(c, Offset(73f, 100.2f), Offset(90f, 100.2f), 1.8f, StrokeCap.Round)
+    drawLine(c, Offset(86f, 100.2f), Offset(86f, 96.8f), 1.4f, StrokeCap.Round)
 }
 
 /** Braço de tubo com anéis, girando no ombro (topo), e mão de três garrinhas. */
