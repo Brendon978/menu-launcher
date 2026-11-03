@@ -219,6 +219,12 @@ class MainActivity : ComponentActivity() {
         hasMusicAccess.value = musicRepo.hasAccess()
     }
 
+    override fun onDestroy() {
+        appRepo.close()
+        musicRepo.close()
+        super.onDestroy()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // Botão home com o launcher já aberto: fecha menus e volta para os favoritos.

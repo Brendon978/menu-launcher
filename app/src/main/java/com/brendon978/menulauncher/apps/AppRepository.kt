@@ -45,6 +45,9 @@ class AppRepository(context: Context) {
     private fun LauncherActivityInfo.toEntry(serial: Long) =
         AppEntry(AppKey(componentName.packageName, componentName.className, serial), label.toString())
 
+    /** Desliga o aviso do sistema; chamar no onDestroy da Activity para ela não ficar presa na memória. */
+    fun close() = launcherApps.unregisterCallback(callback)
+
     fun userOf(key: AppKey): UserHandle? = userManager.getUserForSerialNumber(key.userSerial)
 
     /** Info do sistema para a chave (ícone, flags); null se o app não existe mais. */

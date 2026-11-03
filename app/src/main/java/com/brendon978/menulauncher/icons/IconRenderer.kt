@@ -33,7 +33,8 @@ class IconRenderer(
     private data class CacheKey(val source: IconSource, val sizePx: Int, val color: Int)
 
     private val cache = LruCache<CacheKey, ImageBitmap>(400)
-    private val monoCache = HashMap<AppKey, Drawable?>()
+    // Os ícones são desenhados em várias threads ao mesmo tempo (um por linha visível).
+    private val monoCache = Memo<AppKey, Drawable?> { key -> (iconOf(key) as? AdaptiveIconDrawable)?.monochrome }
 
     fun iconFor(entry: AppEntry, override: String?, sizePx: Int, color: Int): ImageBitmap {
         val source = resolveIcon(entry.key, entry.label, override, filter) { monochromeOf(it) != null }
@@ -58,9 +59,7 @@ class IconRenderer(
         monoCache.clear()
     }
 
-    private fun monochromeOf(key: AppKey): Drawable? = monoCache.getOrPut(key) {
-        (iconOf(key) as? AdaptiveIconDrawable)?.monochrome
-    }
+    private fun monochromeOf(key: AppKey): Drawable? = monoCache.get(key)
 
     private fun renderSvg(name: String, sizePx: Int, color: Int): Bitmap? {
         val svg = runCatching { SVG.getFromAsset(context.assets, "lawnicons/svgs/$name.svg") }.getOrNull()
@@ -83,8 +82,11 @@ class IconRenderer(
         // A camada adaptativa tem 108dp com 72dp visíveis: sobra 1/4 de cada lado.
         val bmp = createBitmap(TRACE_SIZE, TRACE_SIZE)
         val extra = TRACE_SIZE / 4
-        mono.setBounds(-extra, -extra, TRACE_SIZE + extra, TRACE_SIZE + extra)
-        mono.draw(Canvas(bmp))
+        // O mesmo Drawable pode ser pedido em dois tamanhos ao mesmo tempo: bounds+draw não podem se cruzar.
+        synchronized(mono) {
+            mono.setBounds(-extra, -extra, TRACE_SIZE + extra, TRACE_SIZE + extra)
+            mono.draw(Canvas(bmp))
+        }
         val pixels = IntArray(TRACE_SIZE * TRACE_SIZE)
         bmp.getPixels(pixels, 0, TRACE_SIZE, 0, 0, TRACE_SIZE, TRACE_SIZE)
         val alpha = IntArray(pixels.size) { Color.alpha(pixels[it]) }

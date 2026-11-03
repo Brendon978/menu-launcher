@@ -18,4 +18,18 @@ class MusicStateTest {
         val a = SessionInfo("a", playing = false)
         assertEquals(a, pickSession(listOf(a, SessionInfo("b", playing = false))))
     }
+
+    @Test fun tocandoSempreAparece() {
+        assertEquals(true, shouldShowMusic(playing = true, pausedSince = null, now = 0))
+    }
+
+    @Test fun pausadaApareceAteDezMinutos() {
+        val t0 = 1_000_000L
+        assertEquals(true, shouldShowMusic(playing = false, pausedSince = t0, now = t0 + 9 * 60_000))
+        assertEquals(false, shouldShowMusic(playing = false, pausedSince = t0, now = t0 + 10 * 60_000))
+    }
+
+    @Test fun pausadaSemMarcaNaoAparece() {
+        assertEquals(false, shouldShowMusic(playing = false, pausedSince = null, now = 0))
+    }
 }
