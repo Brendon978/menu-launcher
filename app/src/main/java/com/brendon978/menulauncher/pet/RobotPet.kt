@@ -169,6 +169,22 @@ fun RobotPet(
         }
     }
 
+    // moonwalk: atravessa a tela de verdade, deslizando para trás (olha para um lado e vai para o outro)
+    var moonFacingLeft by remember { mutableStateOf(false) }
+    val moonwalking = mood == Mood.DANCING && danceMove == DanceMove.MOONWALK && !menacing
+    LaunchedEffect(moonwalking) {
+        if (!moonwalking || !pos.value.isSpecified) return@LaunchedEffect
+        val here = pos.value
+        val a = currentArea
+        val maxX = a.r - widthPx
+        val target = (0 until 15).map { a.l + random.nextFloat() * (maxX - a.l) }
+            .filter { abs(it - here.x) > widthPx * 1.5f && pathClear(here.x to here.y, it to here.y, widthPx, heightPx, currentObstacles) }
+            .maxByOrNull { abs(it - here.x) }
+            ?: return@LaunchedEffect
+        moonFacingLeft = target > here.x // olha para o lado contrário de onde vai
+        pos.animateTo(Offset(target, here.y), tween((DANCE_MOVE_MS - 300).toInt(), easing = LinearEasing))
+    }
+
     // primeira posição, e fugir de onde a tela mudou (lista cresceu, IA veio para cá)
     LaunchedEffect(area, obstacles) {
         val p = pos.value
@@ -246,7 +262,7 @@ fun RobotPet(
             val stomp = sin(t * 18f)
             RobotPose(face, facingLeft, legL = if (stomp > 0) -14f else 0f, armL = 25f, armR = -25f, antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
         }
-        mood == Mood.DANCING && !reacting -> dancePose(danceMove, face, facingLeft, t)
+        mood == Mood.DANCING && !reacting -> dancePose(danceMove, face, if (danceMove == DanceMove.MOONWALK) moonFacingLeft else facingLeft, t)
         mood == Mood.HAPPY && !walking -> {
             val hop = sin(t * 5f).coerceAtLeast(0f)
             RobotPose(face, facingLeft, armL = -20f, armR = 20f, lift = 8f * hop, blink = blink, phase = t)
@@ -352,12 +368,11 @@ private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float
             val snap = if ((t * 4).toInt() % 2 == 0) 20f else -5f
             RobotPose(face, side < 0, legL = 14f * beat, legR = -14f * beat, armL = -20f - snap, armR = 20f + snap, offsetX = 26f * side, lift = 2f * abs(beat), phase = t)
         }
-        // moonwalk: desliza para um lado com as pernas andando para o outro
+        // moonwalk: o deslize é a posição de verdade (RobotPet); aqui só as pernas "andando" para a frente
+        // e os braços soltos, como se fosse para o lado que ele olha
         DanceMove.MOONWALK -> {
-            val slide = sin(t * 1.2f)
-            val goingRight = kotlin.math.cos(t * 1.2f) > 0
-            val step = sin(t * 9f)
-            RobotPose(face, goingRight, legL = 18f * step, legR = -18f * step, armL = -12f * step, armR = 12f * step, offsetX = 34f * slide, phase = t)
+            val step = sin(t * 8f)
+            RobotPose(face, facingLeft, legL = 20f * step, legR = -20f * step, armL = -14f * step, armR = 14f * step, lift = 1.5f * abs(step), phase = t)
         }
         // giro: vira, fica um instante de costas e volta (frente 0.6s, vira 0.3s, costas 0.6s, vira 0.3s)
         DanceMove.SPIN -> {
