@@ -1,0 +1,9 @@
+<resources>
+    <!-- Mostra o papel de parede do sistema atrás da tela inicial. -->
+    <style name="Theme.MenuLauncher" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>
