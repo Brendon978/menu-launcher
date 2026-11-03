@@ -34,8 +34,9 @@ fun happyUntil(prev: Int?, new: Int, now: Long, current: Long): Long =
 data class Annoyance(val level: Float = 0f, val at: Long = 0L) {
     fun levelAt(now: Long): Float = max(0f, level - (now - at).coerceAtLeast(0) / 1000f * DECAY_PER_S)
 
-    fun tap(now: Long): Pair<Annoyance, Reaction> {
-        val l = levelAt(now) + 1f
+    /** Cada toque soma 1 com vínculo médio; com vínculo alto soma menos (demora a ficar bravo), com baixo soma mais. */
+    fun tap(now: Long, bond: Float = .5f): Pair<Annoyance, Reaction> {
+        val l = levelAt(now) + (1.4f - .8f * bond.coerceIn(0f, 1f))
         val r = reactionFor(l)
         val next = if (r == Reaction.FLEE) Annoyance(AFTER_FLEE, now) else Annoyance(l, now)
         return next to r
