@@ -135,6 +135,7 @@ fun RobotPet(
     fun say(line: String, ms: Long = 2_200) { speech = line; speechUntil = System.currentTimeMillis() + ms }
     val brainScope = androidx.compose.runtime.rememberCoroutineScope()
     fun save() {
+        if (GlitchLive.importing) return
         val m = GlitchMemory(drives, bond, System.currentTimeMillis(), pokeExpect, diary, lastMorning, lastNightNag)
         brainScope.launch { store.save(m) }
     }
@@ -146,6 +147,7 @@ fun RobotPet(
     }
     LaunchedEffect(Unit) {
         val m = store.load()
+        GlitchLive.importing = false
         drives = m.drives
         bond = m.bond
         pokeExpect = m.pokeExpect

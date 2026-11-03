@@ -48,6 +48,9 @@ import com.brendon978.menulauncher.home.SearchScreen
 import com.brendon978.menulauncher.icons.AppFilter
 import com.brendon978.menulauncher.icons.IconRenderer
 import com.brendon978.menulauncher.menu.AppActionsSheet
+import com.brendon978.menulauncher.menu.RenameDialog
+import com.brendon978.menulauncher.apps.organize
+import com.brendon978.menulauncher.apps.withLabel
 import com.brendon978.menulauncher.menu.IconPickerScreen
 import com.brendon978.menulauncher.music.MusicCard
 import com.brendon978.menulauncher.music.MusicControls
@@ -91,6 +94,7 @@ class MainActivity : ComponentActivity() {
     private val resetSignal = mutableIntStateOf(0)
     private val screen = mutableStateOf<Screen>(Screen.Home)
     private val sheetFor = mutableStateOf<AppEntry?>(null)
+    private val renaming = mutableStateOf<AppEntry?>(null)
     private val isDefaultHome = mutableStateOf(false)
     private val hasMusicAccess = mutableStateOf(false)
 
@@ -125,7 +129,10 @@ class MainActivity : ComponentActivity() {
             val loaded by settingsRepo.settings.collectAsState(initial = null)
             val settings = loaded ?: LauncherSettings(firstRunDone = true)
             val music by musicRepo.state.collectAsState()
-            val byKey = remember(apps) { apps.associateBy { it.key } }
+            // nomes próprios e apps escondidos (a busca ainda acha os escondidos)
+            val visibleApps = remember(apps, settings.customLabels, settings.hiddenApps) { organize(apps, settings.customLabels, settings.hiddenApps) }
+            val labeledApps = remember(apps, settings.customLabels) { apps.map { withLabel(it, settings.customLabels) } }
+            val byKey = remember(labeledApps) { labeledApps.associateBy { it.key } }
             val color = Color(settings.strokeColor)
             val current = music.takeIf { settings.showMusic }
 
@@ -171,7 +178,7 @@ class MainActivity : ComponentActivity() {
             // enquanto a busca ou os Ajustes estão abertos por cima.
             Box(Modifier.fillMaxSize()) {
             HomeScreen(
-                    apps = apps,
+                    apps = visibleApps,
                     settings = settings,
                     renderer = renderer,
                     resetSignal = resetSignal.intValue,
@@ -182,6 +189,8 @@ class MainActivity : ComponentActivity() {
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
                     onSearch = { screen.value = Screen.Search },
+                    onSwipeDown = ::expandNotifications,
+                    onSwipeUp = { screen.value = Screen.Search },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
                     overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps) },
@@ -204,7 +213,7 @@ class MainActivity : ComponentActivity() {
             when (val s = screen.value) {
                 Screen.Home -> Unit
                 Screen.Search -> SearchScreen(
-                    apps = apps,
+                    apps = labeledApps,
                     settings = settings,
                     renderer = renderer,
                     onLaunch = {
@@ -262,6 +271,26 @@ class MainActivity : ComponentActivity() {
                     onAppInfo = { openAppInfo(entry.key) },
                     onUninstall = { uninstall(entry.key) },
                     onDismiss = { sheetFor.value = null },
+                    isHidden = entry.key in settings.hiddenApps,
+                    onRename = { renaming.value = entry },
+                    onToggleHidden = {
+                        updateSettings { st ->
+                            st.copy(hiddenApps = if (entry.key in st.hiddenApps) st.hiddenApps - entry.key else st.hiddenApps + entry.key)
+                        }
+                    },
+                )
+            }
+            renaming.value?.let { entry ->
+                val original = apps.firstOrNull { it.key == entry.key }?.label ?: entry.label
+                RenameDialog(
+                    original = original,
+                    current = settings.customLabels[entry.key] ?: "",
+                    onSave = { name ->
+                        updateSettings { st ->
+                            st.copy(customLabels = if (name.isBlank()) st.customLabels - entry.key else st.customLabels + (entry.key to name.trim()))
+                        }
+                    },
+                    onDismiss = { renaming.value = null },
                 )
             }
         }
@@ -356,6 +385,15 @@ class MainActivity : ComponentActivity() {
     private fun toast(msg: String) = android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show()
 
     private var petDebug: android.content.BroadcastReceiver? = null
+
+    /** Abre a cortina de notificações (API escondida do sistema; precisa de EXPAND_STATUS_BAR). */
+    @android.annotation.SuppressLint("WrongConstant")
+    private fun expandNotifications() {
+        runCatching {
+            val sb = getSystemService("statusbar")
+            sb.javaClass.getMethod("expandNotificationsPanel").invoke(sb)
+        }
+    }
 
     override fun onDestroy() {
         petDebug?.let { unregisterReceiver(it) }

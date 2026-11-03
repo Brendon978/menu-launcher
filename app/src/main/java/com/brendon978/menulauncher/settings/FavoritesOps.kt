@@ -14,7 +14,9 @@ object FavoritesOps {
     fun prune(s: LauncherSettings, installed: Set<AppKey>): LauncherSettings {
         val favs = s.favorites.filter { it in installed }
         val overrides = s.iconOverrides.filterKeys { it in installed }
-        return if (favs == s.favorites && overrides == s.iconOverrides) s
-        else s.copy(favorites = favs, iconOverrides = overrides)
+        val labels = s.customLabels.filterKeys { it in installed }
+        val hidden = s.hiddenApps.filter { it in installed }.toSet()
+        return if (favs == s.favorites && overrides == s.iconOverrides && labels == s.customLabels && hidden == s.hiddenApps) s
+        else s.copy(favorites = favs, iconOverrides = overrides, customLabels = labels, hiddenApps = hidden)
     }
 }

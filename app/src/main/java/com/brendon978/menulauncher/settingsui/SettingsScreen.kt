@@ -39,6 +39,8 @@ import com.brendon978.menulauncher.apps.AppKey
 import com.brendon978.menulauncher.settings.FavoritesOps
 import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
+import com.brendon978.menulauncher.settings.Backup
+import kotlinx.coroutines.launch
 
 /** Toque longo numa área vazia abre aqui. Tudo se ajusta no celular. */
 @Composable
@@ -134,6 +136,23 @@ fun SettingsScreen(
         Section("Papel de parede")
         WallpaperSection()
 
+        if (settings.hiddenApps.isNotEmpty()) {
+            Section("Apps escondidos")
+            settings.hiddenApps.forEach { key ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(apps[key]?.label ?: key.packageName, color = Color.White, modifier = Modifier.weight(1f))
+                    Text(
+                        "Mostrar",
+                        color = Color.White.copy(alpha = .8f),
+                        modifier = Modifier.clickable { onChange { it.copy(hiddenApps = it.hiddenApps - key) } }.padding(8.dp),
+                    )
+                }
+            }
+        }
+
+        Section("Backup")
+        BackupSection(settings, onChange)
+
         Section("Sistema")
         Text(
             "Definir como tela inicial padrão",
@@ -204,4 +223,52 @@ private fun Bar(label: String, value: Float) {
         }
         Text("${(value * 100).toInt()}%", color = Color.White.copy(alpha = .6f), fontSize = 12.sp, modifier = Modifier.width(44.dp).padding(start = 8.dp))
     }
+}
+
+/** Exportar e importar ajustes (e a memória do Glitch) num arquivo de texto. */
+@Composable
+private fun BackupSection(settings: LauncherSettings, onChange: ((LauncherSettings) -> LauncherSettings) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val store = androidx.compose.runtime.remember { com.brendon978.menulauncher.pet.GlitchStore(context.applicationContext) }
+    fun toast(m: String) = android.widget.Toast.makeText(context, m, android.widget.Toast.LENGTH_SHORT).show()
+    val export = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val text = Backup.encode(settings, com.brendon978.menulauncher.pet.GlitchBackup.toExtras(store.load()))
+            runCatching { context.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) } }
+                .onSuccess { toast("Backup salvo") }.onFailure { toast("Não consegui salvar") }
+        }
+    }
+    val import = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val text = runCatching { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
+            val restored = text?.let { Backup.decode(it) }
+            if (restored == null) { toast("Esse arquivo não é um backup do launcher"); return@launch }
+            com.brendon978.menulauncher.pet.GlitchBackup.fromExtras(Backup.extras(text, "glitch."))?.let { mem ->
+                com.brendon978.menulauncher.pet.GlitchLive.importing = true
+                store.save(mem)
+            }
+            // não traz a primeira abertura de volta
+            onChange { restored.copy(firstRunDone = true) }
+            toast("Backup restaurado")
+            (context as? android.app.Activity)?.recreate()
+        }
+    }
+    Text(
+        "Exportar ajustes e o Glitch",
+        color = Color.White,
+        modifier = Modifier.fillMaxWidth().clickable { export.launch("menu-launcher-backup.txt") }.padding(vertical = 12.dp),
+    )
+    Text(
+        "Importar de um arquivo",
+        color = Color.White,
+        modifier = Modifier.fillMaxWidth().clickable { import.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) }.padding(vertical = 12.dp),
+    )
+    Text(
+        "Favoritos, cores, nomes, apps escondidos, IA, acessório e a memória do Glitch (vínculo e vontades).",
+        color = Color.White.copy(alpha = .5f),
+        fontSize = 12.sp,
+    )
 }

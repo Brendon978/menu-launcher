@@ -22,4 +22,8 @@ data class LauncherSettings(
     val showPet: Boolean = true,
     /** Nome do acessório do Glitch (enum Accessory). */
     val glitchAccessory: String = "NONE",
+    /** Nomes que você deu aos apps ("Samsung Shop" -> "Shop"). */
+    val customLabels: Map<AppKey, String> = emptyMap(),
+    /** Apps escondidos da lista e da grade (a busca ainda acha). */
+    val hiddenApps: Set<AppKey> = emptySet(),
 )

@@ -10,7 +10,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +30,9 @@ fun AppActionsSheet(
     onAppInfo: () -> Unit,
     onUninstall: () -> Unit,
     onDismiss: () -> Unit,
+    isHidden: Boolean = false,
+    onRename: (() -> Unit)? = null,
+    onToggleHidden: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -37,6 +43,8 @@ fun AppActionsSheet(
             Text(label, color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             Action(if (isFavorite) "Remover dos favoritos" else "Favoritar") { onToggleFavorite(); onDismiss() }
             Action("Trocar ícone") { onChangeIcon(); onDismiss() }
+            onRename?.let { r -> Action("Renomear") { r(); onDismiss() } }
+            onToggleHidden?.let { h -> Action(if (isHidden) "Mostrar na tela inicial" else "Esconder") { h(); onDismiss() } }
             Action("Informações do app") { onAppInfo(); onDismiss() }
             if (canUninstall) Action("Desinstalar") { onUninstall(); onDismiss() }
         }
@@ -50,5 +58,39 @@ private fun Action(text: String, onClick: () -> Unit) {
         color = Color.White,
         fontSize = 16.sp,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 14.dp),
+    )
+}
+
+/** Caixinha para dar outro nome ao app (em branco volta ao original). */
+@Composable
+fun RenameDialog(original: String, current: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    // começa com o nome atual (ou o original), cursor no fim e teclado aberto
+    val start = current.ifBlank { original }
+    var value by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(start, androidx.compose.ui.text.TextRange(start.length)))
+    }
+    val focus = androidx.compose.runtime.remember { androidx.compose.ui.focus.FocusRequester() }
+    androidx.compose.runtime.LaunchedEffect(Unit) { focus.requestFocus() }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF18181B),
+        title = { Text("Renomear", color = Color.White) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                value = value,
+                onValueChange = { value = it },
+                singleLine = true,
+                placeholder = { Text(original) },
+                supportingText = { Text("Em branco volta para \"$original\"", color = Color.White.copy(alpha = .5f)) },
+                modifier = Modifier.focusRequester(focus),
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                // igual ao original conta como "sem nome próprio"
+                onSave(value.text.takeIf { it.trim() != original }.orEmpty()); onDismiss()
+            }) { Text("Salvar", color = Color.White) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.White.copy(alpha = .7f)) } },
     )
 }

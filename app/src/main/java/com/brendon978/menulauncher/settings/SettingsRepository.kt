@@ -33,6 +33,8 @@ class SettingsRepository(private val context: Context) {
         val aiY = floatPreferencesKey("ai_y")
         val showPet = booleanPreferencesKey("show_pet")
         val glitchAccessory = stringPreferencesKey("glitch_accessory")
+        val labels = stringSetPreferencesKey("custom_labels")
+        val hidden = stringSetPreferencesKey("hidden_apps")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -57,6 +59,8 @@ class SettingsRepository(private val context: Context) {
             prefs[K.aiY] = next.aiY
             prefs[K.showPet] = next.showPet
             prefs[K.glitchAccessory] = next.glitchAccessory
+            prefs[K.labels] = next.customLabels.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
+            prefs[K.hidden] = next.hiddenApps.map { it.encode() }.toSet()
         }
     }
 
@@ -93,6 +97,11 @@ class SettingsRepository(private val context: Context) {
             aiY = this[K.aiY] ?: d.aiY,
             showPet = this[K.showPet] ?: d.showPet,
             glitchAccessory = this[K.glitchAccessory] ?: d.glitchAccessory,
+            customLabels = this[K.labels]?.mapNotNull { entry ->
+                val i = entry.indexOf(SEP)
+                if (i < 0) null else AppKey.decode(entry.substring(0, i))?.let { it to entry.substring(i + 1) }
+            }?.toMap() ?: d.customLabels,
+            hiddenApps = this[K.hidden]?.mapNotNull { AppKey.decode(it) }?.toSet() ?: d.hiddenApps,
         )
     }
 

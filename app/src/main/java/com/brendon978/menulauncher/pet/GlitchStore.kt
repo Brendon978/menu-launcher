@@ -81,7 +81,30 @@ class GlitchStore(private val context: Context) {
 /** Retrato do cérebro agora, para o painel dos Ajustes. */
 data class GlitchSnapshot(val drives: Drives, val bond: Float, val activity: Activity, val irritation: Float, val doing: String, val diary: String = "")
 
+/** A memória do Glitch como chaves "glitch.*" do arquivo de backup. */
+object GlitchBackup {
+    fun toExtras(m: GlitchMemory): Map<String, String> = mapOf(
+        "glitch.energy" to m.drives.energy.toString(), "glitch.boredom" to m.drives.boredom.toString(),
+        "glitch.longing" to m.drives.longing.toString(), "glitch.curiosity" to m.drives.curiosity.toString(),
+        "glitch.bond" to m.bond.toString(), "glitch.pokeExpect" to m.pokeExpect.toString(),
+    )
+
+    fun fromExtras(x: Map<String, String>): GlitchMemory? {
+        val bond = x["glitch.bond"]?.toFloatOrNull() ?: return null
+        val d = Drives()
+        fun f(k: String, def: Float) = x[k]?.toFloatOrNull() ?: def
+        return GlitchMemory(
+            drives = Drives(f("glitch.energy", d.energy), f("glitch.boredom", d.boredom), f("glitch.longing", d.longing), f("glitch.curiosity", d.curiosity)).clamped(),
+            bond = bond.coerceIn(0f, 1f),
+            lastSeen = System.currentTimeMillis(),
+            pokeExpect = f("glitch.pokeExpect", 0f),
+        )
+    }
+}
+
 object GlitchLive {
+    /** Importando backup: o Glitch que está na tela não pode salvar por cima. */
+    @Volatile var importing = false
     private val _state = MutableStateFlow<GlitchSnapshot?>(null)
     val state: StateFlow<GlitchSnapshot?> = _state.asStateFlow()
     fun publish(s: GlitchSnapshot) { _state.value = s }

@@ -1,6 +1,7 @@
 package com.brendon978.menulauncher.home
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,8 @@ fun HomeScreen(
     musicSlotTop: @Composable () -> Unit = {},
     musicSlotBottom: @Composable () -> Unit = {},
     onSearch: () -> Unit = {},
+    onSwipeDown: () -> Unit = {},
+    onSwipeUp: () -> Unit = {},
     musicPlaying: Boolean = false,
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
@@ -56,6 +59,17 @@ fun HomeScreen(
         Modifier
             .fillMaxSize()
             .pointerInput(Unit) { detectTapGestures(onLongPress = { onEmptyLongPress() }) }
+            // deslizar para baixo: notificações; para cima: busca
+            .pointerInput(Unit) {
+                var dy = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { dy = 0f },
+                    onDragEnd = {
+                        val min = 90.dp.toPx()
+                        if (dy > min) onSwipeDown() else if (dy < -min) onSwipeUp()
+                    },
+                ) { _, d -> dy += d }
+            }
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {

@@ -99,3 +99,12 @@ Desenho (minha decisão; quem constrói pode ajustar os nomes, mas não a forma)
 - O mecanismo do papel de parede animado (serviço de papel de parede com decodificação de vídeo e GIF).
 - Gestos e animações, desde que fiquem leves e fiéis ao esboço.
 - Um app de teste mínimo, ou um modo de depuração, que implemente o plugue de IA para validar o contrato antes de a IRIS implementá-lo.
+
+## Depois da primeira versão (2026-11-03)
+
+- **Busca**: lupa na curva da barra (uma mão) e barra fixa embaixo (grade); deslizar para cima na tela inicial também abre.
+- **Deslizar para baixo** na tela inicial abre a cortina de notificações.
+- **Renomear e esconder apps** pelo toque longo no app. Escondidos somem da lista e da grade, mas a busca ainda acha; voltam em Ajustes → Apps escondidos.
+- **Backup**: Ajustes → Backup exporta e importa um arquivo de texto com os ajustes e a memória do Glitch.
+- **Contorno de progresso** na caixa da música.
+- Fica para depois: tocar duas vezes no fundo para apagar a tela (precisa de serviço de acessibilidade) e pastas.
