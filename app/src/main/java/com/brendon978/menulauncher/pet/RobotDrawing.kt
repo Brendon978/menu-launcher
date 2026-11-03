@@ -17,7 +17,10 @@ import kotlin.math.sin
 
 /** Rosto na telinha quadrada. */
 /** SURPRISED: pego no colo/voando; DIZZY: tonto depois do arremesso; BLISS: derretendo de carinho. */
-enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD, ROCK, PAPER, SCISSORS }
+enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD, ROCK, PAPER, SCISSORS, CONFUSED }
+
+/** Acessórios do Glitch (tudo liberado, escolhe nos Ajustes). */
+enum class Accessory(val label: String) { NONE("Nenhum"), CAP("Boné"), SUNGLASSES("Óculos escuros"), HEADPHONES("Fone"), HELMET("Capacete"), SCARF("Cachecol"), BOWTIE("Gravatinha") }
 
 /**
  * Pose de um quadro. Ângulos em graus; [phase] é um relógio em segundos para as animações do rosto.
@@ -49,6 +52,7 @@ data class RobotPose(
     val laptop: Boolean = false,
     /** Giro do corpo inteiro (pião), em graus. */
     val rotation: Float = 0f,
+    val accessory: Accessory = Accessory.NONE,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -94,7 +98,10 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     // cabeça (no esboço: translate(9 2) scale(.85) sobre o desenho da cabeça)
                     rotate(pose.headTilt, pivot = Offset(60f, 80f)) {
                         translate(9f, 2f) {
-                            scale(.85f, .85f, pivot = Offset.Zero) { head(color, pose, line) }
+                            scale(.85f, .85f, pivot = Offset.Zero) {
+                                head(color, pose, line)
+                                headAccessory(color, pose.accessory, pose.back)
+                            }
                         }
                     }
                 }
@@ -168,6 +175,54 @@ private fun DrawScope.laptop(c: Color, t: Float) {
     val shown = ((t * 3f).toInt() % 5)
     lines.take(shown.coerceAtMost(4)).forEachIndexed { i, (x, w) ->
         drawLine(c, Offset(40f + x, 96f + i * 4.5f), Offset(40f + x + w, 96f + i * 4.5f), 1.4f, StrokeCap.Round)
+    }
+}
+
+/** Acessórios da cabeça, nas coordenadas da cabeça (caixa 30..90 × 26..88). */
+private fun DrawScope.headAccessory(c: Color, a: Accessory, back: Boolean) {
+    val st = Stroke(2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    when (a) {
+        Accessory.CAP -> {
+            drawPath(Path().apply { moveTo(29f, 34f); quadraticTo(30f, 14f, 60f, 14f); quadraticTo(90f, 14f, 91f, 34f); close() }, c, style = st)
+            drawLine(c, Offset(88f, 34f), Offset(108f, 37f), 3f, StrokeCap.Round) // aba
+            drawCircle(c, 2f, Offset(60f, 14f))
+        }
+        Accessory.HELMET -> {
+            drawPath(Path().apply { moveTo(24f, 36f); quadraticTo(26f, 10f, 60f, 10f); quadraticTo(94f, 10f, 96f, 36f); close() }, c, style = st)
+            drawLine(c, Offset(20f, 36f), Offset(100f, 36f), 3f, StrokeCap.Round)
+            drawLine(c, Offset(60f, 10f), Offset(60f, 36f), 1.6f, StrokeCap.Round)
+        }
+        Accessory.HEADPHONES -> {
+            drawArc(c, 180f, 180f, false, Offset(24f, 10f), androidx.compose.ui.geometry.Size(72f, 80f), style = st)
+            drawRoundRect(c, Offset(18f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
+            drawRoundRect(c, Offset(90f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
+        }
+        Accessory.SUNGLASSES -> if (!back) {
+            drawRoundRect(c, Offset(43f, 50f), androidx.compose.ui.geometry.Size(15f, 10f), CornerRadius(3f))
+            drawRoundRect(c, Offset(62f, 50f), androidx.compose.ui.geometry.Size(15f, 10f), CornerRadius(3f))
+            drawLine(c, Offset(58f, 53f), Offset(62f, 53f), 1.6f, StrokeCap.Round)
+            drawLine(c, Offset(38f, 52f), Offset(43f, 53f), 1.6f, StrokeCap.Round)
+            drawLine(c, Offset(77f, 53f), Offset(82f, 52f), 1.6f, StrokeCap.Round)
+        }
+        else -> Unit
+    }
+}
+
+/** Acessórios do corpo (cachecol balançando, gravatinha). */
+private fun DrawScope.bodyAccessory(c: Color, a: Accessory, t: Float) {
+    val st = Stroke(1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    when (a) {
+        Accessory.SCARF -> {
+            drawRoundRect(c, Offset(42f, 79f), androidx.compose.ui.geometry.Size(36f, 6f), CornerRadius(3f), style = st)
+            val sway = sin(t * 4f) * 3f
+            drawPath(Path().apply { moveTo(68f, 85f); lineTo(70f + sway, 101f); lineTo(75f + sway, 100f); lineTo(73f, 85f) }, c, style = st)
+        }
+        Accessory.BOWTIE -> {
+            drawPath(Path().apply { moveTo(60f, 83f); lineTo(51f, 78f); lineTo(51f, 88f); close() }, c)
+            drawPath(Path().apply { moveTo(60f, 83f); lineTo(69f, 78f); lineTo(69f, 88f); close() }, c)
+            drawCircle(c, 2f, Offset(60f, 83f))
+        }
+        else -> Unit
     }
 }
 
@@ -287,6 +342,12 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
         Face.SCISSORS -> {
             ln(50f, 46f, 66f, 66f, 2.2f); ln(70f, 46f, 54f, 66f, 2.2f)
             drawCircle(c, 3.2f, Offset(52f, 69f), style = Stroke(1.8f)); drawCircle(c, 3.2f, Offset(68f, 69f), style = Stroke(1.8f))
+        }
+        Face.CONFUSED -> {
+            // um "?" grande na telinha
+            drawArc(c, 200f, 230f, false, Offset(52f, 45f), Size(16f, 14f), style = Stroke(2.4f, cap = StrokeCap.Round))
+            ln(62f, 58f, 60f, 64f, 2.4f)
+            drawCircle(c, 1.6f, Offset(60f, 70f))
         }
         Face.SERIOUS -> { px(46f, 56f, 9f, 3f); px(65f, 56f, 9f, 3f); ln(55f, 70f, 65f, 70f) }
         Face.ANGRY -> {

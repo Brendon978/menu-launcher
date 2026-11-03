@@ -94,7 +94,7 @@ fun HomeScreen(
                 )
             }
         }
-        if (settings.mode == HomeMode.ONE_HAND && settings.showPet) PetLayer(color, musicPlaying)
+        if (settings.mode == HomeMode.ONE_HAND && settings.showPet) PetLayer(color, musicPlaying, settings.glitchAccessory)
         overlay()
     }
     }
@@ -102,7 +102,7 @@ fun HomeScreen(
 
 /** Camada do robozinho: a tela inteira, menos o que está marcado como obstáculo (com folga). */
 @Composable
-private fun PetLayer(color: Color, musicPlaying: Boolean) {
+private fun PetLayer(color: Color, musicPlaying: Boolean, accessory: String) {
     val reg = LocalPetObstacles.current ?: return
     val density = LocalDensity.current
     var origin by remember { mutableStateOf(Offset.Zero) }
@@ -123,6 +123,7 @@ private fun PetLayer(color: Color, musicPlaying: Boolean) {
             musicPlaying = musicPlaying,
             area = Area(margin, margin, size.width - margin, size.height - margin),
             obstacles = obstacles,
+            accessory = runCatching { com.brendon978.menulauncher.pet.Accessory.valueOf(accessory) }.getOrDefault(com.brendon978.menulauncher.pet.Accessory.NONE),
         )
     }
 }

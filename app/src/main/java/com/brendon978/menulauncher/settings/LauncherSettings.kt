@@ -20,4 +20,6 @@ data class LauncherSettings(
     val aiY: Float = 0.55f,
     /** Robozinho na tela inicial (modo uma mão). */
     val showPet: Boolean = true,
+    /** Nome do acessório do Glitch (enum Accessory). */
+    val glitchAccessory: String = "NONE",
 )

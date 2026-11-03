@@ -82,6 +82,7 @@ fun RobotPet(
     musicPlaying: Boolean,
     area: Area,
     obstacles: List<Area>,
+    accessory: Accessory = Accessory.NONE,
 ) {
     val density = LocalDensity.current
     val heightPx = with(density) { ROBOT_HEIGHT.toPx() }
@@ -90,6 +91,8 @@ fun RobotPet(
 
     // ---- entradas do celular ----
     val battery = rememberBattery()
+    val headset = rememberHeadset()
+    val online = rememberOnline()
     val notifications by MediaListener.count.collectAsState()
     var prevNotif by remember { mutableStateOf<Int?>(null) }
     var happyUntil by remember { mutableLongStateOf(0L) }
@@ -121,13 +124,18 @@ fun RobotPet(
     var loaded by remember { mutableStateOf(false) }
     var resumed by remember { mutableStateOf(true) }
     var lastSeen by remember { mutableLongStateOf(0L) }
+    var pokeExpect by remember { mutableFloatStateOf(0f) }
+    var diary by remember { mutableStateOf(Diary(todayInt())) }
+    var lastMorning by remember { mutableIntStateOf(0) }
+    var lastNightNag by remember { mutableLongStateOf(0L) }
+    fun log(f: (Diary) -> Diary) { diary = f(diary.forDay(todayInt())) }
     val brainRandom = remember { Random(System.nanoTime() + 3) }
     var speech by remember { mutableStateOf<String?>(null) }
     var speechUntil by remember { mutableLongStateOf(0L) }
     fun say(line: String, ms: Long = 2_200) { speech = line; speechUntil = System.currentTimeMillis() + ms }
     val brainScope = androidx.compose.runtime.rememberCoroutineScope()
     fun save() {
-        val m = GlitchMemory(drives, bond, System.currentTimeMillis())
+        val m = GlitchMemory(drives, bond, System.currentTimeMillis(), pokeExpect, diary, lastMorning, lastNightNag)
         brainScope.launch { store.save(m) }
     }
     fun greetIfAway(awayFrom: Long) {
@@ -140,6 +148,10 @@ fun RobotPet(
         val m = store.load()
         drives = m.drives
         bond = m.bond
+        pokeExpect = m.pokeExpect
+        diary = m.diary.forDay(todayInt())
+        lastMorning = m.lastMorning
+        lastNightNag = m.lastNightNag
         loaded = true
         greetIfAway(m.lastSeen)
     }
@@ -166,6 +178,7 @@ fun RobotPet(
             delay(1_000)
             if (!resumed) continue
             drives = tick(drives, 1f, TickCtx(napping = activity == Activity.NAP || night, night = night, batteryLow = batteryTired, music = musicPlaying))
+            if (battery.charging) drives = drives.copy(energy = drives.energy + 1f / 300f).clamped()
             if (++n % 30 == 0) save()
         }
     }
@@ -304,7 +317,6 @@ fun RobotPet(
     var workUntil by remember { mutableLongStateOf(0L) }
     var spinDeg by remember { mutableFloatStateOf(0f) }
     var spinning by remember { mutableStateOf(false) }
-    var pokeExpect by remember { mutableFloatStateOf(0f) }
     var flinchUntil by remember { mutableLongStateOf(0L) }
     var rootBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
@@ -551,7 +563,7 @@ fun RobotPet(
         if (far != null) glitchTo(far)
     }
 
-    LaunchedEffect(drives, bond, activity, mood, menacing, marching, game, workUntil) {
+    LaunchedEffect(drives, bond, activity, mood, menacing, marching, game, workUntil, diary) {
         val doing = when {
             game != null -> "Brincando: ${game!!.label}"
             System.currentTimeMillis() < workUntil -> "Trabalhando junto"
@@ -574,7 +586,7 @@ fun RobotPet(
                 Activity.PRANK -> "Aprontando"
             }
         }
-        GlitchLive.publish(GlitchSnapshot(drives, bond, activity, annoyance.levelAt(System.currentTimeMillis()) / 6f, doing))
+        GlitchLive.publish(GlitchSnapshot(drives, bond, activity, annoyance.levelAt(System.currentTimeMillis()) / 6f, doing, diaryText(diary.forDay(todayInt()))))
     }
 
     LaunchedEffect(punishment) {
@@ -587,6 +599,39 @@ fun RobotPet(
         }
         if (!p.over) say("Tá, aprendi. Posso sair?", 2_000)
         if (!held) corner = null
+    }
+
+    // rotina: bom dia de manhã, "vai dormir" de madrugada
+    LaunchedEffect(resumed, loaded) {
+        if (!resumed || !loaded) return@LaunchedEffect
+        delay(1_200)
+        val n = System.currentTimeMillis()
+        when (routineFor(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), todayInt(n), lastMorning, lastNightNag, n)) {
+            Routine.GOOD_MORNING -> { lastMorning = todayInt(n); say(GOOD_MORNING_LINES.random(brainRandom), 2_600); save() }
+            Routine.GO_TO_SLEEP -> { lastNightNag = n; say(GO_TO_SLEEP_LINES.random(brainRandom), 2_600); save() }
+            null -> Unit
+        }
+    }
+    // sem internet: fica confuso de vez em quando
+    LaunchedEffect(online, loaded) {
+        if (online || !loaded) return@LaunchedEffect
+        while (true) {
+            say(listOf("Cadê a internet?", "Caiu a net?!", "Sem sinal...").random(brainRandom), 2_000)
+            delay(brainRandom.nextLong(20_000, 40_000))
+        }
+    }
+    // plugou no carregador: "nham, energia"; completou: festa (uma vez por carga)
+    var celebratedFull by remember { mutableStateOf(false) }
+    LaunchedEffect(battery.charging) {
+        if (battery.charging && loaded) say(listOf("Nham, energia!", "Hmm, eletricidade fresquinha.", "Recarregando...").random(brainRandom), 2_000)
+        if (!battery.charging) celebratedFull = false
+    }
+    LaunchedEffect(battery.level, battery.charging) {
+        if (battery.charging && battery.level == 100 && !celebratedFull) {
+            celebratedFull = true
+            fireworksUntil = System.currentTimeMillis() + 2_400
+            say("Carga completa!", 2_000)
+        }
     }
 
     // voltou de um app de trabalho depois de um tempo: ele "trabalhou junto"
@@ -696,6 +741,7 @@ fun RobotPet(
         calming == Reaction.SERIOUS -> Face.SERIOUS
         mood == Mood.SLEEPING -> Face.SLEEP
         mood == Mood.TIRED -> Face.TIRED
+        !online && t % 12f < 3f -> Face.CONFUSED
         sad -> Face.SAD
         mood == Mood.DANCING -> Face.MUSIC
         mood == Mood.HAPPY -> Face.HEART
@@ -773,6 +819,7 @@ fun RobotPet(
     fun startGame(g: GameKind) {
         menuOpen = false
         game = g
+        log { it.copy(games = it.games + 1) }
         val n = System.currentTimeMillis()
         when (g) {
             GameKind.PASS -> { say("Bora! Chuta pra mim!", 1_800); activity = Activity.PLAY }
@@ -875,6 +922,8 @@ fun RobotPet(
             if (protest) { protestUntil = tapNow + PROTEST_MS; protestSign = PROTEST_SIGNS.random(brainRandom) }
         }
         pokeExpect = expectPoke(pokeExpect, poked = r != Reaction.GIGGLE)
+        if (r != Reaction.GIGGLE) log { it.copy(poked = it.poked + 1) }
+        if (r == Reaction.FLEE) log { it.copy(fled = it.fled + 1) }
         reaction = r
         reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
         angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
@@ -894,6 +943,7 @@ fun RobotPet(
         punishSign = null
         drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
         pokeExpect = expectPoke(expectPoke(pokeExpect, false), false)
+        log { it.copy(petted = it.petted + 1) }
         val prevBond = bond
         bond = bondAfterPetting(bond)
         if (celebrates(prevBond, bond)) fireworksUntil = System.currentTimeMillis() + 2_400
@@ -917,6 +967,7 @@ fun RobotPet(
     // solta: voa com a velocidade do dedo, cai, quica e pousa (no chão ou em cima de algo); jogado forte fica tonto
     fun throwWith(v: Offset) {
         held = false
+        if (v.getDistance() > 600f) log { it.copy(thrown = it.thrown + 1) }
         val c = corner
         corner = null
         overCorner = false
@@ -972,6 +1023,23 @@ fun RobotPet(
             }
         }
     }
+    if (battery.charging && visible > 0f && !hidden) {
+        Canvas(Modifier.fillMaxSize()) {
+            val from = Offset(pos.value.x + widthPx * .5f, pos.value.y + heightPx * .62f)
+            val to = Offset((from.x + widthPx * .8f).coerceAtMost(area.r - 6f), area.b)
+            val cable = androidx.compose.ui.graphics.Path().apply {
+                moveTo(from.x, from.y)
+                cubicTo(from.x + widthPx * .9f, from.y, to.x - widthPx * .3f, to.y - heightPx * .6f, to.x, to.y - 14f)
+            }
+            drawPath(cable, color.copy(alpha = .8f), style = androidx.compose.ui.graphics.drawscope.Stroke(2.2f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+            drawRect(color, Offset(to.x - 6f, to.y - 16f), androidx.compose.ui.geometry.Size(12f, 16f), style = androidx.compose.ui.graphics.drawscope.Stroke(2f))
+            // faiscazinha de energia correndo pelo cabo
+            val k = (t % 1f)
+            val spark = Offset(from.x + (to.x - from.x) * (1 - k), from.y + (to.y - from.y) * (1 - k) * (1 - k))
+            drawCircle(color, 3f, spark)
+        }
+    }
+
     // ---- por baixo do Glitch: rede de toques das brincadeiras, post-its, bolhas, antena escondida ----
     val catching = menuOpen || game == GameKind.HIDE || game == GameKind.TAG || game == GameKind.BUBBLES
     if (catching) {
@@ -1173,7 +1241,8 @@ fun RobotPet(
                 }
             },
     ) {
-        Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, pose) }
+        val dressed = pose.copy(accessory = if (headset) Accessory.HEADPHONES else accessory)
+        Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, dressed) }
     }
 
     // placa do castigo (aparece com ele no colo e fica durante o castigo)

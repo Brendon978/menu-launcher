@@ -118,7 +118,15 @@ fun SettingsScreen(
             Text("Glitch na tela inicial", color = Color.White, modifier = Modifier.weight(1f))
             Switch(settings.showPet, onCheckedChange = { v -> onChange { it.copy(showPet = v) } })
         }
-        if (settings.showPet) GlitchPanel()
+        if (settings.showPet) {
+            Text("Acessório", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.brendon978.menulauncher.pet.Accessory.entries.forEach { a ->
+                    Chip(a.label, settings.glitchAccessory == a.name) { onChange { it.copy(glitchAccessory = a.name) } }
+                }
+            }
+            GlitchPanel()
+        }
 
         Section("IA")
         aiSection()
@@ -181,6 +189,10 @@ private fun GlitchPanel() {
     Bar("Curiosidade", s.drives.curiosity)
     Bar("Irritação", s.irritation.coerceIn(0f, 1f))
     Bar("Vínculo com você", s.bond)
+    if (s.diary.isNotBlank()) {
+        Text("Diário de hoje", color = Color.White.copy(alpha = .55f), fontSize = 13.sp, modifier = Modifier.padding(top = 14.dp, bottom = 4.dp))
+        Text("“${s.diary}”", color = Color.White, fontSize = 14.sp)
+    }
 }
 
 @Composable

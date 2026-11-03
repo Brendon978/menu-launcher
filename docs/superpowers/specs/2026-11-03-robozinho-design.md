@@ -116,3 +116,10 @@ Nome escolhido pelo Brendon: **Glitch**. Inspirado nas ideias do projeto Pestinh
 - **Trabalhar junto**: voltando de um app de trabalho aberto pelo launcher (GitHub, Notas, Obsidian, Office, Hangar...) depois de 2 min, ele aparece com um notebookzinho ("Commitou?").
 - **Pião**: girar com dois dedos; solto, continua girando e, se girou muito, fica tonto.
 - **Aprender a se encolher**: cutucadas que irritam ensinam ele a esperar cutucada; com a expectativa alta ele se encolhe quando você encosta. Risadinha e carinho desensinam.
+
+## Vida do Glitch (2026-11-03)
+
+- **Acessórios** (todos liberados, sem XP): boné, óculos escuros, fone, capacete, cachecol, gravatinha. Ajustes → Glitch → Acessório.
+- **Reações ao celular**: carregando, aparece um cabinho saindo das costas até a base da tela, com faísca de energia, e ele recarrega energia ("Nham, energia!"); carga completa dá fogos. Fone conectado: ele põe fone sozinho. Sem internet: "?" na telinha de vez em quando e "Cadê a internet?".
+- **Rotina**: bom dia uma vez por dia entre 6h e 11h; de madrugada (0h–5h) manda você dormir, no máximo a cada 30 min.
+- **Diário de hoje** nos Ajustes, na voz dele: quantas vezes você fez carinho, jogou, cutucou, brincou e fez ele fugir.
