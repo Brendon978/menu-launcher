@@ -51,7 +51,16 @@ fun HomeScreen(
                 onAppLongPress = onAppLongPress,
                 musicSlotBottom = musicSlotBottom,
             )
-            HomeMode.GRID -> Unit // Task 6
+            HomeMode.GRID -> GridMode(
+                apps = apps,
+                settings = settings,
+                renderer = renderer,
+                onLaunch = onLaunch,
+                onAppLongPress = onAppLongPress,
+                musicSlotBottom = musicSlotBottom,
+                // abaixo do relógio e da data
+                modifier = Modifier.padding(top = 120.dp),
+            )
         }
     }
 }
