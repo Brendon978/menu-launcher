@@ -172,7 +172,8 @@ class MainActivity : ComponentActivity() {
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
                     onSearch = { screen.value = Screen.Search },
-                    overlay = { AiOverlay(settings, apps) },
+                    // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
+                    overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps) },
                     // Pedido do Brendon: controles logo abaixo do cartão, no topo (modo uma mão).
                     musicSlotTop = {
                         current?.let {
