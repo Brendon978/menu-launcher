@@ -61,8 +61,10 @@ class MainActivity : ComponentActivity() {
         appRepo = AppRepository(this)
         settingsRepo = SettingsRepository(this)
         musicRepo = MusicRepository(this)
-        val filter = assets.open("lawnicons/appfilter.xml").use { AppFilter.parse(it) }
-        renderer = IconRenderer(this, filter) { key -> appRepo.activityInfo(key)?.getIcon(0) }
+        renderer = IconRenderer(
+            this,
+            filterLoader = { assets.open("lawnicons/appfilter.xml").use { AppFilter.parse(it) } },
+        ) { key -> appRepo.activityInfo(key)?.getIcon(0) }
 
         // Launcher: voltar só fecha telas internas; nunca sai da tela inicial.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

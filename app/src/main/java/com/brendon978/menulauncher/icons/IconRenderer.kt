@@ -24,9 +24,12 @@ import com.caverock.androidsvg.SVG
  */
 class IconRenderer(
     private val context: Context,
-    val filter: AppFilter,
+    filterLoader: () -> AppFilter,
     private val iconOf: (AppKey) -> Drawable?,
 ) {
+    /** Carregado na primeira vez que um ícone é desenhado (sempre fora da thread principal). */
+    val filter: AppFilter by lazy(filterLoader)
+
     private data class CacheKey(val source: IconSource, val sizePx: Int, val color: Int)
 
     private val cache = LruCache<CacheKey, ImageBitmap>(400)
@@ -65,6 +68,9 @@ class IconRenderer(
         if (svg.documentViewBox == null) {
             svg.setDocumentViewBox(0f, 0f, svg.documentWidth.coerceAtLeast(1f), svg.documentHeight.coerceAtLeast(1f))
         }
+        // Lawnicons traz width/height="192": sem isso o AndroidSVG desenha em 192px e corta o ícone.
+        svg.setDocumentWidth("100%")
+        svg.setDocumentHeight("100%")
         val bmp = createBitmap(sizePx, sizePx)
         val canvas = Canvas(bmp)
         svg.renderToCanvas(canvas, RenderOptions().viewPort(0f, 0f, sizePx.toFloat(), sizePx.toFloat()))
