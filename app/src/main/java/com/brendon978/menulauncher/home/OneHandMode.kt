@@ -42,6 +42,7 @@ fun OneHandMode(
     onLaunch: (AppEntry) -> Unit,
     onAppLongPress: (AppEntry) -> Unit,
     musicSlotBottom: @Composable () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selected by rememberSaveable { mutableStateOf(LetterIndex.STAR) }
@@ -93,6 +94,7 @@ fun OneHandMode(
             available = groups.keys,
             color = color,
             onSelect = { selected = it },
+            onSearch = onSearch,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .heightIn(max = half)

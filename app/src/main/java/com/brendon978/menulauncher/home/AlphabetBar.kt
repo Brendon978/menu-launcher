@@ -25,6 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +59,7 @@ fun AlphabetBar(
     available: Set<Char>,
     color: Color,
     onSelect: (Char) -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val letters = LetterIndex.BAR
@@ -123,6 +131,15 @@ fun AlphabetBar(
             }
         }
 
+        // Lupa na "barriga" da curva: o vão entre as letras do meio e a borda.
+        SearchGlyph(
+            color = color,
+            onClick = onSearch,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(y = -(itemHeight * (letters.size / 2f)) + 20.dp),
+        )
+
         LetterBubble(
             letter = selected,
             visible = pressed || dragging,
@@ -136,6 +153,29 @@ fun AlphabetBar(
 }
 
 private fun curveOf(i: Int, count: Int) = (sin(i / (count - 1).toFloat() * PI) * 22).roundToInt().dp
+
+/** Alvo de toque estreito (cabe no vão da curva) e alto, para o polegar acertar sem pegar as letras. */
+@Composable
+private fun SearchGlyph(color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(width = 24.dp, height = 40.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClickLabel = "Buscar app",
+                onClick = onClick,
+            ),
+    ) {
+        Canvas(Modifier.size(16.dp)) {
+            val w = size.width
+            val stroke = w * 0.12f
+            drawCircle(color, radius = w * 0.32f, center = Offset(w * 0.42f, w * 0.42f), style = Stroke(stroke))
+            drawLine(color, Offset(w * 0.66f, w * 0.66f), Offset(w * 0.92f, w * 0.92f), stroke, StrokeCap.Round)
+        }
+    }
+}
 
 /** Balão à esquerda da letra escolhida; cresce da direita para a esquerda ao encostar e some ao soltar. */
 @Composable

@@ -40,6 +40,7 @@ import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.apps.AppKey
 import com.brendon978.menulauncher.apps.AppRepository
 import com.brendon978.menulauncher.home.HomeScreen
+import com.brendon978.menulauncher.home.SearchScreen
 import com.brendon978.menulauncher.icons.AppFilter
 import com.brendon978.menulauncher.icons.IconRenderer
 import com.brendon978.menulauncher.menu.AppActionsSheet
@@ -68,6 +69,7 @@ private val LAUNCHER_COLORS = darkColorScheme(
 private sealed interface Screen {
     data object Home : Screen
     data object Settings : Screen
+    data object Search : Screen
     data class IconPicker(val entry: AppEntry) : Screen
 }
 
@@ -169,6 +171,7 @@ class MainActivity : ComponentActivity() {
                     onLaunch = { appRepo.launch(it.key) },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
+                    onSearch = { screen.value = Screen.Search },
                     overlay = { AiOverlay(settings, apps) },
                     // Pedido do Brendon: controles logo abaixo do cartão, no topo (modo uma mão).
                     musicSlotTop = {
@@ -179,6 +182,16 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     },
+                )
+                Screen.Search -> SearchScreen(
+                    apps = apps,
+                    settings = settings,
+                    renderer = renderer,
+                    onLaunch = {
+                        appRepo.launch(it.key)
+                        screen.value = Screen.Home
+                    },
+                    onAppLongPress = { sheetFor.value = it },
                 )
                 Screen.Settings -> SettingsScreen(
                     settings = settings,

@@ -29,6 +29,7 @@ fun HomeScreen(
     onEmptyLongPress: () -> Unit,
     musicSlotTop: @Composable () -> Unit = {},
     musicSlotBottom: @Composable () -> Unit = {},
+    onSearch: () -> Unit = {},
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
 ) {
@@ -54,6 +55,7 @@ fun HomeScreen(
                     onLaunch = onLaunch,
                     onAppLongPress = onAppLongPress,
                     musicSlotBottom = musicSlotBottom,
+                    onSearch = onSearch,
                 )
             }
             // Grade: player ao lado do relógio; a grade começa logo abaixo do que for mais alto.
