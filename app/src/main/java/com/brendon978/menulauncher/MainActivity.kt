@@ -31,6 +31,7 @@ import com.brendon978.menulauncher.menu.IconPickerScreen
 import com.brendon978.menulauncher.music.MusicCard
 import com.brendon978.menulauncher.music.MusicControls
 import com.brendon978.menulauncher.music.MusicRepository
+import com.brendon978.menulauncher.onboarding.FirstRunScreen
 import com.brendon978.menulauncher.settings.FavoritesOps
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
@@ -51,6 +52,8 @@ class MainActivity : ComponentActivity() {
     private val resetSignal = mutableIntStateOf(0)
     private val screen = mutableStateOf<Screen>(Screen.Home)
     private val sheetFor = mutableStateOf<AppEntry?>(null)
+    private val isDefaultHome = mutableStateOf(false)
+    private val hasMusicAccess = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,7 +73,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val apps by appRepo.apps.collectAsState()
-            val settings by settingsRepo.settings.collectAsState(initial = LauncherSettings())
+            val loaded by settingsRepo.settings.collectAsState(initial = null)
+            val settings = loaded ?: LauncherSettings(firstRunDone = true)
             val music by musicRepo.state.collectAsState()
             val byKey = remember(apps) { apps.associateBy { it.key } }
             val color = Color(settings.strokeColor)
@@ -82,6 +86,26 @@ class MainActivity : ComponentActivity() {
                     val installed = apps.map { it.key }.toSet()
                     settingsRepo.update { FavoritesOps.prune(it, installed) }
                 }
+            }
+
+            if (loaded == null) return@setContent // evita piscar a primeira abertura antes de ler os ajustes
+
+            if (!settings.firstRunDone) {
+                FirstRunScreen(
+                    isDefaultHome = isDefaultHome.value,
+                    hasMusicAccess = hasMusicAccess.value,
+                    onRequestHome = ::requestHomeRole,
+                    onRequestMusic = {
+                        startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    },
+                    onDone = {
+                        val defaults = settingsRepo.defaultFavorites(apps)
+                        updateSettings { st ->
+                            st.copy(firstRunDone = true, favorites = st.favorites.ifEmpty { defaults })
+                        }
+                    },
+                )
+                return@setContent
             }
 
             when (val s = screen.value) {
@@ -172,6 +196,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         musicRepo.refresh()
+        isDefaultHome.value = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_HOME)
+        hasMusicAccess.value = musicRepo.hasAccess()
     }
 
     override fun onNewIntent(intent: Intent) {
