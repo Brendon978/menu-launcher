@@ -95,7 +95,96 @@ fun RobotPet(
         }
     }
     val hour = remember(now / 60_000) { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
-    val mood = baseMood(hour, battery.level, battery.charging, musicPlaying, happyUntil, now)
+    val phoneMood = baseMood(hour, battery.level, battery.charging, musicPlaying, happyUntil, now)
+
+    // ---- cérebro do Glitch: vontades, vínculo e o que ele decidiu fazer ----
+    val context = LocalContext.current
+    val store = remember { GlitchStore(context.applicationContext) }
+    var drives by remember { mutableStateOf(Drives()) }
+    var bond by remember { mutableFloatStateOf(.5f) }
+    var activity by remember { mutableStateOf(Activity.WANDER) }
+    var loaded by remember { mutableStateOf(false) }
+    var resumed by remember { mutableStateOf(true) }
+    var lastSeen by remember { mutableLongStateOf(0L) }
+    val brainRandom = remember { Random(System.nanoTime() + 3) }
+    var speech by remember { mutableStateOf<String?>(null) }
+    var speechUntil by remember { mutableLongStateOf(0L) }
+    fun say(line: String, ms: Long = 2_200) { speech = line; speechUntil = System.currentTimeMillis() + ms }
+    val brainScope = androidx.compose.runtime.rememberCoroutineScope()
+    fun save() {
+        val m = GlitchMemory(drives, bond, System.currentTimeMillis())
+        brainScope.launch { store.save(m) }
+    }
+    fun greetIfAway(awayFrom: Long) {
+        if (awayFrom <= 0L) return
+        val (d, greeting) = onReturn(drives, System.currentTimeMillis() - awayFrom, bond)
+        drives = d
+        greeting?.let { say(GREETING_LINES.getValue(it).random(brainRandom), 2_800) }
+    }
+    LaunchedEffect(Unit) {
+        val m = store.load()
+        drives = m.drives
+        bond = m.bond
+        loaded = true
+        greetIfAway(m.lastSeen)
+    }
+    // tela inicial saiu de vista: guarda a memória; voltou depois de muito tempo: cumprimenta
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            when (e) {
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> { resumed = false; lastSeen = System.currentTimeMillis(); if (loaded) save() }
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> { resumed = true; if (loaded) greetIfAway(lastSeen) }
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(obs)
+        onDispose { lifecycle.removeObserver(obs); if (loaded) save() }
+    }
+    val night = phoneMood == Mood.SLEEPING
+    val batteryTired = phoneMood == Mood.TIRED
+    // vontades andam com o tempo (só com a tela inicial à vista)
+    LaunchedEffect(loaded) {
+        if (!loaded) return@LaunchedEffect
+        var n = 0
+        while (true) {
+            delay(1_000)
+            if (!resumed) continue
+            drives = tick(drives, 1f, TickCtx(napping = activity == Activity.NAP || night, night = night, batteryLow = batteryTired, music = musicPlaying))
+            if (++n % 30 == 0) save()
+        }
+    }
+    // decide o que fazer de tempos em tempos
+    LaunchedEffect(loaded) {
+        if (!loaded) return@LaunchedEffect
+        while (true) {
+            activity = decide(drives, bond, musicPlaying, brainRandom)
+            delay(brainRandom.nextLong(7_000, 13_000))
+        }
+    }
+    // novidades: notificação nova e música começando deixam ele curioso (e a música faz ele repensar)
+    var prevCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(notifications) {
+        val n = notifications ?: return@LaunchedEffect
+        if (prevCount != null && n > prevCount!!) drives = onEvent(drives, GlitchEvent.NOTIFICATION)
+        prevCount = n
+    }
+    LaunchedEffect(musicPlaying, loaded) {
+        if (!musicPlaying || !loaded) return@LaunchedEffect
+        drives = onEvent(drives, GlitchEvent.MUSIC_START)
+        activity = decide(drives, bond, true, brainRandom)
+        if (activity == Activity.SULK) say(REFUSE_DANCE_LINES.random(brainRandom))
+    }
+
+    // humor final: noite e bateria mandam; senão, o que ele decidiu
+    val mood = when {
+        night || batteryTired -> phoneMood
+        activity == Activity.NAP -> Mood.SLEEPING
+        activity == Activity.DANCE && musicPlaying -> Mood.DANCING
+        phoneMood == Mood.HAPPY -> Mood.HAPPY
+        else -> Mood.NORMAL
+    }
+    val sulking = activity == Activity.SULK && mood == Mood.NORMAL
 
     // ---- toque ----
     var annoyance by remember { mutableStateOf(Annoyance()) }
@@ -115,16 +204,24 @@ fun RobotPet(
     }
     val marching = !menacing && now < marchUntil
 
-    // balão de fala (só raiva e marcha)
-    var speech by remember { mutableStateOf<String?>(null) }
-    var speechUntil by remember { mutableLongStateOf(0L) }
-    val speechRandom = remember { Random(System.nanoTime() + 1) }
+    val speechRandom = brainRandom
     LaunchedEffect(marching) {
         if (!marching) return@LaunchedEffect
         while (true) {
             delay(speechRandom.nextLong(2_500, 5_000))
             speech = MARCH_LINES.random(speechRandom)
             speechUntil = System.currentTimeMillis() + 2_000
+        }
+    }
+
+    LaunchedEffect(activity, mood) {
+        when {
+            activity == Activity.SEEK_ATTENTION && mood == Mood.NORMAL -> while (true) {
+                delay(brainRandom.nextLong(3_000, 6_000)); say(ATTENTION_LINES.random(brainRandom))
+            }
+            activity == Activity.SULK && mood == Mood.NORMAL -> while (true) {
+                delay(brainRandom.nextLong(6_000, 11_000)); say(SULK_LINES.random(brainRandom))
+            }
         }
     }
 
@@ -149,7 +246,7 @@ fun RobotPet(
     val currentArea by rememberUpdatedState(area)
     val currentObstacles by rememberUpdatedState(obstacles)
     // marchando, ele anda mesmo que estivesse dormindo, cansado ou dançando
-    val stillMood = menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING))
+    val stillMood = menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -196,9 +293,40 @@ fun RobotPet(
         }
     }
 
-    LaunchedEffect(stillMood, placed, marching) {
+    // lugar livre perto de um ponto (vai até o meio da tela para chamar atenção, ou até algo para explorar)
+    fun spotNear(target: Offset): Offset? =
+        (0 until 20).mapNotNull { spot(pos.value, widthPx) }.minByOrNull { (it + Offset(widthPx / 2, heightPx / 2) - target).getDistance() }
+
+    suspend fun walkTo(target: Offset) {
+        facingLeft = target.x < pos.value.x
+        walking = true
+        val speed = with(density) { 38.dp.toPx() }
+        val ms = ((target - pos.value).getDistance() / speed * 1000).roundToInt().coerceAtLeast(1)
+        try { pos.animateTo(target, tween(ms, easing = LinearEasing)) } finally { walking = false }
+    }
+
+    LaunchedEffect(stillMood, placed, marching, activity) {
         if (stillMood || !placed) {
             walking = false
+            return@LaunchedEffect
+        }
+        if (!marching && activity == Activity.SEEK_ATTENTION) {
+            // vem para o meio da tela, de frente para você, e acena
+            spotNear(Offset((currentArea.l + currentArea.r) / 2, (currentArea.t + currentArea.b) / 2))?.let { walkTo(it) }
+            facingLeft = pos.value.x + widthPx / 2 > (currentArea.l + currentArea.r) / 2
+            return@LaunchedEffect
+        }
+        if (!marching && activity == Activity.EXPLORE) {
+            // vai até alguma coisa da tela e escaneia
+            val thing = currentObstacles.randomOrNull(brainRandom)
+            val target = thing?.let { Offset((it.l + it.r) / 2, (it.t + it.b) / 2) }
+            target?.let { spotNear(it) }?.let { walkTo(it) }
+            say(EXPLORE_LINES.random(brainRandom))
+            scanning = true
+            delay(3_000)
+            scanning = false
+            drives = drives.copy(curiosity = drives.curiosity - .4f).clamped()
+            activity = decide(drives, bond, musicPlaying, brainRandom)
             return@LaunchedEffect
         }
         while (true) {
@@ -224,6 +352,25 @@ fun RobotPet(
         val here = pos.value
         val far = (0 until 12).mapNotNull { spot(null, 0f) }.maxByOrNull { (it - here).getDistance() }
         if (far != null) glitchTo(far)
+    }
+
+    LaunchedEffect(drives, bond, activity, mood, menacing, marching) {
+        val doing = when {
+            menacing -> "Apontando a arma pra você"
+            marching -> "Marchando, bravo"
+            night -> "Dormindo (é noite)"
+            batteryTired -> "Cansado (bateria baixa)"
+            mood == Mood.DANCING -> "Dançando"
+            else -> when (activity) {
+                Activity.WANDER -> "Passeando"
+                Activity.NAP -> "Cochilando"
+                Activity.SEEK_ATTENTION -> "Pedindo atenção"
+                Activity.EXPLORE -> "Explorando"
+                Activity.SULK -> "Emburrado"
+                Activity.DANCE -> "Querendo dançar"
+            }
+        }
+        GlitchLive.publish(GlitchSnapshot(drives, bond, activity, annoyance.levelAt(System.currentTimeMillis()) / 6f, doing))
     }
 
     if (!placed) return
@@ -263,6 +410,11 @@ fun RobotPet(
             RobotPose(face, facingLeft, legL = if (stomp > 0) -14f else 0f, armL = 25f, armR = -25f, antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
         }
         mood == Mood.DANCING && !reacting -> dancePose(danceMove, face, if (danceMove == DanceMove.MOONWALK) moonFacingLeft else facingLeft, t)
+        sulking && !walking -> RobotPose(face, facingLeft, armL = 8f, armR = -8f, back = true, phase = t)
+        activity == Activity.SEEK_ATTENTION && mood == Mood.NORMAL && !walking -> {
+            val wave = sin(t * 9f)
+            RobotPose(face, facingLeft, armL = 6f, armR = -150f + 22f * wave, lift = 2f * abs(wave), blink = blink, phase = t)
+        }
         mood == Mood.HAPPY && !walking -> {
             val hop = sin(t * 5f).coerceAtLeast(0f)
             RobotPose(face, facingLeft, armL = -20f, armR = 20f, lift = 8f * hop, blink = blink, phase = t)
@@ -287,8 +439,14 @@ fun RobotPet(
             .pointerInput(Unit) {
                 detectTapGestures {
                     val tapNow = System.currentTimeMillis()
-                    val (next, r) = annoyance.tap(tapNow)
+                    val (next, r) = annoyance.tap(tapNow, bond)
                     annoyance = next
+                    bond = bondAfter(bond, r)
+                    if (r == Reaction.GIGGLE) {
+                        drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
+                        // deu atenção a quem estava pedindo: missão cumprida
+                        if (activity == Activity.SEEK_ATTENTION) activity = Activity.WANDER
+                    }
                     reaction = r
                     reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
                     angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
@@ -344,7 +502,10 @@ private fun SpeechBubble(text: String, color: Color, modifier: Modifier = Modifi
     }
 }
 
-/** Uma pose por passo de dança, no tempo [t] (segundos). */
+/**
+ * Uma pose por passo de dança, no tempo [t] (segundos).
+ * Braços: ângulo positivo gira para a esquerda da tela. O esquerdo abre para fora com +, o direito com -.
+ */
 private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float): RobotPose {
     val beat = sin(t * 7f)
     return when (move) {
@@ -353,14 +514,14 @@ private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float
         // robô clássico: poses travadas que trocam em "tique"
         DanceMove.ROBOT -> {
             val k = (t * 3f).toInt() % 4
-            val (aL, aR, head) = when (k) { 0 -> Triple(-90f, 0f, -12f); 1 -> Triple(0f, 90f, 12f); 2 -> Triple(-90f, 90f, 0f); else -> Triple(0f, 0f, -12f) }
+            val (aL, aR, head) = when (k) { 0 -> Triple(90f, 0f, -12f); 1 -> Triple(0f, -90f, 12f); 2 -> Triple(90f, -90f, 0f); else -> Triple(0f, 0f, -12f) }
             RobotPose(face, facingLeft, armL = aL, armR = aR, headTilt = head, phase = t)
         }
         // pulinho: um tempinho no chão, sobe abrindo os braços em V (para fora, sem passar na cabeça)
         DanceMove.HOP -> {
             val p = (t * 1.6f) % 1f
             val air = if (p < .55f) sin(p / .55f * Math.PI.toFloat()) else 0f
-            RobotPose(face, facingLeft, legL = -8f * air, legR = 8f * air, armL = -25f - 105f * air, armR = 25f + 105f * air, lift = 16f * air, phase = t)
+            RobotPose(face, facingLeft, legL = 8f * air, legR = -8f * air, armL = 25f + 105f * air, armR = -25f - 105f * air, lift = 16f * air, phase = t)
         }
         // dois passos pra um lado e volta, estalando as garrinhas
         DanceMove.SIDESTEP -> {
