@@ -3,7 +3,18 @@
 
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <queries>
+        <intent>
+            <action android:name="com.brendon978.menulauncher.action.ASSISTANT" />
+        </intent>
+        <intent>
+            <action android:name="com.brendon978.menulauncher.action.COMMAND" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

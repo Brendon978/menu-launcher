@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "menu-launcher"
 include(":app")
+include(":ia-exemplo")

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:label="IA Exemplo"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+
+        <!-- 1) Descoberta + toque: Activity com a action ASSISTANT. -->
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.brendon978.menulauncher.action.ASSISTANT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- 2) Símbolo flutuante (o launcher pinta na cor do traço). -->
+            <meta-data
+                android:name="com.brendon978.menulauncher.symbol"
+                android:resource="@drawable/simbolo" />
+        </activity>
+
+        <!-- 3) Comandos de voz (opcional): receiver com a action COMMAND; o texto vem em EXTRA_TEXT. -->
+        <receiver android:name=".CommandReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.brendon978.menulauncher.action.COMMAND" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

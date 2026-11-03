@@ -46,6 +46,7 @@ fun SettingsScreen(
     apps: Map<AppKey, AppEntry>,
     onChange: ((LauncherSettings) -> LauncherSettings) -> Unit,
     onSetDefaultLauncher: () -> Unit,
+    aiSection: @Composable () -> Unit,
     onClose: () -> Unit,
 ) {
     Column(
@@ -110,6 +111,9 @@ fun SettingsScreen(
                 SmallButton("✕", enabled = true) { onChange { it.copy(favorites = FavoritesOps.toggle(it.favorites, key)) } }
             }
         }
+
+        Section("IA")
+        aiSection()
 
         Section("Papel de parede")
         WallpaperSection()

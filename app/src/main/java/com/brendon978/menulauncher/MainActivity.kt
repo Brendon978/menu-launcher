@@ -14,7 +14,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +25,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
+import com.brendon978.menulauncher.ai.AiChooser
+import com.brendon978.menulauncher.ai.AiRepository
+import com.brendon978.menulauncher.ai.AiSymbol
+import com.brendon978.menulauncher.ai.HoldAction
+import com.brendon978.menulauncher.ai.VoiceCapture
+import com.brendon978.menulauncher.ai.clampFraction
+import com.brendon978.menulauncher.ai.holdAction
+import com.brendon978.menulauncher.ai.pruneAi
 import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.apps.AppKey
 import com.brendon978.menulauncher.apps.AppRepository
@@ -63,6 +76,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var renderer: IconRenderer
     private lateinit var musicRepo: MusicRepository
+    private lateinit var aiRepo: AiRepository
+    private lateinit var voice: VoiceCapture
+    private val listening = mutableStateOf(false)
+    private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        toast(if (granted) "Microfone liberado. Segure o símbolo e fale." else "Sem o microfone, segurar só abre a IA.")
+    }
     private val resetSignal = mutableIntStateOf(0)
     private val screen = mutableStateOf<Screen>(Screen.Home)
     private val sheetFor = mutableStateOf<AppEntry?>(null)
@@ -75,6 +94,8 @@ class MainActivity : ComponentActivity() {
         appRepo = AppRepository(this)
         settingsRepo = SettingsRepository(this)
         musicRepo = MusicRepository(this)
+        aiRepo = AiRepository(this)
+        voice = VoiceCapture(this)
         renderer = IconRenderer(
             this,
             filterLoader = { assets.open("lawnicons/appfilter.xml").use { AppFilter.parse(it) } },
@@ -106,6 +127,9 @@ class MainActivity : ComponentActivity() {
                 if (apps.isNotEmpty()) {
                     val installed = apps.map { it.key }.toSet()
                     settingsRepo.update { FavoritesOps.prune(it, installed) }
+                    if (settings.aiPackage?.let { !aiRepo.isInstalled(it) } == true) {
+                        settingsRepo.update { pruneAi(it, emptySet()) }
+                    }
                 }
             }
 
@@ -118,6 +142,13 @@ class MainActivity : ComponentActivity() {
                     onRequestHome = ::requestHomeRole,
                     onRequestMusic = {
                         startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    },
+                    hasAi = settings.aiPackage != null,
+                    aiChooser = {
+                        val candidates = remember { aiRepo.discover() }
+                        AiChooser(candidates, apps, settings.aiPackage) { pkg, act ->
+                            updateSettings { it.copy(aiPackage = pkg, aiActivity = act) }
+                        }
                     },
                     onDone = {
                         val defaults = settingsRepo.defaultFavorites(apps)
@@ -138,6 +169,7 @@ class MainActivity : ComponentActivity() {
                     onLaunch = { appRepo.launch(it.key) },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
+                    overlay = { AiOverlay(settings, apps) },
                     // Pedido do Brendon: controles logo abaixo do cartão, no topo (modo uma mão).
                     musicSlotTop = {
                         current?.let {
@@ -153,6 +185,21 @@ class MainActivity : ComponentActivity() {
                     apps = byKey,
                     onChange = ::updateSettings,
                     onSetDefaultLauncher = ::requestHomeRole,
+                    aiSection = {
+                        val candidates = remember { aiRepo.discover() }
+                        AiChooser(candidates, apps, settings.aiPackage) { pkg, act ->
+                            updateSettings { it.copy(aiPackage = pkg, aiActivity = act) }
+                        }
+                        settings.aiPackage?.let { pkg ->
+                            androidx.compose.material3.Text(
+                                "Desconectar ${aiRepo.label(pkg)}",
+                                color = Color.White.copy(alpha = 0.8f),
+                                modifier = androidx.compose.ui.Modifier
+                                    .clickable { updateSettings { it.copy(aiPackage = null, aiActivity = null) } }
+                                    .padding(vertical = 12.dp),
+                            )
+                        }
+                    },
                     onClose = { screen.value = Screen.Home },
                 )
                 is Screen.IconPicker -> IconPickerScreen(
@@ -224,9 +271,59 @@ class MainActivity : ComponentActivity() {
         hasMusicAccess.value = musicRepo.hasAccess()
     }
 
+    @androidx.compose.runtime.Composable
+    private fun AiOverlay(settings: LauncherSettings, apps: List<AppEntry>) {
+        val pkg = settings.aiPackage ?: return
+        val activity = settings.aiActivity ?: return
+        val px = with(androidx.compose.ui.platform.LocalDensity.current) { 34.dp.roundToPx() }
+        val symbol by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, pkg, activity, settings.strokeColor, apps) {
+            value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                aiRepo.symbol(pkg, activity, px, settings.strokeColor)?.asImageBitmap()
+                    ?: apps.firstOrNull { it.key.packageName == pkg }?.let { renderer.iconFor(it, null, px, settings.strokeColor) }
+            }
+        }
+        AiSymbol(
+            symbol = symbol,
+            color = Color(settings.strokeColor),
+            xFraction = settings.aiX,
+            yFraction = settings.aiY,
+            listening = listening.value,
+            onTap = { aiRepo.open(pkg, activity) },
+            onHoldStart = { startListening(pkg, activity) },
+            onHoldEnd = { if (listening.value) voice.stop() },
+            onMoved = { x, y -> updateSettings { it.copy(aiX = clampFraction(x), aiY = clampFraction(y)) } },
+        )
+    }
+
+    private fun startListening(pkg: String, activity: String) {
+        if (holdAction(aiRepo.acceptsCommands(pkg)) == HoldAction.OPEN) {
+            aiRepo.open(pkg, activity)
+            return
+        }
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+            return
+        }
+        listening.value = true
+        window.decorView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+        voice.start { text ->
+            listening.value = false
+            if (text == null) {
+                toast("Não entendi")
+            } else if (aiRepo.sendCommand(pkg, text)) {
+                toast("${aiRepo.label(pkg)}: $text")
+            } else {
+                toast("${aiRepo.label(pkg)} não recebe comandos")
+            }
+        }
+    }
+
+    private fun toast(msg: String) = android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show()
+
     override fun onDestroy() {
         appRepo.close()
         musicRepo.close()
+        voice.cancel()
         super.onDestroy()
     }
 

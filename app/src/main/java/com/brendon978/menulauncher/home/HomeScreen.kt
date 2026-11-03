@@ -29,6 +29,8 @@ fun HomeScreen(
     onEmptyLongPress: () -> Unit,
     musicSlotTop: @Composable () -> Unit = {},
     musicSlotBottom: @Composable () -> Unit = {},
+    /** Desenhado por cima de tudo (símbolo flutuante da IA). */
+    overlay: @Composable () -> Unit = {},
 ) {
     val color = Color(settings.strokeColor)
     Box(
@@ -71,5 +73,6 @@ fun HomeScreen(
                 )
             }
         }
+        overlay()
     }
 }

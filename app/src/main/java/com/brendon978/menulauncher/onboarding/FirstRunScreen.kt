@@ -23,11 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-enum class FirstRunStep { HOME, MUSIC, DONE }
+enum class FirstRunStep { HOME, MUSIC, AI, DONE }
 
 /**
  * Um passo por tela, cada um pulável; o que já está resolvido é pulado sozinho.
- * O plano 3 insere aqui o passo da IA, entre MUSIC e DONE.
+ * O passo da IA é opcional: conectar ou pular, sem insistir.
  */
 @Composable
 fun FirstRunScreen(
@@ -35,6 +35,8 @@ fun FirstRunScreen(
     hasMusicAccess: Boolean,
     onRequestHome: () -> Unit,
     onRequestMusic: () -> Unit,
+    hasAi: Boolean,
+    aiChooser: @Composable () -> Unit,
     onDone: () -> Unit,
 ) {
     var index by rememberSaveable { mutableIntStateOf(0) }
@@ -43,6 +45,7 @@ fun FirstRunScreen(
     while (index < steps.lastIndex && when (steps[index]) {
             FirstRunStep.HOME -> isDefaultHome
             FirstRunStep.MUSIC -> hasMusicAccess
+            FirstRunStep.AI -> hasAi
             FirstRunStep.DONE -> false
         }
     ) index++
@@ -60,17 +63,23 @@ fun FirstRunScreen(
         val (title, body, action) = when (step) {
             FirstRunStep.HOME -> Triple("Usar como tela inicial", "Para o botão home abrir este launcher no lugar do One UI.", "Definir")
             FirstRunStep.MUSIC -> Triple("Mostrar a música que está tocando", "Libere o acesso às notificações para ver a faixa e controlar a música na tela inicial.", "Liberar")
+            FirstRunStep.AI -> Triple("Tem uma IA para conectar?", "O símbolo dela fica na tela inicial: toque para abrir, segure para falar com ela.", "")
             FirstRunStep.DONE -> Triple("Pronto", "Segure um app para favoritar ou trocar o ícone. Segure uma área vazia para abrir os ajustes.", "Começar")
         }
         Text(title, color = Color.White, fontSize = 26.sp)
         Spacer(Modifier.height(10.dp))
         Text(body, color = Color.White.copy(alpha = 0.7f), fontSize = 15.sp)
         Spacer(Modifier.height(28.dp))
+        if (step == FirstRunStep.AI) {
+            aiChooser()
+            Spacer(Modifier.height(16.dp))
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(action, primary = true) {
+            if (step != FirstRunStep.AI) Button(action, primary = true) {
                 when (step) {
                     FirstRunStep.HOME -> onRequestHome()
                     FirstRunStep.MUSIC -> onRequestMusic()
+                    FirstRunStep.AI -> Unit
                     FirstRunStep.DONE -> onDone()
                 }
             }
