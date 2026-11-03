@@ -14,6 +14,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -162,8 +166,10 @@ class MainActivity : ComponentActivity() {
                 return@run
             }
 
-            when (val s = screen.value) {
-                Screen.Home -> HomeScreen(
+            // A tela inicial fica sempre por baixo: o Glitch continua vivo (e o painel dele, ao vivo)
+            // enquanto a busca ou os Ajustes estão abertos por cima.
+            Box(Modifier.fillMaxSize()) {
+            HomeScreen(
                     apps = apps,
                     settings = settings,
                     renderer = renderer,
@@ -185,6 +191,14 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                 )
+            if (screen.value != Screen.Home) Box(
+                Modifier
+                    .fillMaxSize()
+                    // toque na tela de cima não vaza para a tela inicial
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } },
+            ) {
+            when (val s = screen.value) {
+                Screen.Home -> Unit
                 Screen.Search -> SearchScreen(
                     apps = apps,
                     settings = settings,
@@ -230,6 +244,8 @@ class MainActivity : ComponentActivity() {
                         screen.value = Screen.Home
                     },
                 )
+            }
+            }
             }
 
             sheetFor.value?.let { entry ->

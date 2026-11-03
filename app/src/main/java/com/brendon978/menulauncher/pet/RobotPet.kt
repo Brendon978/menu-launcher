@@ -442,6 +442,7 @@ fun RobotPet(
                     val (next, r) = annoyance.tap(tapNow, bond)
                     annoyance = next
                     bond = bondAfter(bond, r)
+                    save() // o vínculo é o que mais importa não perder
                     if (r == Reaction.GIGGLE) {
                         drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
                         // deu atenção a quem estava pedindo: missão cumprida
