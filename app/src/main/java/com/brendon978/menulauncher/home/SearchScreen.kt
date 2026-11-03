@@ -1,6 +1,25 @@
 package com.brendon978.menulauncher.home
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -79,17 +97,77 @@ fun SearchScreen(
         if (query.isNotBlank() && results.isEmpty()) {
             Text("Nenhum app com “$query”", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
         }
-        OutlinedTextField(
+        SearchField(
             value = query,
             onValueChange = { query = it },
-            singleLine = true,
-            placeholder = { Text("Buscar app") },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = { results.firstOrNull()?.let(onLaunch) }),
+            color = Color(settings.strokeColor),
+            onGo = { results.firstOrNull()?.let(onLaunch) },
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 8.dp)
                 .focusRequester(focus),
         )
     }
+}
+
+/** Pílula translúcida no estilo do cartão de música: lupa, texto na cor do traço e "×" para limpar. */
+@Composable
+private fun SearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    color: Color,
+    onGo: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(28.dp)
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(color = color, fontSize = 17.sp),
+        cursorBrush = SolidColor(color),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+        keyboardActions = KeyboardActions(onGo = { onGo() }),
+        modifier = modifier.fillMaxWidth(),
+        decorationBox = { inner ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(shape)
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .border(1.dp, color.copy(alpha = 0.3f), shape)
+                    .padding(start = 18.dp, end = 6.dp),
+            ) {
+                Canvas(Modifier.size(18.dp)) {
+                    val w = size.width
+                    val stroke = w * 0.1f
+                    val c = color.copy(alpha = 0.7f)
+                    drawCircle(c, radius = w * 0.33f, center = Offset(w * 0.42f, w * 0.42f), style = Stroke(stroke))
+                    drawLine(c, Offset(w * 0.67f, w * 0.67f), Offset(w * 0.92f, w * 0.92f), stroke, StrokeCap.Round)
+                }
+                Spacer(Modifier.width(12.dp))
+                Box(Modifier.weight(1f)) {
+                    if (value.isEmpty()) Text("Buscar app", color = color.copy(alpha = 0.45f), fontSize = 17.sp)
+                    inner()
+                }
+                if (value.isNotEmpty()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .clickable { onValueChange("") },
+                    ) {
+                        Canvas(Modifier.size(12.dp)) {
+                            val w = size.width
+                            val c = color.copy(alpha = 0.7f)
+                            drawLine(c, Offset(0f, 0f), Offset(w, w), w * 0.14f, StrokeCap.Round)
+                            drawLine(c, Offset(w, 0f), Offset(0f, w), w * 0.14f, StrokeCap.Round)
+                        }
+                    }
+                }
+            }
+        },
+    )
 }
