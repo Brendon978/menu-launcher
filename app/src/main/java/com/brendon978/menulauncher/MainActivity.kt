@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import com.brendon978.menulauncher.music.MusicControls
 import com.brendon978.menulauncher.music.MusicRepository
 import com.brendon978.menulauncher.onboarding.FirstRunScreen
 import com.brendon978.menulauncher.settings.FavoritesOps
+import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
 import com.brendon978.menulauncher.settingsui.SettingsScreen
@@ -136,9 +138,18 @@ class MainActivity : ComponentActivity() {
                     onLaunch = { appRepo.launch(it.key) },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
-                    musicSlotTop = { current?.let { MusicCard(it, color) } },
-                    musicSlotBottom = {
+                    // Pedido do Brendon: controles logo abaixo do cartão, no topo (modo uma mão).
+                    musicSlotTop = {
                         current?.let {
+                            Column {
+                                MusicCard(it, color)
+                                MusicControls(it.playing, color, musicRepo::previous, musicRepo::playPause, musicRepo::next)
+                            }
+                        }
+                    },
+                    // A grade não mostra o cartão no topo: lá os controles continuam embaixo.
+                    musicSlotBottom = {
+                        current?.takeIf { settings.mode == HomeMode.GRID }?.let {
                             MusicControls(it.playing, color, musicRepo::previous, musicRepo::playPause, musicRepo::next)
                         }
                     },
