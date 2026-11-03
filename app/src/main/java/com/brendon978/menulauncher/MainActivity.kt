@@ -147,12 +147,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     },
-                    // A grade não mostra o cartão no topo: lá os controles continuam embaixo.
-                    musicSlotBottom = {
-                        current?.takeIf { settings.mode == HomeMode.GRID }?.let {
-                            MusicControls(it.playing, color, musicRepo::previous, musicRepo::playPause, musicRepo::next)
-                        }
-                    },
                 )
                 Screen.Settings -> SettingsScreen(
                     settings = settings,

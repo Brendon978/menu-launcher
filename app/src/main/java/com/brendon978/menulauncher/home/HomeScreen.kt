@@ -3,6 +3,7 @@ package com.brendon978.menulauncher.home
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -37,30 +38,38 @@ fun HomeScreen(
             .statusBarsPadding()
             .navigationBarsPadding(),
     ) {
-        Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp)) {
-            TopInfo(color)
-            if (settings.mode == HomeMode.ONE_HAND) musicSlotTop()
-        }
         when (settings.mode) {
-            HomeMode.ONE_HAND -> OneHandMode(
-                apps = apps,
-                settings = settings,
-                renderer = renderer,
-                resetSignal = resetSignal,
-                onLaunch = onLaunch,
-                onAppLongPress = onAppLongPress,
-                musicSlotBottom = musicSlotBottom,
-            )
-            HomeMode.GRID -> GridMode(
-                apps = apps,
-                settings = settings,
-                renderer = renderer,
-                onLaunch = onLaunch,
-                onAppLongPress = onAppLongPress,
-                musicSlotBottom = musicSlotBottom,
-                // abaixo do relógio e da data
-                modifier = Modifier.padding(top = 120.dp),
-            )
+            HomeMode.ONE_HAND -> {
+                Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp)) {
+                    TopInfo(color)
+                    musicSlotTop()
+                }
+                OneHandMode(
+                    apps = apps,
+                    settings = settings,
+                    renderer = renderer,
+                    resetSignal = resetSignal,
+                    onLaunch = onLaunch,
+                    onAppLongPress = onAppLongPress,
+                    musicSlotBottom = musicSlotBottom,
+                )
+            }
+            // Grade: player ao lado do relógio; a grade começa logo abaixo do que for mais alto.
+            HomeMode.GRID -> Column(Modifier.fillMaxSize()) {
+                Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp, bottom = 12.dp)) {
+                    TopInfo(color)
+                    Box(Modifier.weight(1f).padding(start = 16.dp)) { musicSlotTop() }
+                }
+                GridMode(
+                    apps = apps,
+                    settings = settings,
+                    renderer = renderer,
+                    onLaunch = onLaunch,
+                    onAppLongPress = onAppLongPress,
+                    musicSlotBottom = musicSlotBottom,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }

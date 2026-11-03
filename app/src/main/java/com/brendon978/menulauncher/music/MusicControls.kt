@@ -32,7 +32,8 @@ fun MusicControls(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+        // SpaceEvenly cabe tanto na largura toda quanto ao lado do relógio.
+        horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = modifier.fillMaxWidth(),
     ) {
         ControlButton(onPrevious) { skip(color, forward = false) }
