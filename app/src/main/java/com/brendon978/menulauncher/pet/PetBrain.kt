@@ -120,13 +120,24 @@ fun marchUntil(wasMenacing: Boolean, menacing: Boolean, now: Long, current: Long
 
 /** Falas no balão, por nível de raiva. A risadinha não fala. */
 val ANGER_LINES: Map<Reaction, List<String>> = mapOf(
-    Reaction.SERIOUS to listOf("Ei.", "Hm.", "Que foi?", "Para."),
-    Reaction.ANGRY to listOf("Para com isso!", "Tá me tirando?", "Me erra!", "Sai pra lá!", "Chega!"),
-    Reaction.MENACE to listOf("Mais um toque...", "Tá avisado!", "Vai encarar?", "Não testa.", "Mão pra cima!"),
-    Reaction.FLEE to listOf("Pra mim chega!", "Fui!", "Me deixa!"),
+    Reaction.SERIOUS to listOf("Ei.", "Hm.", "Que foi?", "Para.", "Pô...", "Sério isso?"),
+    Reaction.ANGRY to listOf(
+        "Para com isso!", "Tá me tirando?", "Me erra!", "Sai pra lá!", "Chega!",
+        "Que saco, mano!", "Seu mané!", "Vai catar coquinho!", "Porra, para!", "Caralho, de novo?",
+        "Vai te catar!", "Desgraça, me deixa!", "Que merda é essa?", "Seu chato do caramba!",
+    ),
+    Reaction.MENACE to listOf(
+        "Mais um toque...", "Tá avisado!", "Vai encarar?", "Não testa.", "Mão pra cima!",
+        "Encosta de novo, desgraçado!", "Tá achando que é bagunça, porra?", "Se folgar, já era!",
+        "Perdeu, playboy!", "Vai pra pqp!", "Filho da mãe...",
+    ),
+    Reaction.FLEE to listOf("Pra mim chega!", "Fui!", "Me deixa!", "Aff, vou embora, porra!", "Que inferno!"),
 )
 
 /** Falas enquanto marcha com a arma. */
-val MARCH_LINES: List<String> = listOf("Esquerda, direita!", "Tô de olho.", "Um, dois! Um, dois!", "Patrulha.", "Hmpf.")
+val MARCH_LINES: List<String> = listOf(
+    "Esquerda, direita!", "Tô de olho.", "Um, dois! Um, dois!", "Patrulha.", "Hmpf.",
+    "Folgado...", "Tô de olho em você, mané.", "Ninguém me respeita, porra.", "Encosta pra ver.",
+)
 
 fun angerLine(reaction: Reaction, random: Random): String? = ANGER_LINES[reaction]?.random(random)
