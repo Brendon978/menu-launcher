@@ -103,3 +103,16 @@ Nome escolhido pelo Brendon: **Glitch**. Inspirado nas ideias do projeto Pestinh
 - **Bolinha**: entediado e com energia, solta uma bola do alto e corre atrás chutando; você pode pegar e jogar a bola também ("Ei, devolve a bola!").
 - **Protesto**: três raivas em 10 minutos e ele marcha 30 s com um cartaz ("ABAIXO O DEDO!", "GREVE!").
 - **Fogos**: quando o vínculo chega a 85%, comemora com fogos e "Melhor humano!".
+
+## Brincadeiras que você começa e mais ideias do Pestinha (2026-11-03)
+
+- **Toque duplo no Glitch** abre o menu "Bora brincar de quê?": Bola, Esconde-esconde, Pega-pega, Jokenpô, Bolhas.
+  - **Bola (passe)**: ele chuta de volta para você; você joga a bola com o dedo. Acaba depois de 40 s sem você tocar na bola.
+  - **Esconde-esconde**: ele some atrás de algo da tela (só a antena espia); você toca onde acha. Errou: "tá quente" / "tá frio"; 5 erros e ele aparece.
+  - **Pega-pega** (25 s): ele foge do seu dedo, encurralado dá glitch; encostou nele, pegou.
+  - **Jokenpô**: você escolhe pedra, papel ou tesoura; ele mostra a dele na telinha. Perdeu, fica bravo e pede revanche.
+  - **Bolhas** (30 s): cada toque na tela solta uma bolha; ele corre e estoura.
+- **Travessura**: entediado e sem carência, cola post-its na tela ("Vai beber água!", "Lembra de mim"); arrastar para longe joga fora (ele reclama).
+- **Trabalhar junto**: voltando de um app de trabalho aberto pelo launcher (GitHub, Notas, Obsidian, Office, Hangar...) depois de 2 min, ele aparece com um notebookzinho ("Commitou?").
+- **Pião**: girar com dois dedos; solto, continua girando e, se girou muito, fica tonto.
+- **Aprender a se encolher**: cutucadas que irritam ensinam ele a esperar cutucada; com a expectativa alta ele se encolhe quando você encosta. Risadinha e carinho desensinam.

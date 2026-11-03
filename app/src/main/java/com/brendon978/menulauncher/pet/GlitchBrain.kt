@@ -29,7 +29,8 @@ data class TickCtx(
 
 /** O que ele escolhe fazer quando não está dormindo de noite nem cansado pela bateria. */
 /** SAD: carente e ignorado há muito tempo, vai para um canto. PLAY: entediado e com energia, joga bola. */
-enum class Activity { WANDER, NAP, SEEK_ATTENTION, EXPLORE, SULK, DANCE, SAD, PLAY }
+/** PRANK: entediado mas não carente, apronta (cola post-its na tela). */
+enum class Activity { WANDER, NAP, SEEK_ATTENTION, EXPLORE, SULK, DANCE, SAD, PLAY, PRANK }
 
 enum class GlitchEvent { GENTLE_TAP, NOTIFICATION, MUSIC_START }
 
@@ -76,6 +77,7 @@ fun decide(d: Drives, bond: Float, music: Boolean, random: Random): Activity {
         Activity.SULK to if (bond < .3f) (.3f - bond) / .3f + (if (music) .3f else 0f) else 0f,
         Activity.SAD to if (d.longing > .75f && d.boredom > .5f) (d.longing - .75f) * 3f + (if (bond < .5f) .15f else 0f) else 0f,
         Activity.PLAY to if (d.energy > .5f && d.longing < .6f) (d.boredom - .25f) * 1.2f + (d.energy - .5f) * .3f else 0f,
+        Activity.PRANK to if (d.energy > .35f && d.longing < .5f && d.boredom > .45f) (d.boredom - .4f) * 1.4f else 0f,
         Activity.WANDER to .45f,
     )
     return weights.filterValues { it > 0f }

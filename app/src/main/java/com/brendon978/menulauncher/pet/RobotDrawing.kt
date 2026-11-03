@@ -17,7 +17,7 @@ import kotlin.math.sin
 
 /** Rosto na telinha quadrada. */
 /** SURPRISED: pego no colo/voando; DIZZY: tonto depois do arremesso; BLISS: derretendo de carinho. */
-enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD }
+enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD, ROCK, PAPER, SCISSORS }
 
 /**
  * Pose de um quadro. Ângulos em graus; [phase] é um relógio em segundos para as animações do rosto.
@@ -45,6 +45,10 @@ data class RobotPose(
     val spin: Float = 1f,
     /** De costas: sem telinha nem LEDs, com grade de ventilação e tampa traseira. */
     val back: Boolean = false,
+    /** Segurando um notebookzinho aberto, digitando. */
+    val laptop: Boolean = false,
+    /** Giro do corpo inteiro (pião), em graus. */
+    val rotation: Float = 0f,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -60,6 +64,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
         // de perfil no giro ele não some de vez: no mínimo 8% de largura
         val spin = if (kotlin.math.abs(pose.spin) < .08f) (if (pose.spin < 0f) -.08f else .08f) else pose.spin
         val sx = (if (pose.facingLeft) -1f else 1f) * spin
+        rotate(pose.rotation, pivot = Offset(60f, 100f)) {
         scale(sx, 1f, pivot = Offset(60f, 0f)) {
             translate(left = pose.offsetX, top = -pose.lift) {
                 rotate(pose.tilt, pivot = Offset(60f, 153f)) {
@@ -82,6 +87,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                         GunHold.MARCH -> rotate(-42f, pivot = Offset(60f, 101f)) { ak47Side(color) }
                         GunHold.NONE -> Unit
                     }
+                    if (pose.laptop) laptop(color, pose.phase)
                     // braços sanfonados (por cima da arma: as garrinhas seguram ela) (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
@@ -94,6 +100,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                 }
             }
         }
+    }
     }
 }
 
@@ -150,6 +157,18 @@ private fun DrawScope.ak47Side(c: Color) {
     drawLine(c, Offset(62f, 96.5f), Offset(76f, 96.5f), 1.2f, StrokeCap.Round)
     drawLine(c, Offset(73f, 100.2f), Offset(90f, 100.2f), 1.8f, StrokeCap.Round)
     drawLine(c, Offset(86f, 100.2f), Offset(86f, 96.8f), 1.4f, StrokeCap.Round)
+}
+
+/** Notebookzinho aberto na frente do peito, com linhas de código piscando na tela. */
+private fun DrawScope.laptop(c: Color, t: Float) {
+    val st = Stroke(1.6f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    drawRoundRect(c, Offset(40f, 92f), Size(40f, 22f), CornerRadius(2f), style = st)              // tela
+    drawPath(Path().apply { moveTo(36f, 118f); lineTo(84f, 118f); lineTo(80f, 114f); lineTo(40f, 114f); close() }, c, style = st) // teclado
+    val lines = listOf(8f to 18f, 12f to 26f, 8f to 14f, 12f to 22f)
+    val shown = ((t * 3f).toInt() % 5)
+    lines.take(shown.coerceAtMost(4)).forEachIndexed { i, (x, w) ->
+        drawLine(c, Offset(40f + x, 96f + i * 4.5f), Offset(40f + x + w, 96f + i * 4.5f), 1.4f, StrokeCap.Round)
+    }
 }
 
 /** Braço de tubo com anéis, girando no ombro (topo), e mão de três garrinhas. */
@@ -259,6 +278,15 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
             drawArc(c, 180f, 180f, false, Offset(54f, 68f), Size(12f, 7f), style = Stroke(2f, cap = StrokeCap.Round))
             val drop = (t * .8f) % 1f
             drawCircle(c.copy(alpha = c.alpha * (1f - drop)), 1.3f, Offset(50f, 63f + drop * 12f))
+        }
+        Face.ROCK -> drawRoundRect(c, Offset(48f, 47f), Size(24f, 22f), CornerRadius(9f))
+        Face.PAPER -> {
+            drawRoundRect(c, Offset(47f, 44f), Size(26f, 30f), CornerRadius(2f), style = Stroke(2f))
+            for (y in listOf(51f, 57f, 63f)) ln(51f, y, 69f, y, 1.4f)
+        }
+        Face.SCISSORS -> {
+            ln(50f, 46f, 66f, 66f, 2.2f); ln(70f, 46f, 54f, 66f, 2.2f)
+            drawCircle(c, 3.2f, Offset(52f, 69f), style = Stroke(1.8f)); drawCircle(c, 3.2f, Offset(68f, 69f), style = Stroke(1.8f))
         }
         Face.SERIOUS -> { px(46f, 56f, 9f, 3f); px(65f, 56f, 9f, 3f); ln(55f, 70f, 65f, 70f) }
         Face.ANGRY -> {

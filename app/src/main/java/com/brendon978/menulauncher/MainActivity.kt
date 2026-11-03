@@ -175,7 +175,10 @@ class MainActivity : ComponentActivity() {
                     settings = settings,
                     renderer = renderer,
                     resetSignal = resetSignal.intValue,
-                    onLaunch = { appRepo.launch(it.key) },
+                    onLaunch = {
+                        com.brendon978.menulauncher.pet.GlitchSignals.lastLaunch = it.key.packageName to System.currentTimeMillis()
+                        appRepo.launch(it.key)
+                    },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
                     onSearch = { screen.value = Screen.Search },
