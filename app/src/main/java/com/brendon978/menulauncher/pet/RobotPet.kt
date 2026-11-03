@@ -3,6 +3,8 @@ package com.brendon978.menulauncher.pet
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -250,6 +252,8 @@ fun RobotPet(
     var flyVx by remember { mutableFloatStateOf(0f) }
     var dizzyUntil by remember { mutableLongStateOf(0L) }
     val dizzy = now < dizzyUntil
+    var debugHold by remember { mutableStateOf(false) }
+    var rootBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
     // ---- andar ----
     val pos = remember { Animatable(Offset.Unspecified, Offset.VectorConverter) }
@@ -261,7 +265,7 @@ fun RobotPet(
     val currentArea by rememberUpdatedState(area)
     val currentObstacles by rememberUpdatedState(obstacles)
     // marchando, ele anda mesmo que estivesse dormindo, cansado ou dançando
-    val stillMood = petting || held || flying || dizzy || menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
+    val stillMood = debugHold || petting || held || flying || dizzy || menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -389,6 +393,26 @@ fun RobotPet(
         GlitchLive.publish(GlitchSnapshot(drives, bond, activity, annoyance.levelAt(System.currentTimeMillis()) / 6f, doing))
     }
 
+    // teste por ADB (só na versão de desenvolvimento)
+    LaunchedEffect(Unit) {
+        PetDebug.commands.collect { cmd ->
+            when (cmd) {
+                "parar" -> {
+                    debugHold = true
+                    val a = currentArea
+                    val center = Offset((a.l + a.r) / 2, (a.t + a.b) / 2)
+                    val target = (0 until 40).mapNotNull { spot(null, 0f) }
+                        .minByOrNull { (it + Offset(widthPx / 2, heightPx / 2) - center).getDistance() }
+                    if (target != null) pos.snapTo(target)
+                    delay(300)
+                    val c = rootBounds.center
+                    android.util.Log.d(PetDebug.TAG, "centro=${c.x.roundToInt()},${c.y.roundToInt()} tamanho=${rootBounds.width.roundToInt()}x${rootBounds.height.roundToInt()}")
+                }
+                "soltar" -> debugHold = false
+            }
+        }
+    }
+
     if (!placed) return
 
     // ---- rosto e pose ----
@@ -505,6 +529,8 @@ fun RobotPet(
             var b = Body(pos.value.x, pos.value.y, v.x.coerceIn(-4_000f, 4_000f), v.y.coerceIn(-4_000f, 4_000f))
             var impact = 0f
             var last = 0L
+            var steps = 0
+            android.util.Log.d(PetDebug.TAG, "arremesso v=${v.x.roundToInt()},${v.y.roundToInt()} de ${b.x.roundToInt()},${b.y.roundToInt()}")
             try {
                 while (true) {
                     var settled = false
@@ -520,11 +546,16 @@ fun RobotPet(
                     }
                     flyVx = b.vx
                     pos.snapTo(Offset(b.x, b.y))
+                    steps++
                     if (settled) break
                 }
             } finally {
                 flying = false
+                android.util.Log.d(PetDebug.TAG, "pousou em ${b.x.roundToInt()},${b.y.roundToInt()} depois de $steps passos, impacto=${impact.roundToInt()}")
             }
+            // caiu por cima de algo tocável (soltou ele já dentro da lista, por exemplo): sai dali num glitch
+            val me = Area(pos.value.x, pos.value.y, pos.value.x + widthPx, pos.value.y + heightPx)
+            if (currentObstacles.any { it.intersects(me) }) spot(null, 0f)?.let { glitchTo(it) }
             if (impact > 1_500f) {
                 dizzyUntil = System.currentTimeMillis() + 2_500
                 say(LAND_LINES.random(brainRandom))
@@ -539,6 +570,7 @@ fun RobotPet(
             .size(with(density) { widthPx.toDp() } + TOUCH_PAD * 2, ROBOT_HEIGHT + TOUCH_PAD * 2)
             .alpha(visible)
             .onPlaced { placedAt = it.positionInParent() }
+            .onGloballyPositioned { rootBounds = it.boundsInRoot() }
             .pointerInput(Unit) {
                 val slop = viewConfiguration.touchSlop
                 val minRub = 12.dp.toPx()

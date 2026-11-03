@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
         musicRepo = MusicRepository(this)
         aiRepo = AiRepository(this)
         voice = VoiceCapture(this)
+        if (BuildConfig.DEBUG) petDebug = com.brendon978.menulauncher.pet.PetDebug.register(this)
         renderer = IconRenderer(
             this,
             filterLoader = { assets.open("lawnicons/appfilter.xml").use { AppFilter.parse(it) } },
@@ -351,7 +352,10 @@ class MainActivity : ComponentActivity() {
 
     private fun toast(msg: String) = android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show()
 
+    private var petDebug: android.content.BroadcastReceiver? = null
+
     override fun onDestroy() {
+        petDebug?.let { unregisterReceiver(it) }
         appRepo.close()
         musicRepo.close()
         voice.cancel()
