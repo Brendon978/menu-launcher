@@ -141,3 +141,12 @@ val MARCH_LINES: List<String> = listOf(
 )
 
 fun angerLine(reaction: Reaction, random: Random): String? = ANGER_LINES[reaction]?.random(random)
+
+/** Passos de dança; troca a cada [DANCE_MOVE_MS] em ordem aleatória. */
+enum class DanceMove { SWAY, ROBOT, HOP, SIDESTEP, MOONWALK, SPIN, HEADBANG }
+
+const val DANCE_MOVE_MS = 4_000L
+
+/** Próximo passo, nunca o mesmo de agora. */
+fun nextDanceMove(random: Random, current: DanceMove): DanceMove =
+    DanceMove.entries.filter { it != current }.random(random)

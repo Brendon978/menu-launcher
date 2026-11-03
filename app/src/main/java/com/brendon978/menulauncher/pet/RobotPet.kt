@@ -128,6 +128,17 @@ fun RobotPet(
         }
     }
 
+    // ---- dança: troca de passo a cada DANCE_MOVE_MS ----
+    var danceMove by remember { mutableStateOf(DanceMove.SWAY) }
+    val danceRandom = remember { Random(System.nanoTime() + 2) }
+    LaunchedEffect(mood == Mood.DANCING) {
+        if (mood != Mood.DANCING) return@LaunchedEffect
+        while (true) {
+            delay(DANCE_MOVE_MS)
+            danceMove = nextDanceMove(danceRandom, danceMove)
+        }
+    }
+
     // ---- andar ----
     val pos = remember { Animatable(Offset.Unspecified, Offset.VectorConverter) }
     var placed by remember { mutableStateOf(false) }
@@ -235,10 +246,7 @@ fun RobotPet(
             val stomp = sin(t * 18f)
             RobotPose(face, facingLeft, legL = if (stomp > 0) -14f else 0f, armL = 25f, armR = -25f, antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
         }
-        mood == Mood.DANCING && !reacting -> {
-            val s = sin(t * 7f)
-            RobotPose(face, facingLeft, legL = 8f * s, legR = -8f * s, armL = -35f + 30f * s, armR = 35f + 30f * s, tilt = 6f * s, lift = 3f * abs(s), phase = t)
-        }
+        mood == Mood.DANCING && !reacting -> dancePose(danceMove, face, facingLeft, t)
         mood == Mood.HAPPY && !walking -> {
             val hop = sin(t * 5f).coerceAtLeast(0f)
             RobotPose(face, facingLeft, armL = -20f, armR = 20f, lift = 8f * hop, blink = blink, phase = t)
@@ -316,6 +324,46 @@ private fun SpeechBubble(text: String, color: Color, modifier: Modifier = Modifi
             drawPath(tail, Color(0xE60C0C0E))
             drawLine(color.copy(alpha = .6f), Offset(0f, 0f), Offset(size.width / 2, size.height), 1.dp.toPx())
             drawLine(color.copy(alpha = .6f), Offset(size.width, 0f), Offset(size.width / 2, size.height), 1.dp.toPx())
+        }
+    }
+}
+
+/** Uma pose por passo de dança, no tempo [t] (segundos). */
+private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float): RobotPose {
+    val beat = sin(t * 7f)
+    return when (move) {
+        // o de sempre: balança de um lado pro outro
+        DanceMove.SWAY -> RobotPose(face, facingLeft, legL = 8f * beat, legR = -8f * beat, armL = -35f + 30f * beat, armR = 35f + 30f * beat, tilt = 6f * beat, lift = 3f * abs(beat), phase = t)
+        // robô clássico: poses travadas que trocam em "tique"
+        DanceMove.ROBOT -> {
+            val k = (t * 3f).toInt() % 4
+            val (aL, aR, head) = when (k) { 0 -> Triple(-90f, 0f, -12f); 1 -> Triple(0f, 90f, 12f); 2 -> Triple(-90f, 90f, 0f); else -> Triple(0f, 0f, -12f) }
+            RobotPose(face, facingLeft, armL = aL, armR = aR, headTilt = head, phase = t)
+        }
+        // pulinho com os braços pra cima
+        DanceMove.HOP -> {
+            val h = abs(sin(t * 5f))
+            RobotPose(face, facingLeft, legL = -10f * h, legR = 10f * h, armL = -165f + 15f * h, armR = 165f - 15f * h, lift = 14f * h, phase = t)
+        }
+        // dois passos pra um lado e volta, estalando as garrinhas
+        DanceMove.SIDESTEP -> {
+            val side = sin(t * 2.5f)
+            val snap = if ((t * 4).toInt() % 2 == 0) 20f else -5f
+            RobotPose(face, side < 0, legL = 14f * beat, legR = -14f * beat, armL = -20f - snap, armR = 20f + snap, offsetX = 26f * side, lift = 2f * abs(beat), phase = t)
+        }
+        // moonwalk: desliza para um lado com as pernas andando para o outro
+        DanceMove.MOONWALK -> {
+            val slide = sin(t * 1.2f)
+            val goingRight = kotlin.math.cos(t * 1.2f) > 0
+            val step = sin(t * 9f)
+            RobotPose(face, goingRight, legL = 18f * step, legR = -18f * step, armL = -12f * step, armR = 12f * step, offsetX = 34f * slide, phase = t)
+        }
+        // giro: vira de lado, de costas e volta; antena piscando
+        DanceMove.SPIN -> RobotPose(face, facingLeft, armL = -60f, armR = 60f, spin = kotlin.math.cos(t * 4f), lift = 3f * abs(beat), antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
+        // headbang: só a cabeça vai e volta forte; equalizador a mil
+        DanceMove.HEADBANG -> {
+            val nod = sin(t * 13f)
+            RobotPose(face, facingLeft, legL = 4f * nod, armL = -30f + 10f * nod, armR = 30f - 10f * nod, headTilt = 18f * nod, lift = 2f * abs(nod), phase = t * 2f)
         }
     }
 }

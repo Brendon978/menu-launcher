@@ -36,6 +36,12 @@ data class RobotPose(
     val phase: Float = 0f,
     /** AK de brinquedo (nunca atira): apontando para você, ou atravessada no peito marchando. */
     val gun: GunHold = GunHold.NONE,
+    /** Cabeça inclinando no pescoço (headbang, robô). */
+    val headTilt: Float = 0f,
+    /** Deslize do corpo, em unidades do desenho (moonwalk, passinho de lado). */
+    val offsetX: Float = 0f,
+    /** Largura do corpo: 1 normal, perto de 0 de perfil, negativo de costas (giro). */
+    val spin: Float = 1f,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -48,8 +54,11 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
     val u = size.height / 170f
     val line = Stroke(width = 2.2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
     scale(u, u, pivot = Offset.Zero) {
-        scale(if (pose.facingLeft) -1f else 1f, 1f, pivot = Offset(60f, 0f)) {
-            translate(top = -pose.lift) {
+        // de perfil no giro ele não some de vez: no mínimo 8% de largura
+        val spin = if (kotlin.math.abs(pose.spin) < .08f) (if (pose.spin < 0f) -.08f else .08f) else pose.spin
+        val sx = (if (pose.facingLeft) -1f else 1f) * spin
+        scale(sx, 1f, pivot = Offset(60f, 0f)) {
+            translate(left = pose.offsetX, top = -pose.lift) {
                 rotate(pose.tilt, pivot = Offset(60f, 153f)) {
                     // pernas sanfonadas com pé em cúpula (giram no quadril)
                     leg(52f, pose.legL, color, line)
@@ -68,8 +77,10 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
                     // cabeça (no esboço: translate(9 2) scale(.85) sobre o desenho da cabeça)
-                    translate(9f, 2f) {
-                        scale(.85f, .85f, pivot = Offset.Zero) { head(color, pose, line) }
+                    rotate(pose.headTilt, pivot = Offset(60f, 80f)) {
+                        translate(9f, 2f) {
+                            scale(.85f, .85f, pivot = Offset.Zero) { head(color, pose, line) }
+                        }
                     }
                 }
             }

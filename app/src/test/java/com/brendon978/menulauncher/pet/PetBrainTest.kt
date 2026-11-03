@@ -96,6 +96,19 @@ class PetBrainTest {
         assertTrue(MARCH_LINES.isNotEmpty())
     }
 
+    @Test fun passoDeDancaNuncaRepeteSeguido() {
+        val r = Random(9)
+        var cur = DanceMove.SWAY
+        val seen = mutableSetOf(cur)
+        repeat(500) {
+            val next = nextDanceMove(r, cur)
+            assertTrue(next != cur)
+            seen += next
+            cur = next
+        }
+        assertEquals(DanceMove.entries.toSet(), seen)
+    }
+
     @Test fun irritacaoBaixaSozinha() {
         var a = Annoyance()
         repeat(4) { i -> a = a.tap(i * 200L).first }
