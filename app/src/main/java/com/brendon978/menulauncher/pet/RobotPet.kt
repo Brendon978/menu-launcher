@@ -340,10 +340,11 @@ private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float
             val (aL, aR, head) = when (k) { 0 -> Triple(-90f, 0f, -12f); 1 -> Triple(0f, 90f, 12f); 2 -> Triple(-90f, 90f, 0f); else -> Triple(0f, 0f, -12f) }
             RobotPose(face, facingLeft, armL = aL, armR = aR, headTilt = head, phase = t)
         }
-        // pulinho com os braços pra cima
+        // pulinho: um tempinho no chão, sobe abrindo os braços em V (para fora, sem passar na cabeça)
         DanceMove.HOP -> {
-            val h = abs(sin(t * 5f))
-            RobotPose(face, facingLeft, legL = -10f * h, legR = 10f * h, armL = -165f + 15f * h, armR = 165f - 15f * h, lift = 14f * h, phase = t)
+            val p = (t * 1.6f) % 1f
+            val air = if (p < .55f) sin(p / .55f * Math.PI.toFloat()) else 0f
+            RobotPose(face, facingLeft, legL = -8f * air, legR = 8f * air, armL = -25f - 105f * air, armR = 25f + 105f * air, lift = 16f * air, phase = t)
         }
         // dois passos pra um lado e volta, estalando as garrinhas
         DanceMove.SIDESTEP -> {
@@ -358,8 +359,17 @@ private fun dancePose(move: DanceMove, face: Face, facingLeft: Boolean, t: Float
             val step = sin(t * 9f)
             RobotPose(face, goingRight, legL = 18f * step, legR = -18f * step, armL = -12f * step, armR = 12f * step, offsetX = 34f * slide, phase = t)
         }
-        // giro: vira de lado, de costas e volta; antena piscando
-        DanceMove.SPIN -> RobotPose(face, facingLeft, armL = -60f, armR = 60f, spin = kotlin.math.cos(t * 4f), lift = 3f * abs(beat), antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
+        // giro: vira, fica um instante de costas e volta (frente 0.6s, vira 0.3s, costas 0.6s, vira 0.3s)
+        DanceMove.SPIN -> {
+            val p = (t % 1.8f) / 1.8f
+            val (width, back) = when {
+                p < .33f -> 1f to false
+                p < .5f -> kotlin.math.cos((p - .33f) / .17f * Math.PI.toFloat()).let { kotlin.math.abs(it) to (it < 0f) }
+                p < .83f -> 1f to true
+                else -> kotlin.math.cos((p - .83f) / .17f * Math.PI.toFloat()).let { kotlin.math.abs(it) to (it > 0f) }
+            }
+            RobotPose(face, facingLeft, armL = -60f, armR = 60f, spin = width, back = back, lift = 3f * abs(beat), antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
+        }
         // headbang: só a cabeça vai e volta forte; equalizador a mil
         DanceMove.HEADBANG -> {
             val nod = sin(t * 13f)

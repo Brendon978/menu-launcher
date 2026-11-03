@@ -40,8 +40,10 @@ data class RobotPose(
     val headTilt: Float = 0f,
     /** Deslize do corpo, em unidades do desenho (moonwalk, passinho de lado). */
     val offsetX: Float = 0f,
-    /** Largura do corpo: 1 normal, perto de 0 de perfil, negativo de costas (giro). */
+    /** Largura do corpo: 1 normal, perto de 0 de perfil (giro). */
     val spin: Float = 1f,
+    /** De costas: sem telinha nem LEDs, com grade de ventilação e tampa traseira. */
+    val back: Boolean = false,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -65,9 +67,15 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     leg(68f, pose.legR, color, line)
                     // corpo
                     drawRoundRect(color, Offset(44f, 80f), Size(32f, 44f), CornerRadius(8f), style = line)
-                    drawCircle(color, 1.6f, Offset(53f, 94f))
-                    drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
-                    drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
+                    if (pose.back) {
+                        // tampa traseira com 4 parafusos
+                        drawRoundRect(color.copy(alpha = color.alpha * .7f), Offset(49f, 88f), Size(22f, 26f), CornerRadius(3f), style = Stroke(1.4f))
+                        for ((sx, sy) in listOf(51.5f to 90.5f, 68.5f to 90.5f, 51.5f to 111.5f, 68.5f to 111.5f)) drawCircle(color, 1f, Offset(sx, sy))
+                    } else {
+                        drawCircle(color, 1.6f, Offset(53f, 94f))
+                        drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
+                        drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
+                    }
                     when (pose.gun) {
                         GunHold.AIM -> ak47(color)
                         GunHold.MARCH -> rotate(-42f, pivot = Offset(60f, 101f)) { ak47Side(color) }
@@ -167,9 +175,15 @@ private fun DrawScope.head(color: Color, pose: RobotPose, line: Stroke) {
     drawLine(color, Offset(60f, 26f), Offset(60f, 16f), 2.2f, StrokeCap.Round)
     drawCircle(if (pose.antennaOn) color else color.copy(alpha = color.alpha * .2f), 3f, Offset(60f, 13f), style = line)
     drawRoundRect(color, Offset(30f, 26f), Size(60f, 62f), CornerRadius(14f), style = line)
-    drawRoundRect(color, Offset(38f, 36f), Size(44f, 44f), CornerRadius(4f), style = line)
     drawLine(color, Offset(30f, 52f), Offset(25f, 52f), 2.2f, StrokeCap.Round)
     drawLine(color, Offset(90f, 52f), Offset(95f, 52f), 2.2f, StrokeCap.Round)
+    if (pose.back) {
+        // nuca: grade de ventilação e dois parafusos
+        for (y in listOf(46f, 52f, 58f, 64f)) drawLine(color, Offset(44f, y), Offset(76f, y), 1.8f, StrokeCap.Round)
+        drawCircle(color, 1.4f, Offset(40f, 78f)); drawCircle(color, 1.4f, Offset(80f, 78f))
+        return
+    }
+    drawRoundRect(color, Offset(38f, 36f), Size(44f, 44f), CornerRadius(4f), style = line)
     // o rosto não sai da telinha
     clipRect(39f, 37f, 81f, 79f) { face(color, pose) }
     if (pose.face == Face.SLEEP) zzz(color, pose.phase)
