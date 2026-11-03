@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)
     implementation(libs.activity.compose)
+    implementation(libs.core.ktx)
     implementation(libs.datastore.preferences)
     implementation(libs.androidsvg)
     implementation(libs.coroutines.android)

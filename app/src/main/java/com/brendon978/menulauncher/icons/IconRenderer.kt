@@ -1,0 +1,115 @@
+package com.brendon978.menulauncher.icons
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Drawable
+import android.util.LruCache
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
+import com.brendon978.menulauncher.apps.AppEntry
+import com.brendon978.menulauncher.apps.AppKey
+import com.caverock.androidsvg.RenderOptions
+import com.caverock.androidsvg.SVG
+
+/**
+ * Desenha os ícones de contorno. Tudo sai numa cor só (a do ajuste), nunca com as cores do logo.
+ * [iconOf] devolve o ícone do sistema do app (para a camada monocromática).
+ */
+class IconRenderer(
+    private val context: Context,
+    val filter: AppFilter,
+    private val iconOf: (AppKey) -> Drawable?,
+) {
+    private data class CacheKey(val source: IconSource, val sizePx: Int, val color: Int)
+
+    private val cache = LruCache<CacheKey, ImageBitmap>(400)
+    private val monoCache = HashMap<AppKey, Drawable?>()
+
+    fun iconFor(entry: AppEntry, override: String?, sizePx: Int, color: Int): ImageBitmap {
+        val source = resolveIcon(entry.key, entry.label, override, filter) { monochromeOf(it) != null }
+        return render(source, sizePx, color)
+    }
+
+    fun render(source: IconSource, sizePx: Int, color: Int): ImageBitmap {
+        val key = CacheKey(source, sizePx, color)
+        cache.get(key)?.let { return it }
+        val bmp = when (source) {
+            is IconSource.Lawnicon -> renderSvg(source.name, sizePx, color)
+                ?: renderInitial('?', sizePx, color)
+            is IconSource.Monochrome -> monochromeOf(source.key)?.let { renderMonochrome(it, sizePx, color) }
+                ?: renderInitial('?', sizePx, color)
+            is IconSource.Initial -> renderInitial(source.letter, sizePx, color)
+        }
+        return bmp.asImageBitmap().also { cache.put(key, it) }
+    }
+
+    fun clear() {
+        cache.evictAll()
+        monoCache.clear()
+    }
+
+    private fun monochromeOf(key: AppKey): Drawable? = monoCache.getOrPut(key) {
+        (iconOf(key) as? AdaptiveIconDrawable)?.monochrome
+    }
+
+    private fun renderSvg(name: String, sizePx: Int, color: Int): Bitmap? {
+        val svg = runCatching { SVG.getFromAsset(context.assets, "lawnicons/svgs/$name.svg") }.getOrNull()
+            ?: return null
+        if (svg.documentViewBox == null) {
+            svg.setDocumentViewBox(0f, 0f, svg.documentWidth.coerceAtLeast(1f), svg.documentHeight.coerceAtLeast(1f))
+        }
+        val bmp = createBitmap(sizePx, sizePx)
+        val canvas = Canvas(bmp)
+        svg.renderToCanvas(canvas, RenderOptions().viewPort(0f, 0f, sizePx.toFloat(), sizePx.toFloat()))
+        // Pinta traço e preenchimento (alguns ícones têm pontos cheios) na cor escolhida.
+        canvas.drawColor(color, PorterDuff.Mode.SRC_IN)
+        return bmp
+    }
+
+    private fun renderMonochrome(mono: Drawable, sizePx: Int, color: Int): Bitmap {
+        // A camada adaptativa tem 108dp com 72dp visíveis: sobra 1/4 de cada lado.
+        val bmp = createBitmap(TRACE_SIZE, TRACE_SIZE)
+        val extra = TRACE_SIZE / 4
+        mono.setBounds(-extra, -extra, TRACE_SIZE + extra, TRACE_SIZE + extra)
+        mono.draw(Canvas(bmp))
+        val pixels = IntArray(TRACE_SIZE * TRACE_SIZE)
+        bmp.getPixels(pixels, 0, TRACE_SIZE, 0, 0, TRACE_SIZE, TRACE_SIZE)
+        val alpha = IntArray(pixels.size) { Color.alpha(pixels[it]) }
+        val edge = OutlineTracer.trace(alpha, TRACE_SIZE, STROKE)
+        val out = IntArray(pixels.size) { if (edge[it]) color else Color.TRANSPARENT }
+        bmp.setPixels(out, 0, TRACE_SIZE, 0, 0, TRACE_SIZE, TRACE_SIZE)
+        return if (sizePx == TRACE_SIZE) bmp else bmp.scale(sizePx, sizePx)
+    }
+
+    private fun renderInitial(letter: Char, sizePx: Int, color: Int): Bitmap {
+        val bmp = createBitmap(sizePx, sizePx)
+        val canvas = Canvas(bmp)
+        val stroke = sizePx * STROKE / TRACE_SIZE.toFloat()
+        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = stroke
+            this.color = color
+        }
+        val c = sizePx / 2f
+        canvas.drawCircle(c, c, c - stroke, ring)
+        val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            textSize = sizePx * 0.45f
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText(letter.toString(), c, c - (text.descent() + text.ascent()) / 2, text)
+        return bmp
+    }
+
+    private companion object {
+        const val TRACE_SIZE = 192
+        const val STROKE = 14
+    }
+}
