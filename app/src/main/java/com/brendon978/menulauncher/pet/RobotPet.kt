@@ -151,6 +151,20 @@ fun RobotPet(
     var battleLeft by remember { mutableStateOf(Offset.Zero) }
     var battleRight by remember { mutableStateOf(Offset.Zero) }
     var battleEvil by remember { mutableStateOf(Offset.Zero) }
+    // peteleco, cócegas, memória e voo
+    var shoveUntil by remember { mutableLongStateOf(0L) }
+    var tickleUntil by remember { mutableLongStateOf(0L) }
+    var shoveDir by remember { mutableFloatStateOf(1f) }
+    var memorySeq by remember { mutableStateOf(listOf<Int>()) }
+    var memoryPos by remember { mutableIntStateOf(0) }
+    var memoryLit by remember { mutableStateOf<Int?>(null) }
+    var memoryYourTurn by remember { mutableStateOf(false) }
+    var memoryBest by remember { mutableIntStateOf(0) }
+    var memoryLost by remember { mutableStateOf(false) }
+    var memoryTapAt by remember { mutableLongStateOf(0L) }
+    var fly by remember { mutableStateOf<FlyState?>(null) }
+    var flyWorld by remember { mutableStateOf<FlyWorld?>(null) }
+    var flyBest by remember { mutableIntStateOf(0) }
     // barriga, poleiro, caça aos bugs e duelo
     var belly by remember { mutableFloatStateOf(0f) }
     var eatUntil by remember { mutableLongStateOf(0L) }
@@ -203,7 +217,7 @@ fun RobotPet(
     val brainScope = androidx.compose.runtime.rememberCoroutineScope()
     fun save() {
         if (GlitchLive.importing) return
-        val m = GlitchMemory(drives, bond, System.currentTimeMillis(), pokeExpect, diary, lastMorning, lastNightNag, duelBest, plantWatered, lastWaterDay, towerBlocks)
+        val m = GlitchMemory(drives, bond, System.currentTimeMillis(), pokeExpect, diary, lastMorning, lastNightNag, duelBest, plantWatered, lastWaterDay, towerBlocks, memoryBest, flyBest)
         brainScope.launch { store.save(m) }
     }
     fun greetIfAway(awayFrom: Long) {
@@ -225,6 +239,8 @@ fun RobotPet(
         plantWatered = m.plantWatered
         lastWaterDay = m.lastWaterDay
         towerBlocks = m.towerBlocks
+        memoryBest = m.memoryBest
+        flyBest = m.flyBest
         loaded = true
         greetIfAway(m.lastSeen)
     }
@@ -442,9 +458,11 @@ fun RobotPet(
     val flinching = now < flinchUntil
     val posing = now < poseUntil
     val eating = now < eatUntil
-    val dueling = game == GameKind.DUEL
+    val dueling = game == GameKind.DUEL || game == GameKind.MEMORY || game == GameKind.FLY
+    val shoved = now < shoveUntil
+    val tickled = now < tickleUntil
     val asleep = mood == Mood.SLEEPING
-    val stillMood = dueling || eating || tiltShown != Tilt.LEVEL || posing || fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && game == null && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
+    val stillMood = shoved || tickled || dueling || eating || tiltShown != Tilt.LEVEL || posing || fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && game == null && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -1083,6 +1101,75 @@ fun RobotPet(
         GlitchSignals.lastLaunch = null
     }
 
+    // saiu da tela inicial: jogo de reflexo não fica esperando
+    LaunchedEffect(resumed) {
+        if (!resumed && (game == GameKind.MEMORY || game == GameKind.FLY)) game = null
+    }
+    // memória: ele mostra, você repete; cada rodada aumenta um
+    LaunchedEffect(game == GameKind.MEMORY) {
+        if (game != GameKind.MEMORY) return@LaunchedEffect
+        memorySeq = emptyList()
+        memoryLost = false
+        while (game == GameKind.MEMORY && !memoryLost) {
+            memorySeq = memorySeq + brainRandom.nextInt(4)
+            memoryPos = 0
+            memoryYourTurn = false
+            delay(650)
+            val flash = memoryFlashMs(memorySeq.size)
+            for (pad in memorySeq) {
+                memoryLit = pad
+                delay(flash)
+                memoryLit = null
+                delay(flash / 2)
+            }
+            memoryYourTurn = true
+            val seq = memorySeq
+            memoryTapAt = System.currentTimeMillis()
+            while (memoryYourTurn && !memoryLost && memorySeq === seq && game == GameKind.MEMORY) {
+                delay(30)
+                if (System.currentTimeMillis() - memoryTapAt > 12_000) memoryLost = true // largou o jogo: não fica preso na tela
+            }
+        }
+        val score = (memorySeq.size - 1).coerceAtLeast(0)
+        if (score > memoryBest) { memoryBest = score; save(); say("Recorde: $score!", 2_400) } else say("Você foi até $score. Tenta de novo!", 2_400)
+        memoryYourTurn = false
+        game = null
+    }
+    // voo: tocar sobe, soltar cai; desvia dos muros
+    LaunchedEffect(game == GameKind.FLY) {
+        if (game != GameKind.FLY) return@LaunchedEffect
+        val a = currentArea
+        val world = FlyWorld(a, a.l + widthPx * .8f, widthPx, heightPx)
+        flyWorld = world
+        pos.snapTo(Offset(world.x, (a.t + a.b) / 2))
+        fly = FlyState(pos.value.y, vy = world.thrust)
+        var last = 0L
+        while (game == GameKind.FLY) {
+            val dt = androidx.compose.runtime.withFrameNanos { nanos ->
+                val d = if (last == 0L) 1f / 60f else ((nanos - last) / 1e9f).coerceIn(0f, .05f)
+                last = nanos
+                d
+            }
+            val s = flyStep(fly ?: break, dt, world, brainRandom)
+            fly = s
+            pos.snapTo(Offset(world.x, s.y))
+            if (s.crashed) {
+                dizzyUntil = System.currentTimeMillis() + 2_000
+                if (s.score > flyBest) { flyBest = s.score; save(); say("Recorde: ${s.score} muros!", 2_400) } else say("${s.score} muros. Bati!", 2_400)
+                game = null
+            }
+        }
+        fly = null
+        flyWorld = null
+    }
+    // falas espontâneas, de vez em quando
+    LaunchedEffect(resumed, loaded) {
+        if (!resumed || !loaded) return@LaunchedEffect
+        while (true) {
+            delay(nextIdleGapMs(brainRandom))
+            if (commentsNow && game == null && show == null && !asleep && now >= speechUntil) say(idleLine(hour, bond, brainRandom), 2_400)
+        }
+    }
     // barriga cheia vai descendo sozinha
     LaunchedEffect(belly > 0f) {
         while (belly > 0f) { delay(1_000); belly = bellyAfterTime(belly, 1f, walking) }
@@ -1253,6 +1340,10 @@ fun RobotPet(
                 "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
                 "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
                 "noite" -> debugNight = !debugNight
+                "memoria" -> pendingGame = GameKind.MEMORY
+                "voo" -> pendingGame = GameKind.FLY
+                "empurra" -> { shoveDir = 1f; shoveUntil = System.currentTimeMillis() + 1_500; say(SHOVE_LINES.random(brainRandom), 1_600) }
+                "cocegas" -> { tickleUntil = System.currentTimeMillis() + 1_600; say(TICKLE_LINES.random(brainRandom), 1_600) }
                 "brincar" -> { pendingShow = Show.BUDDY; activity = Activity.SHOW }
                 "clones" -> { debugBattle = true; pendingShow = Show.CLONES; activity = Activity.SHOW }
                 "jetpack" -> { pendingShow = Show.JETPACK; activity = Activity.SHOW }
@@ -1306,6 +1397,9 @@ fun RobotPet(
     val showK = showNow?.progress(now) ?: 0f
     val showPoseNow = showNow?.let { showPose(it, showK, facingLeft, t) }
     val face = when {
+        shoved -> Face.DIZZY
+        tickled -> Face.GIGGLE
+        game == GameKind.FLY -> Face.GIGGLE
         showPoseNow != null -> showPoseNow.face
         talking != null -> Face.SCAN
         eating -> Face.GIGGLE
@@ -1349,6 +1443,9 @@ fun RobotPet(
         (if (facingLeft) -dx else dx).coerceIn(-1f, 1f) to dy.coerceIn(-1f, 1f)
     } else 0f to 0f
     val pose = when {
+        shoved -> RobotPose(face, shoveDir < 0f, armL = 70f, armR = -70f, tilt = 82f * shoveDir, lift = -6f, phase = t)
+        tickled -> RobotPose(face, facingLeft, armL = 60f + 30f * sin(t * 26f), armR = -60f - 30f * sin(t * 26f), tilt = 7f * sin(t * 26f), lift = 4f * abs(sin(t * 18f)), phase = t)
+        game == GameKind.FLY -> RobotPose(face, false, armL = 40f, armR = -40f, legL = 18f, legR = 8f, tilt = 8f, phase = t)
         showPoseNow != null -> showPoseNow
         tiltShown == Tilt.UPSIDE_DOWN -> RobotPose(face, facingLeft, armL = 150f, armR = -150f, rotation = 180f, phase = t)
         tiltShown != Tilt.LEVEL -> RobotPose(face, tiltShown == Tilt.LEFT, armL = 70f, armR = -70f, tilt = if (tiltShown == Tilt.LEFT) -12f else 12f, phase = t)
@@ -1457,6 +1554,7 @@ fun RobotPet(
     }
 
     fun gameTap(p: Offset) {
+        if (game == GameKind.FLY) { fly = (fly ?: return).let { s -> flyWorld?.let { w -> flyTap(s, w) } ?: s }; return }
         if (game == GameKind.DUEL) {
             if (duelGoAt > 0L) { if (duelTapped == 0L) duelTapped = System.currentTimeMillis() } else if (duelMessage == "Espera...") duelEarly = true
             return
@@ -1494,6 +1592,8 @@ fun RobotPet(
             GameKind.JOKENPO -> { jkChoosing = true; jkGlitch = null; jkOutcome = null; say("Escolhe aí!", 1_600) }
             GameKind.BUGS -> { bugsUntil = n + 25_000; bugs = emptyList(); bugsYou = 0; bugsHim = 0; say("Invasão de bugs! Bora!", 1_600) }
             GameKind.DUEL -> say("Toca quando aparecer JÁ!", 1_800)
+            GameKind.MEMORY -> say("Repete o que eu mostrar!", 1_600)
+            GameKind.FLY -> say("Toca pra subir!", 1_600)
             GameKind.BUBBLES -> { bubblesUntil = n + 30_000; bubbles = emptyList(); say("Toca na tela pra soltar bolhas!", 2_200) }
         }
     }
@@ -1765,7 +1865,7 @@ fun RobotPet(
     }
 
     // ---- por baixo do Glitch: rede de toques das brincadeiras, post-its, bolhas, antena escondida ----
-    val catching = menuOpen || game == GameKind.HIDE || game == GameKind.TAG || game == GameKind.BUBBLES || game == GameKind.BUGS || game == GameKind.DUEL
+    val catching = menuOpen || game == GameKind.HIDE || game == GameKind.TAG || game == GameKind.BUBBLES || game == GameKind.BUGS || game == GameKind.DUEL || game == GameKind.FLY
     if (catching) {
         TouchCatcher(
             onDown = { p ->
@@ -1780,7 +1880,7 @@ fun RobotPet(
                         if (game == GameKind.HIDE && hideTries >= 5) endHide(false)
                     }
                     game == GameKind.TAG -> finger = p
-                    game == GameKind.BUGS || game == GameKind.DUEL -> gameTap(p)
+                    game == GameKind.BUGS || game == GameKind.DUEL || game == GameKind.FLY -> gameTap(p)
                     game == GameKind.BUBBLES -> {
                         val r = with(density) { (14 + brainRandom.nextInt(10)).dp.toPx() }
                         bubbles = (bubbles + Bubble(++bubbleSeq, p.x, p.y, r, System.currentTimeMillis())).takeLast(12)
@@ -1829,6 +1929,31 @@ fun RobotPet(
             bugs.forEach { drawBug(color, Offset(it.x, it.y), s, t) }
         }
     }
+    fly?.let { s -> flyWorld?.let { w ->
+        Canvas(Modifier.fillMaxSize()) {
+            drawFlyWalls(color, s, w)
+            drawShowProps(color, ShowRun(Show.JETPACK, 0L), 0f, t, pos.value, widthPx, heightPx, Offset.Zero)
+        }
+        Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+            androidx.compose.material3.Text(
+                "${s.score}" + if (flyBest > 0) "  ·  recorde $flyBest" else "",
+                color = color,
+                modifier = Modifier.padding(top = 56.dp).background(androidx.compose.ui.graphics.Color(0xCC0C0C0E), androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 5.dp),
+            )
+        }
+    } }
+    if (game == GameKind.MEMORY) {
+        Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            MemoryPanel(color, memoryLit, memoryYourTurn, memorySeq.size, memoryBest, onPad = { pad ->
+                memoryTapAt = System.currentTimeMillis()
+                when (memoryTap(memorySeq, memoryPos, pad)) {
+                    MemoryTap.CORRECT -> memoryPos++
+                    MemoryTap.ROUND_DONE -> memoryYourTurn = false
+                    MemoryTap.WRONG -> memoryLost = true
+                }
+            })
+        }
+    }
     if (game == GameKind.DUEL && duelMessage.isNotEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
             DuelPanel(color, duelMessage, duelYou, duelHim, duelBest)
@@ -1873,7 +1998,10 @@ fun RobotPet(
                 }
                 val side = if (facingLeft) -1f else 1f
                 val play = show?.takeIf { it.kind == Show.BUDDY }
+                val dancing = mood == Mood.DANCING
                 val goal = when {
+                    asleep -> pos.value + Offset(widthPx * .5f + side * widthPx * .85f, heightPx * .94f)
+                    dancing && n >= strayUntil -> pos.value + Offset(widthPx * .5f + side * widthPx * (.95f + .25f * sin(n / 160f)), heightPx * (.5f + .18f * kotlin.math.abs(sin(n / 200f))))
                     // pega-pega: foge um pouco à frente dele; carinho: fica colado, ao alcance da mão
                     play != null && buddyChase(play.variant) -> pos.value + Offset(widthPx * .5f + side * widthPx * 1.5f, heightPx * (.45f + .25f * sin(n / 170f)))
                     play != null -> pos.value + Offset(widthPx * .5f + side * widthPx * .62f, if (buddy == Buddy.CAT) heightPx * .92f else heightPx * .55f)
@@ -1886,7 +2014,24 @@ fun RobotPet(
         }
     }
     if (buddy != Buddy.NONE && buddyAt.isSpecified && visible > 0f && !hidden) {
-        Canvas(Modifier.fillMaxSize()) { drawBuddy(color, buddy, buddyAt, heightPx / 170f, t) }
+        Canvas(Modifier.fillMaxSize()) { drawBuddy(color, buddy, buddyAt, heightPx / 170f, t, asleep) }
+        // tocar no bichinho: só quando ele não está em cima de nada tocável
+        val r = with(density) { 26.dp.toPx() }
+        if (game == null && currentObstacles.none { it.intersects(Area(buddyAt.x - r, buddyAt.y - r, buddyAt.x + r, buddyAt.y + r)) }) {
+            Box(
+                Modifier
+                    .offset { IntOffset((buddyAt.x - r).roundToInt(), (buddyAt.y - r).roundToInt()) }
+                    .size(52.dp)
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            awaitFirstDown().consume()
+                            say(BUDDY_TAP_LINES.random(brainRandom), 1_500)
+                            poseUntil = System.currentTimeMillis() + 900
+                            photoPoseKind = PhotoPose.HEART
+                        }
+                    },
+            )
+        }
     }
     showNow?.let { run ->
         Canvas(Modifier.fillMaxSize()) {
@@ -1920,7 +2065,7 @@ fun RobotPet(
                     val down = awaitFirstDown()
                     down.consume()
                     // nos jogos de reflexo o toque vale ao encostar, não ao soltar
-                    if (game == GameKind.DUEL || game == GameKind.BUGS) {
+                    if (game == GameKind.DUEL || game == GameKind.BUGS || game == GameKind.FLY) {
                         gameTap(placedAt + down.position)
                         while (awaitPointerEvent().changes.any { c -> c.consume(); c.pressed }) Unit
                         return@awaitEachGesture
@@ -2006,14 +2151,35 @@ fun RobotPet(
                         early == "rub" || early == "move" -> {
                             // mexendo: vira carinho quando vai e volta
                             if (early == "rub") startPetting()
+                            val began = down.uptimeMillis
+                            var endX = xs.last()
+                            var ended = began
                             while (true) {
                                 val ch = awaitPointerEvent().changes.first()
                                 ch.consume()
+                                ended = ch.uptimeMillis
                                 if (!ch.pressed) break
-                                xs += placedAt.x + ch.position.x
+                                endX = placedAt.x + ch.position.x
+                                xs += endX
                                 if (!petting && countReversals(xs, minRub) >= 2) startPetting()
+                                if (now >= tickleUntil && isTickle(countReversals(xs, minRub), ended - began)) {
+                                    tickleUntil = System.currentTimeMillis() + 1_600
+                                    say(TICKLE_LINES.random(brainRandom), 1_600)
+                                    bond = (bond + .01f).coerceIn(0f, 1f)
+                                }
                             }
                             petting = false
+                            // peteleco: ele tropeça para o lado e cai
+                            if (isFlick(endX - xs.first(), ended - began, with(density) { 56.dp.toPx() })) {
+                                shoveDir = if (endX > xs.first()) 1f else -1f
+                                shoveUntil = System.currentTimeMillis() + 1_500
+                                say(SHOVE_LINES.random(brainRandom), 1_600)
+                                val c = currentArea
+                                val x = (pos.value.x + shoveDir * widthPx).coerceIn(c.l, c.r - widthPx)
+                                if (pathClear(pos.value.x to pos.value.y, x to pos.value.y, widthPx, heightPx, currentObstacles)) {
+                                    scope.launch { pos.animateTo(Offset(x, pos.value.y), tween(300)) }
+                                }
+                            }
                         }
                         else -> {
                             // segurou parado: pega no colo, arrasta e, ao soltar, joga

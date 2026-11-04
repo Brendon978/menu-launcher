@@ -396,8 +396,22 @@ fun erased(rubbed: Float, areaWidth: Float): Boolean = rubbed > areaWidth * 1.5f
 
 enum class Buddy(val label: String) { NONE("Nenhum"), DRONE("Mini drone"), CAT("Gato-robô") }
 
-fun DrawScope.drawBuddy(color: Color, kind: Buddy, at: Offset, u: Float, t: Float) {
+fun DrawScope.drawBuddy(color: Color, kind: Buddy, at: Offset, u: Float, t: Float, asleep: Boolean = false) {
     val st = Stroke(1.8f * u, cap = StrokeCap.Round)
+    if (asleep) {
+        // dorme junto: o drone pousa de hélices paradas e o gato enrola
+        if (kind == Buddy.DRONE) {
+            drawRoundRect(color, at - Offset(12f * u, 7f * u), Size(24f * u, 14f * u), style = st)
+            for (s in listOf(-1f, 1f)) drawLine(color, at + Offset(s * 15f * u - 7f * u, -11f * u), at + Offset(s * 15f * u + 7f * u, -11f * u), 2f * u, StrokeCap.Round)
+        } else if (kind == Buddy.CAT) {
+            drawOval(color, at - Offset(16f * u, 8f * u), Size(32f * u, 18f * u), style = st)
+            drawArc(color, 200f, 150f, false, at - Offset(10f * u, 4f * u), Size(20f * u, 10f * u), style = Stroke(1.4f * u))
+        }
+        val z = (t * .5f) % 1f
+        val p = at + Offset(10f * u, (-14f - z * 22f) * u)
+        drawPath(Path().apply { moveTo(p.x, p.y); lineTo(p.x + 7f * u, p.y); lineTo(p.x, p.y + 7f * u); lineTo(p.x + 7f * u, p.y + 7f * u) }, color.copy(alpha = color.alpha * (1f - z)), style = Stroke(1.4f * u))
+        return
+    }
     when (kind) {
         Buddy.DRONE -> {
             drawRoundRect(color, at - Offset(12f * u, 7f * u), Size(24f * u, 14f * u), style = st)

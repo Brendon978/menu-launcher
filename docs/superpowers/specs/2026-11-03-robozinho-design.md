@@ -178,3 +178,13 @@ Números curtos que ele faz sozinho, sorteados sem repetir o último. Ficam em `
 
 - **Brincar com o bichinho** (só com bichinho ligado): pega-pega indo e voltando, ou carinho com ele colado na mão.
 
+## Mais interação (2026-11-04)
+
+- **Peteleco**: arrastar rápido em cima dele empurra; ele tomba e levanta.
+- **Cócegas**: esfregar muito rápido faz ele rir; sobe um pouco o vínculo.
+- **Tocar no bichinho**: ele reage, só quando o bichinho não está sobre nada tocável.
+- **Bichinho**: dorme junto à noite (drone pousa, gato enrola) e dança junto com música.
+- **Memória**: quatro blocos, sequência crescente, recorde salvo.
+- **Voo**: tocar sobe; desviar dos muros, recorde salvo.
+- **Falas soltas**: a cada 2 a 5 min, conforme hora e vínculo; segue o interruptor de comentários.
+
