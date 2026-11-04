@@ -1862,8 +1862,7 @@ fun RobotPet(
                 val pl = m.measure(c.copy(minWidth = 0, minHeight = 0))
                 layout(pl.width, pl.height) {
                     val x = (cx - pl.width / 2).coerceIn(area.l, (area.r - pl.width).coerceAtLeast(area.l))
-                    val y = (top - pl.height - 8f).let { if (it < area.t) top + heightPx + 8f else it }
-                    pl.place(x.roundToInt(), y.roundToInt())
+                    pl.place(x.roundToInt(), menuTop(top, heightPx, pl.height.toFloat(), area).roundToInt())
                 }
             },
         )

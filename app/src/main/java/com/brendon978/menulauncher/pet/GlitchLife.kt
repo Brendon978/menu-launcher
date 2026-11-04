@@ -171,3 +171,13 @@ val STUFFED_LINES = listOf("Tô cheio...", "Chega de notificação!")
 
 /** Sentado em cima da lista, com as pernas balançando, ou pendurado embaixo do relógio. */
 enum class Perch { SIT, HANG }
+
+// ---- menu ----
+
+/** Acima dele se couber; senão embaixo; e nunca fora da tela, mesmo que precise cobrir ele. */
+fun menuTop(robotTop: Float, robotHeight: Float, menuHeight: Float, area: Area): Float {
+    val above = robotTop - menuHeight - 8f
+    val wanted = if (above >= area.t) above else robotTop + robotHeight + 8f
+    return wanted.coerceIn(area.t, maxOf(area.t, area.b - menuHeight))
+}
+

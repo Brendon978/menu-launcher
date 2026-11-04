@@ -43,4 +43,12 @@ class GlitchGamesTest {
         assertEquals(.5f, bellyAfterTime(.6f, 18f), .001f)
         assertEquals(0f, bellyAfterTime(.1f, 60f))
     }
+
+    @Test fun menuSempreDentroDaTela() {
+        val tela = Area(0f, 0f, 400f, 1_000f)
+        assertEquals("cabe acima", 192f, menuTop(700f, 100f, 500f, tela))
+        assertEquals("não cabe acima, vai para baixo", 408f, menuTop(300f, 100f, 300f, tela))
+        assertEquals("não cabe em nenhum dos dois: encosta no fim da tela", 400f, menuTop(450f, 100f, 600f, tela))
+        assertEquals("maior que a tela: começa no topo", 0f, menuTop(500f, 100f, 1_200f, tela))
+    }
 }
