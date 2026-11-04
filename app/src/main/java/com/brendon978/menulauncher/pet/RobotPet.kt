@@ -67,7 +67,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /** Altura do robozinho na tela. */
-val ROBOT_HEIGHT = 72.dp
+val ROBOT_HEIGHT = 84.dp
 private val TOUCH_PAD = 14.dp
 /** Segurar parado este tempo pega no colo; antes disso, mexer o dedo é carinho. */
 private const val PICKUP_HOLD_MS = 650L

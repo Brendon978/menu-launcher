@@ -3,6 +3,7 @@ package com.brendon978.menulauncher.pet
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -70,6 +71,17 @@ enum class GunHold { NONE, AIM, MARCH }
 const val ROBOT_ASPECT = 120f / 170f
 
 /** Desenha o robozinho do esboço (variante "corpo") em contorno, numa cor só, ocupando o DrawScope inteiro. */
+/** Corpo preenchido de escuro: o Glitch lê bem em qualquer papel de parede. */
+private val BODY = Color(0xFF14171E)
+private val SCREEN = Color(0xFF050608)
+private fun fillFor(c: Color, base: Color) = base.copy(alpha = c.alpha)
+
+/** LED aceso: ponto cheio com halo suave. */
+private fun DrawScope.led(c: Color, r: Float, at: Offset) {
+    drawCircle(c.copy(alpha = c.alpha * .22f), r * 2.4f, at)
+    drawCircle(c, r, at)
+}
+
 fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
     val u = size.height / 170f
     val line = Stroke(width = 2.2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
@@ -85,15 +97,21 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     leg(52f, pose.legL, color, line)
                     leg(68f, pose.legR, color, line)
                     // corpo
+                    drawRoundRect(fillFor(color, BODY), Offset(44f, 80f), Size(32f, 44f), CornerRadius(8f))
                     drawRoundRect(color, Offset(44f, 80f), Size(32f, 44f), CornerRadius(8f), style = line)
                     if (pose.back) {
                         // tampa traseira com 4 parafusos
                         drawRoundRect(color.copy(alpha = color.alpha * .7f), Offset(49f, 88f), Size(22f, 26f), CornerRadius(3f), style = Stroke(1.4f))
                         for ((sx, sy) in listOf(51.5f to 90.5f, 68.5f to 90.5f, 51.5f to 111.5f, 68.5f to 111.5f)) drawCircle(color, 1f, Offset(sx, sy))
                     } else {
-                        drawCircle(color, 1.6f, Offset(53f, 94f))
-                        drawCircle(color.copy(alpha = color.alpha * .5f), 1.6f, Offset(59f, 94f))
-                        drawLine(color.copy(alpha = color.alpha * .5f), Offset(52f, 106f), Offset(68f, 106f), 2.2f, StrokeCap.Round)
+                        // painel do peito com LEDs acesos e respiros
+                        drawRoundRect(fillFor(color, SCREEN), Offset(49f, 86f), Size(22f, 14f), CornerRadius(3f))
+                        drawRoundRect(color, Offset(49f, 86f), Size(22f, 14f), CornerRadius(3f), style = Stroke(1.4f))
+                        led(color, 1.9f, Offset(55f, 93f))
+                        led(color.copy(alpha = color.alpha * .55f), 1.9f, Offset(63f, 93f))
+                        val vent = color.copy(alpha = color.alpha * .6f)
+                        drawLine(vent, Offset(51f, 108f), Offset(69f, 108f), 1.6f, StrokeCap.Round)
+                        drawLine(vent, Offset(51f, 114f), Offset(69f, 114f), 1.6f, StrokeCap.Round)
                     }
                     when (pose.gun) {
                         GunHold.AIM -> ak47(color)
@@ -107,11 +125,10 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     arm(80f, -10f + pose.armR, color, line)
                     // cabeça (no esboço: translate(9 2) scale(.85) sobre o desenho da cabeça)
                     rotate(pose.headTilt, pivot = Offset(60f, 80f)) {
-                        translate(9f, 2f) {
-                            scale(.85f, .85f, pivot = Offset.Zero) {
-                                head(color, pose, line)
-                                headAccessory(color, pose.accessory, pose.back)
-                            }
+                        // cabeça maior: nesse tamanho é o rosto que dá personalidade
+                        translate(0f, -8f) {
+                            head(color, pose, line)
+                            headAccessory(color, pose.accessory, pose.back)
                         }
                     }
                 }
@@ -137,6 +154,7 @@ private fun DrawScope.leg(x: Float, angle: Float, color: Color, line: Stroke) {
             quadraticTo(x + 8, 145f, x + 8, 153f)
             close()
         }
+        drawPath(foot, fillFor(color, BODY))
         drawPath(foot, color, style = line)
     }
 }
@@ -275,19 +293,30 @@ private fun DrawScope.arm(x: Float, angle: Float, color: Color, line: Stroke) {
 
 private fun DrawScope.head(color: Color, pose: RobotPose, line: Stroke) {
     drawLine(color, Offset(60f, 26f), Offset(60f, 16f), 2.2f, StrokeCap.Round)
-    drawCircle(if (pose.antennaOn) color else color.copy(alpha = color.alpha * .2f), 3f, Offset(60f, 13f), style = line)
+    if (pose.antennaOn) led(color, 3f, Offset(60f, 13f)) else drawCircle(color.copy(alpha = color.alpha * .35f), 3f, Offset(60f, 13f), style = Stroke(1.6f))
+    for (x in listOf(24f, 90f)) {
+        drawRoundRect(fillFor(color, BODY), Offset(x, 46f), Size(6f, 20f), CornerRadius(3f))
+        drawRoundRect(color, Offset(x, 46f), Size(6f, 20f), CornerRadius(3f), style = line)
+    }
+    drawRoundRect(fillFor(color, BODY), Offset(30f, 26f), Size(60f, 62f), CornerRadius(14f))
     drawRoundRect(color, Offset(30f, 26f), Size(60f, 62f), CornerRadius(14f), style = line)
-    drawLine(color, Offset(30f, 52f), Offset(25f, 52f), 2.2f, StrokeCap.Round)
-    drawLine(color, Offset(90f, 52f), Offset(95f, 52f), 2.2f, StrokeCap.Round)
     if (pose.back) {
         // nuca: grade de ventilação e dois parafusos
         for (y in listOf(46f, 52f, 58f, 64f)) drawLine(color, Offset(44f, y), Offset(76f, y), 1.8f, StrokeCap.Round)
         drawCircle(color, 1.4f, Offset(40f, 78f)); drawCircle(color, 1.4f, Offset(80f, 78f))
         return
     }
-    drawRoundRect(color, Offset(38f, 36f), Size(44f, 44f), CornerRadius(4f), style = line)
+    // telinha preta, levemente iluminada pelo próprio rosto
+    drawRoundRect(fillFor(color, SCREEN), Offset(38f, 36f), Size(44f, 44f), CornerRadius(7f))
+    drawRoundRect(
+        Brush.radialGradient(listOf(color.copy(alpha = color.alpha * .26f), Color.Transparent), Offset(60f, 58f), 30f),
+        Offset(38f, 36f), Size(44f, 44f), CornerRadius(7f),
+    )
+    drawRoundRect(color, Offset(38f, 36f), Size(44f, 44f), CornerRadius(7f), style = Stroke(1.8f))
     // o rosto não sai da telinha
     clipRect(39f, 37f, 81f, 79f) { face(color, pose) }
+    // reflexo no canto da tela
+    drawArc(color.copy(alpha = color.alpha * .45f), 180f, 90f, false, Offset(42f, 40f), Size(14f, 14f), style = Stroke(1.5f, cap = StrokeCap.Round))
     if (pose.face == Face.SLEEP) zzz(color, pose.phase)
 }
 
