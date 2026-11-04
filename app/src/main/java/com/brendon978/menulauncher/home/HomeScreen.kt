@@ -83,7 +83,8 @@ fun HomeScreen(
         when (settings.mode) {
             HomeMode.ONE_HAND -> {
                 Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp).petObstacle("top")) {
-                    TopInfo(color)
+                    TopInfo(color, showNextEvent = settings.showNextEvent)
+                    if (settings.showQuickActions) QuickActions(color)
                     musicSlotTop()
                 }
                 OneHandMode(
@@ -100,7 +101,10 @@ fun HomeScreen(
             // Grade: player ao lado do relógio; a grade começa logo abaixo do que for mais alto.
             HomeMode.GRID -> Column(Modifier.fillMaxSize()) {
                 Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp, bottom = 12.dp)) {
-                    TopInfo(color)
+                    Column {
+                        TopInfo(color, showNextEvent = settings.showNextEvent)
+                        if (settings.showQuickActions) QuickActions(color)
+                    }
                     Box(Modifier.weight(1f).padding(start = 16.dp)) { musicSlotTop() }
                 }
                 GridMode(

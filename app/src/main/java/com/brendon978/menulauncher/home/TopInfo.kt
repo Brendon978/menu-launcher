@@ -26,7 +26,7 @@ private val PT_BR = Locale.forLanguageTag("pt-BR")
 
 /** Relógio e data no topo: só para olhar (tocar no relógio abre os alarmes). */
 @Composable
-fun TopInfo(color: Color, modifier: Modifier = Modifier) {
+fun TopInfo(color: Color, modifier: Modifier = Modifier, showNextEvent: Boolean = false) {
     val context = LocalContext.current
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -51,5 +51,12 @@ fun TopInfo(color: Color, modifier: Modifier = Modifier) {
             },
         )
         Text(date, color = color.copy(alpha = 0.7f), fontSize = 13.sp)
+        if (showNextEvent) {
+            // próximo compromisso, relido a cada minuto (fora da thread principal)
+            val event by androidx.compose.runtime.produceState<String?>(null, now / 60_000) {
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queryNextEvent(context) }
+            }
+            event?.let { Text(it, color = color.copy(alpha = 0.85f), fontSize = 13.sp, maxLines = 1) }
+        }
     }
 }
