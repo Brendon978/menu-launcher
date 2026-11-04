@@ -144,3 +144,7 @@ Testado no S25 FE (Android 17, One UI 9): uma tela nossa por cima do bloqueio de
 - Dorme de noite e no não perturbe, fica cansado com bateria baixa e dança de leve com música.
 - Só desenha à vista, e parado redesenha poucas vezes por segundo.
 
+## Sono com gorro (2026-11-04)
+
+Dormindo das 23h às 7h, na tela inicial e no bloqueio, ele usa gorrinho com pompom e tapa-olho, por cima de qualquer acessório escolhido, e o Zzz sobe bem acima da cabeça. No não perturbe de dia, só o tapa-olho. O notebook do trabalho passou a ter tela acesa e teclado, com as mãos nas laterais.
+

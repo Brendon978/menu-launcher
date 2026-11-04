@@ -22,11 +22,12 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.brendon978.menulauncher.pet.Accessory
-import com.brendon978.menulauncher.pet.Face
 import com.brendon978.menulauncher.pet.Mood
 import com.brendon978.menulauncher.pet.ROBOT_ASPECT
+import com.brendon978.menulauncher.pet.SLEEP_FROM_HOUR
 import com.brendon978.menulauncher.pet.baseMood
 import com.brendon978.menulauncher.pet.drawRobot
+import com.brendon978.menulauncher.pet.sleepAccessory
 import com.brendon978.menulauncher.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +67,8 @@ class LockWallpaperService : WallpaperService() {
         private var nextActAt = Long.MAX_VALUE
         /** Só em build de teste: dispara uma ação mesmo dançando ou dormindo. */
         private var forced = false
+        private var debugNight = false
+        private var hour = 12
         private var debugReceiver: android.content.BroadcastReceiver? = null
         private val started = System.currentTimeMillis()
 
@@ -85,6 +88,7 @@ class LockWallpaperService : WallpaperService() {
             if (com.brendon978.menulauncher.BuildConfig.DEBUG && !isPreview) {
                 debugReceiver = object : android.content.BroadcastReceiver() {
                     override fun onReceive(c: android.content.Context, i: Intent) {
+                        if (i.getStringExtra("acao") == "NOITE") { debugNight = !debugNight; readMood(System.currentTimeMillis()); return }
                         act = runCatching { LockAct.valueOf(i.getStringExtra("acao").orEmpty()) }.getOrNull() ?: return
                         forced = true
                         actAt = System.currentTimeMillis()
@@ -139,7 +143,7 @@ class LockWallpaperService : WallpaperService() {
             val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
             val music = getSystemService(AudioManager::class.java).isMusicActive
             dnd = getSystemService(NotificationManager::class.java).currentInterruptionFilter > NotificationManager.INTERRUPTION_FILTER_ALL
-            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            hour = if (debugNight) SLEEP_FROM_HOUR else Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             mood = if (dnd) Mood.SLEEPING else baseMood(hour, level, charging, music, 0L, now)
         }
 
@@ -195,7 +199,7 @@ class LockWallpaperService : WallpaperService() {
                 val current = act
                 val k = if (current != null) ((now - actAt).toFloat() / current.durationMs).coerceIn(0f, 1f) else 0f
                 val pose = lockPose(current, k, if (forced) Mood.NORMAL else mood, (now - started) / 1000f).let {
-                    it.copy(accessory = if (dnd && it.face == Face.SLEEP) Accessory.SLEEP_MASK else accessory)
+                    it.copy(accessory = sleepAccessory(it.face, hour, dnd, accessory))
                 }
                 val h = c.height * LOCK_ROBOT_HEIGHT
                 val w = h * ROBOT_ASPECT

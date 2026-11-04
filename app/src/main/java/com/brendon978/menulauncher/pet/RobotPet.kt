@@ -116,7 +116,8 @@ fun RobotPet(
             now = System.currentTimeMillis()
         }
     }
-    val hour = remember(now / 60_000) { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+    var debugNight by remember { mutableStateOf(false) } // só para testar de dia
+    val hour = remember(now / 60_000, debugNight) { if (debugNight) SLEEP_FROM_HOUR else Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     // não perturbe: dorme junto (como se fosse noite)
     val phoneMood = if (dnd) Mood.SLEEPING else baseMood(hour, battery.level, battery.charging, musicPlaying, happyUntil, now)
 
@@ -817,6 +818,7 @@ fun RobotPet(
                 "revolucao" -> { protestTimes = List(2) { System.currentTimeMillis() }; pendingProtest++ }
                 "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
                 "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
+                "noite" -> debugNight = !debugNight
                 "ak" -> { reaction = Reaction.MENACE; reactionUntil = System.currentTimeMillis() + 5_000 }
                 "marcha" -> marchUntil = System.currentTimeMillis() + 8_000
                 "menu" -> menuOpen = true
@@ -883,7 +885,7 @@ fun RobotPet(
         spinning -> RobotPose(face, facingLeft, armL = 110f, armR = -110f, rotation = spinDeg, phase = t)
         flinching -> RobotPose(face, facingLeft, armL = -150f, armR = 150f, lift = -4f, phase = t)
         jkCounting -> RobotPose(face, facingLeft, armL = 10f, armR = -70f + 25f * sin(t * 22f), phase = t)
-        working -> RobotPose(face, facingLeft, armL = -58f + 6f * sin(t * 22f), armR = 58f - 6f * sin(t * 22f + 1f), laptop = true, phase = t)
+        working -> RobotPose(face, false, armL = 12f + 4f * sin(t * 22f), armR = -12f - 4f * sin(t * 22f + 1f), laptop = true, phase = t)
         // comemorando: pula com os braços para cima
         celebrating -> {
             val air = abs(sin(t * 6f))
@@ -1419,11 +1421,7 @@ fun RobotPet(
                 }
             },
     ) {
-        val dressed = pose.copy(lookX = lookX, lookY = lookY, accessory = when {
-            dnd && face == Face.SLEEP -> Accessory.SLEEP_MASK
-            headset -> Accessory.HEADPHONES
-            else -> accessory
-        })
+        val dressed = pose.copy(lookX = lookX, lookY = lookY, accessory = sleepAccessory(face, hour, dnd, if (headset) Accessory.HEADPHONES else accessory))
         Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, dressed) }
     }
 

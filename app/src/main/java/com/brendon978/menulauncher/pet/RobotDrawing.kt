@@ -25,6 +25,8 @@ enum class Accessory(val label: String, val choosable: Boolean = true) {
     NONE("Nenhum"), CAP("Boné"), SUNGLASSES("Óculos escuros"), HEADPHONES("Fone"), HELMET("Capacete"), SCARF("Cachecol"), BOWTIE("Gravatinha"),
     /** Tapa-olho de dormir: ele põe sozinho no não perturbe. */
     SLEEP_MASK("Tapa-olho", choosable = false),
+    /** Gorrinho e tapa-olho: ele põe sozinho para dormir de noite. */
+    NIGHT_GEAR("Gorro de dormir", choosable = false),
 }
 
 /**
@@ -129,6 +131,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                         translate(0f, -8f) {
                             head(color, pose, line)
                             headAccessory(color, pose.accessory, pose.back)
+                            if (pose.face == Face.SLEEP && !pose.back) zzz(color, pose.phase)
                         }
                     }
                 }
@@ -196,17 +199,32 @@ private fun DrawScope.ak47Side(c: Color) {
 
 /** Notebookzinho aberto na frente do peito, com linhas de código piscando na tela. */
 private fun DrawScope.laptop(c: Color, t: Float) {
-    val st = Stroke(1.6f, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    drawRoundRect(c, Offset(40f, 92f), Size(40f, 22f), CornerRadius(2f), style = st)              // tela
-    drawPath(Path().apply { moveTo(36f, 118f); lineTo(84f, 118f); lineTo(80f, 114f); lineTo(40f, 114f); close() }, c, style = st) // teclado
-    val lines = listOf(8f to 18f, 12f to 26f, 8f to 14f, 12f to 22f)
-    val shown = ((t * 3f).toInt() % 5)
+    val st = Stroke(2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    // tela grande e acesa, tampando o corpo: nesse tamanho é o que faz parecer um computador
+    drawRoundRect(fillFor(c, SCREEN), Offset(34f, 86f), Size(52f, 33f), CornerRadius(3f))
+    drawRoundRect(
+        Brush.radialGradient(listOf(c.copy(alpha = c.alpha * .3f), Color.Transparent), Offset(60f, 102f), 30f),
+        Offset(34f, 86f), Size(52f, 33f), CornerRadius(3f),
+    )
+    drawRoundRect(c, Offset(34f, 86f), Size(52f, 33f), CornerRadius(3f), style = st)
+    // código sendo digitado, linha por linha, com cursor piscando
+    val lines = listOf(6f to 22f, 11f to 28f, 11f to 16f, 6f to 24f)
+    val shown = (t * 2.5f).toInt() % 6
     lines.take(shown.coerceAtMost(4)).forEachIndexed { i, (x, w) ->
-        drawLine(c, Offset(40f + x, 96f + i * 4.5f), Offset(40f + x + w, 96f + i * 4.5f), 1.4f, StrokeCap.Round)
+        drawLine(c, Offset(34f + x, 92f + i * 6f), Offset(34f + x + w, 92f + i * 6f), 2f, StrokeCap.Round)
     }
+    if ((t * 4f).toInt() % 2 == 0) {
+        val row = shown.coerceAtMost(3)
+        drawLine(c, Offset(36f + lines[row].first, 90f + row * 6f), Offset(36f + lines[row].first, 94f + row * 6f), 1.6f)
+    }
+    // base com teclado
+    val base = Path().apply { moveTo(34f, 119f); lineTo(86f, 119f); lineTo(95f, 128f); lineTo(25f, 128f); close() }
+    drawPath(base, fillFor(c, BODY))
+    drawPath(base, c, style = st)
+    val key = c.copy(alpha = c.alpha * .65f)
+    drawLine(key, Offset(38f, 122f), Offset(82f, 122f), 1.4f, StrokeCap.Round)
+    drawLine(key, Offset(35f, 125f), Offset(85f, 125f), 1.4f, StrokeCap.Round)
 }
-
-/** Acessórios da cabeça, nas coordenadas da cabeça (caixa 30..90 × 26..88). */
 private fun DrawScope.headAccessory(c: Color, a: Accessory, back: Boolean) {
     val st = Stroke(2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
     when (a) {
@@ -224,6 +242,29 @@ private fun DrawScope.headAccessory(c: Color, a: Accessory, back: Boolean) {
             drawArc(c, 180f, 180f, false, Offset(24f, 10f), androidx.compose.ui.geometry.Size(72f, 80f), style = st)
             drawRoundRect(c, Offset(18f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
             drawRoundRect(c, Offset(90f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
+        }
+        Accessory.NIGHT_GEAR -> {
+            headAccessory(c, Accessory.SLEEP_MASK, back)
+            // gorrinho caído para o lado, com pompom (a cor do traço é a única cor dele)
+            val cap = Path().apply {
+                moveTo(28f, 34f)
+                cubicTo(30f, 6f, 60f, -6f, 74f, 8f)
+                quadraticTo(84f, 18f, 92f, 34f)
+                close()
+            }
+            drawPath(cap, fillFor(c, BODY))
+            drawPath(cap, c, style = st)
+            val tail = Path().apply {
+                moveTo(44f, 12f)
+                cubicTo(26f, 8f, 12f, 16f, 10f, 34f)
+                quadraticTo(22f, 24f, 34f, 26f)
+            }
+            drawPath(tail, fillFor(c, BODY))
+            drawPath(tail, c, style = st)
+            drawCircle(c, 5.5f, Offset(10f, 38f))
+            // barra dobrada
+            drawRoundRect(fillFor(c, BODY), Offset(24f, 30f), Size(72f, 11f), CornerRadius(5.5f))
+            drawRoundRect(c, Offset(24f, 30f), Size(72f, 11f), CornerRadius(5.5f), style = st)
         }
         Accessory.SLEEP_MASK -> if (!back) {
             // faixa em volta da cabeça e a máscara cobrindo a telinha, com olhos fechados desenhados
@@ -317,7 +358,6 @@ private fun DrawScope.head(color: Color, pose: RobotPose, line: Stroke) {
     clipRect(39f, 37f, 81f, 79f) { face(color, pose) }
     // reflexo no canto da tela
     drawArc(color.copy(alpha = color.alpha * .45f), 180f, 90f, false, Offset(42f, 40f), Size(14f, 14f), style = Stroke(1.5f, cap = StrokeCap.Round))
-    if (pose.face == Face.SLEEP) zzz(color, pose.phase)
 }
 
 private fun DrawScope.face(c: Color, pose: RobotPose) {
@@ -418,16 +458,17 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
 
 /** Três "z" subindo da cabeça (únicos traços fora da telinha). */
 private fun DrawScope.zzz(c: Color, t: Float) {
-    for (i in 0 until 3) {
-        val p = ((t / 2.4f) + i / 3f) % 1f
-        val a = when { p < .3f -> p / .3f; else -> 1f - (p - .3f) / .7f }.coerceIn(0f, 1f)
-        val s = 4f + i * 1.2f
-        val x = 84f + p * 16f + i * 2f
-        val y = 30f - p * 24f
+    // sobe bem acima da cabeça, balançando e crescendo; é a única coisa que sai do corpo dele
+    for (i in 0 until 4) {
+        val p = ((t / 4.2f) + i / 4f) % 1f
+        val a = when { p < .15f -> p / .15f; p > .7f -> (1f - p) / .3f; else -> 1f }.coerceIn(0f, 1f)
+        val s = 6f + p * 13f
+        val x = 90f + p * 26f + sin(p * 9f) * 5f
+        val y = 34f - p * 88f
         drawPath(
             Path().apply { moveTo(x, y); lineTo(x + s, y); lineTo(x, y + s); lineTo(x + s, y + s) },
-            c.copy(alpha = c.alpha * a * .9f),
-            style = Stroke(1.6f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            c.copy(alpha = c.alpha * a),
+            style = Stroke(1.8f + p * 1.2f, cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
 }
