@@ -1279,6 +1279,15 @@ fun RobotPet(
         ) { drawPeekingAntenna(color, Offset(size.width / 2, size.height), density.density / 2.6f * 1.4f, t) }
     }
 
+    // placa do castigo (aparece com ele no colo e fica durante o castigo); vem antes dele para não cobri-lo
+    corner?.let { c ->
+        PunishCorner(
+            color = color,
+            highlighted = overCorner,
+            modifier = Modifier.offset { IntOffset(c.l.roundToInt(), c.t.roundToInt()) },
+        )
+    }
+
     Box(
         contentAlignment = androidx.compose.ui.Alignment.Center,
         modifier = Modifier
@@ -1414,15 +1423,6 @@ fun RobotPet(
             else -> accessory
         })
         Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, dressed) }
-    }
-
-    // placa do castigo (aparece com ele no colo e fica durante o castigo)
-    corner?.let { c ->
-        PunishCorner(
-            color = color,
-            highlighted = overCorner,
-            modifier = Modifier.offset { IntOffset(c.l.roundToInt(), c.t.roundToInt()) },
-        )
     }
 
     // bola: dá para pegar e jogar também

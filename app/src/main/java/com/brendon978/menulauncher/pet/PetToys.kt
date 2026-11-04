@@ -88,15 +88,16 @@ fun PunishCorner(color: Color, highlighted: Boolean, modifier: Modifier = Modifi
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "CANTINHO\nDO CASTIGO",
-            color = if (highlighted) Color.Black else color,
+            color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             lineHeight = 12.sp,
             modifier = Modifier
                 .width(96.dp)
-                .background(if (highlighted) color else Color(0xCC0C0C0E), RoundedCornerShape(6.dp))
-                .border(1.6.dp, color, RoundedCornerShape(6.dp))
+                .background(Color(0xCC0C0C0E), RoundedCornerShape(6.dp))
+                // acesa só no contorno: preenchida na cor do traço, o Glitch sumiria em cima dela
+                .border(if (highlighted) 4.dp else 1.6.dp, color, RoundedCornerShape(6.dp))
                 .padding(vertical = 8.dp),
         )
     }
