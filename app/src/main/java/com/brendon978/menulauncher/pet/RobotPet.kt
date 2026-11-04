@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.layout
 import com.brendon978.menulauncher.music.MediaListener
@@ -621,6 +622,18 @@ fun RobotPet(
             }.getOrDefault("alguém")
             say(listOf("Chegou coisa do $label!", "Cartinha do $label!", "Ó, $label te chamando.").random(brainRandom), 2_400)
         }
+    }
+
+    // uma IA falando pelo Glitch (IRIS, Eloy...): sai num balão maior, com o nome de quem fala
+    val incoming by com.brendon978.menulauncher.ai.SayReceiver.pending.collectAsState()
+    LaunchedEffect(incoming, resumed, loaded) {
+        val sp = incoming ?: return@LaunchedEffect
+        if (!resumed || !loaded) return@LaunchedEffect
+        com.brendon978.menulauncher.ai.SayReceiver.consumed(sp)
+        // fala velha (mais de 10 min) não vale mais
+        if (System.currentTimeMillis() - sp.at > 10 * 60_000L) return@LaunchedEffect
+        val line = sp.from?.let { "$it: ${sp.text}" } ?: sp.text
+        say(line, (2_500L + line.length * 45L).coerceAtMost(9_000L))
     }
 
     // rotina: bom dia de manhã, "vai dormir" de madrugada
@@ -1427,8 +1440,10 @@ private fun SpeechBubble(text: String, color: Color, modifier: Modifier = Modifi
             text,
             color = color,
             fontSize = 13.sp,
-            maxLines = 1,
+            maxLines = 4,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier
+                .widthIn(max = 240.dp)
                 .background(Color(0xE60C0C0E), RoundedCornerShape(12.dp))
                 .border(1.dp, color.copy(alpha = .6f), RoundedCornerShape(12.dp))
                 .padding(horizontal = 10.dp, vertical = 5.dp),

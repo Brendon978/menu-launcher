@@ -90,5 +90,12 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_service" />
         </service>
+
+        <!-- Uma IA (IRIS, Eloy...) pode falar pelo Glitch: ver docs/plugue-ia.md -->
+        <receiver android:name=".ai.SayReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.brendon978.menulauncher.action.SAY" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
