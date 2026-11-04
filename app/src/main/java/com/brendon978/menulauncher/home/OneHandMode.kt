@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.brendon978.menulauncher.apps.AppEntry
@@ -44,6 +45,8 @@ fun OneHandMode(
     strokeColor: Int,
     renderer: IconRenderer,
     resetSignal: Int,
+    /** Altura ocupada no topo (0 = não limita a lista além da metade da tela). */
+    reservedTop: Dp = 0.dp,
     onLaunch: (AppEntry) -> Unit,
     onAppLongPress: (AppEntry) -> Unit,
     musicSlotBottom: @Composable () -> Unit,
@@ -80,12 +83,13 @@ fun OneHandMode(
 
     BoxWithConstraints(modifier.fillMaxSize()) {
         val half = maxHeight / 2
+        val listMax = if (reservedTop > 0.dp) minOf(half, (maxHeight - reservedTop).coerceAtLeast(MIN_LIST)) else half
         Column(
             verticalArrangement = Arrangement.Bottom,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .heightIn(max = half)
+                .heightIn(max = listMax)
                 .padding(start = 22.dp, end = 52.dp)
                 .petObstacle("list"),
         ) {
@@ -145,6 +149,9 @@ fun OneHandMode(
         )
     }
 }
+
+/** Pelo menos duas linhas e o título: a lista nunca some, mesmo com o topo cheio. */
+private val MIN_LIST = 110.dp
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun Modifier.combinedClickableCompat(onClick: () -> Unit, onLongClick: () -> Unit): Modifier =

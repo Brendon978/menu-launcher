@@ -212,6 +212,7 @@ class MainActivity : ComponentActivity() {
                     onSwipeDown = { runGesture(settings.gestureDown, torch) },
                     onSwipeUp = { runGesture(settings.gestureUp, torch) },
                     onEmptyDoubleTap = { runGesture(settings.doubleTapChoice(), torch) },
+                    onNoteChange = { text -> updateSettings { it.copy(noteText = text) } },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
                     overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps, stroke) },

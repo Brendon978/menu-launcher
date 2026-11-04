@@ -51,6 +51,10 @@ data class LauncherSettings(
     val swipeAppActions: Boolean = false,
     /** Atalhos rápidos (lanterna, Wi-Fi, internet, não perturbe) embaixo da data. */
     val showQuickActions: Boolean = false,
+    /** Bloco de notas rápido na tela inicial. */
+    val showNote: Boolean = false,
+    /** O texto da nota. */
+    val noteText: String = "",
     /** Próximo compromisso da agenda embaixo da data (pede acesso à agenda). */
     val showNextEvent: Boolean = false,
     /** Favoritos diferentes de dia, no trabalho e à noite. */

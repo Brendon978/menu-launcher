@@ -49,6 +49,8 @@ class SettingsRepository(private val context: Context) {
         val showMostUsed = booleanPreferencesKey("show_most_used")
         val swipeAppActions = booleanPreferencesKey("swipe_app_actions")
         val showQuickActions = booleanPreferencesKey("show_quick_actions")
+        val showNote = booleanPreferencesKey("show_note")
+        val noteText = stringPreferencesKey("note_text")
         val showNextEvent = booleanPreferencesKey("show_next_event")
         val timeProfiles = booleanPreferencesKey("time_profiles")
         val profileFavorites = stringSetPreferencesKey("profile_favorites")
@@ -99,6 +101,8 @@ class SettingsRepository(private val context: Context) {
             prefs[K.showMostUsed] = next.showMostUsed
             prefs[K.swipeAppActions] = next.swipeAppActions
             prefs[K.showQuickActions] = next.showQuickActions
+            prefs[K.showNote] = next.showNote
+            prefs[K.noteText] = next.noteText
             prefs[K.showNextEvent] = next.showNextEvent
             prefs[K.timeProfiles] = next.timeProfiles
             prefs[K.profileFavorites] = next.profileFavorites.map { (name, keys) -> name + SEP + keys.joinToString("\n") { it.encode() } }.toSet()
@@ -170,6 +174,8 @@ class SettingsRepository(private val context: Context) {
             showMostUsed = this[K.showMostUsed] ?: d.showMostUsed,
             swipeAppActions = this[K.swipeAppActions] ?: d.swipeAppActions,
             showQuickActions = this[K.showQuickActions] ?: d.showQuickActions,
+            showNote = this[K.showNote] ?: d.showNote,
+            noteText = this[K.noteText] ?: d.noteText,
             showNextEvent = this[K.showNextEvent] ?: d.showNextEvent,
             timeProfiles = this[K.timeProfiles] ?: d.timeProfiles,
             profileFavorites = this[K.profileFavorites]?.mapNotNull { entry ->

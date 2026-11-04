@@ -43,6 +43,8 @@ object Backup {
         p["usage"] = s.usage.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
         p["swipeAppActions"] = s.swipeAppActions.toString()
         p["showQuickActions"] = s.showQuickActions.toString()
+        p["showNote"] = s.showNote.toString()
+        p["noteText"] = s.noteText
         p["showNextEvent"] = s.showNextEvent.toString()
         p["timeProfiles"] = s.timeProfiles.toString()
         p["profileFavorites"] = s.profileFavorites.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
@@ -97,6 +99,8 @@ object Backup {
             usage = pairs("usage").mapNotNull { (k, v) -> v.toFloatOrNull()?.let { k to it } }.toMap(),
             swipeAppActions = p.getProperty("swipeAppActions")?.toBooleanStrictOrNull() ?: d.swipeAppActions,
             showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,
+            showNote = p.getProperty("showNote")?.toBooleanStrictOrNull() ?: d.showNote,
+            noteText = p.getProperty("noteText") ?: d.noteText,
             showNextEvent = p.getProperty("showNextEvent")?.toBooleanStrictOrNull() ?: d.showNextEvent,
             timeProfiles = p.getProperty("timeProfiles")?.toBooleanStrictOrNull() ?: d.timeProfiles,
             profileFavorites = lines("profileFavorites").mapNotNull { l ->

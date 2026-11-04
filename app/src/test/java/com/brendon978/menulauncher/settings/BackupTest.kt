@@ -29,7 +29,7 @@ class BackupTest {
             strokeAuto = StrokeAuto.BY_TIME, strokeDay = 0xFF7FB7A4.toInt(), strokeNight = 0xFFC9A27E.toInt(),
             gestureDown = GestureChoice(GestureAction.TORCH), gestureUp = GestureChoice(GestureAction.APP, b),
             gestureDoubleTap = GestureChoice(GestureAction.CAMERA),
-            swipeAppActions = true,
+            swipeAppActions = true, showNote = true, noteText = "pão = 2\nleite #1 ✓",
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
     }

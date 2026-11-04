@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
@@ -54,6 +56,7 @@ fun HomeScreen(
     onSwipeDown: () -> Unit = {},
     onSwipeUp: () -> Unit = {},
     onEmptyDoubleTap: () -> Unit = {},
+    onNoteChange: (String) -> Unit = {},
     musicPlaying: Boolean = false,
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
@@ -65,6 +68,8 @@ fun HomeScreen(
     val swipeUp by rememberUpdatedState(onSwipeUp)
     val doubleTap by rememberUpdatedState(onEmptyDoubleTap)
     val listensDoubleTap = settings.listensDoubleTap()
+    val growsTop = settings.showNote
+    var topHeight by remember { mutableIntStateOf(0) }
     CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
         Modifier
@@ -103,9 +108,16 @@ fun HomeScreen(
     ) {
         when (settings.mode) {
             HomeMode.ONE_HAND -> {
-                Column(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp).petObstacle("top")) {
+                Column(
+                    Modifier
+                        // com o que é novo ligado a coluna cresce: a lista respeita o que sobrar
+                        .then(if (growsTop) Modifier.onSizeChanged { topHeight = it.height } else Modifier)
+                        .padding(start = 22.dp, end = 22.dp, top = 24.dp)
+                        .petObstacle("top"),
+                ) {
                     TopInfo(color, showNextEvent = settings.showNextEvent)
                     if (settings.showQuickActions) QuickActions(color)
+                    TopExtras(settings, color, onNoteChange)
                     musicSlotTop()
                 }
                 OneHandMode(
@@ -114,6 +126,7 @@ fun HomeScreen(
                     strokeColor = strokeColor,
                     renderer = renderer,
                     resetSignal = resetSignal,
+                    reservedTop = if (growsTop) with(LocalDensity.current) { topHeight.toDp() } else 0.dp,
                     onLaunch = onLaunch,
                     onAppLongPress = onAppLongPress,
                     musicSlotBottom = musicSlotBottom,
@@ -126,6 +139,7 @@ fun HomeScreen(
                     Column {
                         TopInfo(color, showNextEvent = settings.showNextEvent)
                         if (settings.showQuickActions) QuickActions(color)
+                        TopExtras(settings, color, onNoteChange)
                     }
                     Box(Modifier.weight(1f).padding(start = 16.dp)) { musicSlotTop() }
                 }
@@ -146,6 +160,12 @@ fun HomeScreen(
         overlay()
     }
     }
+}
+
+/** O que entra no topo só quando ligado nos Ajustes. */
+@Composable
+private fun TopExtras(settings: LauncherSettings, color: Color, onNoteChange: (String) -> Unit) {
+    if (settings.showNote) QuickNote(settings.noteText, color, onNoteChange)
 }
 
 /** Camada do robozinho: a tela inteira, menos o que está marcado como obstáculo (com folga). */
