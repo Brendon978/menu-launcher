@@ -121,6 +121,7 @@ fun OneHandMode(
                             renderer = renderer,
                             onClick = { onLaunch(entry) },
                             onLongClick = { onAppLongPress(entry) },
+                            tracksBadge = true,
                         )
                     }
                 }

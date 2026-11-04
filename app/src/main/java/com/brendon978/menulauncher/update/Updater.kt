@@ -14,7 +14,7 @@ data class Release(val versionCode: Int, val url: String, val notes: String)
 
 private fun field(json: String, key: String): String? =
     Regex("\"" + key + "\"\\s*:\\s*(\"((?:[^\"\\\\]|\\\\.)*)\"|-?[0-9]+)").find(json)?.let { m ->
-        m.groupValues[2].ifEmpty { m.groupValues[1] }
+        if (m.groupValues[1].startsWith("\"")) m.groupValues[2] else m.groupValues[1]
     }
 
 fun parseRelease(json: String): Release? {
@@ -42,7 +42,14 @@ object Updater {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         val tmp = File(dir, "update.tmp")
         val apk = File(dir, "menu-launcher.apk")
-        URL(release.url).openStream().use { input -> tmp.outputStream().use { input.copyTo(it) } }
+        val c = URL(release.url).openConnection() as HttpURLConnection
+        c.connectTimeout = 10_000
+        c.readTimeout = 30_000 // rede parada não pode deixar "Baixando…" para sempre
+        try {
+            c.inputStream.use { input -> tmp.outputStream().use { input.copyTo(it) } }
+        } finally {
+            c.disconnect()
+        }
         apk.delete()
         check(tmp.renameTo(apk)) { "não consegui gravar o APK" }
         apk

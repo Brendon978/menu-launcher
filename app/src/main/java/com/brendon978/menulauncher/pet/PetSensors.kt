@@ -109,6 +109,9 @@ fun MotionEffect(active: Boolean, onTilt: (Tilt) -> Unit, onShake: () -> Unit) {
             }
         }
         sm.registerListener(l, sensor, android.hardware.SensorManager.SENSOR_DELAY_UI)
-        onDispose { sm.unregisterListener(l) }
+        onDispose {
+            sm.unregisterListener(l)
+            tilt.value(Tilt.LEVEL) // desligou o sensor: não pode ficar preso de lado
+        }
     }
 }

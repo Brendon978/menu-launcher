@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
 
 /** Ícone de contorno desenhado fora da thread principal (a conversão do monocromático custa um pouco). */
 @Composable
-fun AppIcon(entry: AppEntry, override: String?, color: Int, size: Dp, renderer: IconRenderer) {
+fun AppIcon(entry: AppEntry, override: String?, color: Int, size: Dp, renderer: IconRenderer, tracksBadge: Boolean = false) {
     val px = with(LocalDensity.current) { size.roundToPx() }
     val bmp by produceState<ImageBitmap?>(null, entry.key, override, color, px) {
         value = withContext(Dispatchers.Default) { renderer.iconFor(entry, override, px, color) }
@@ -36,8 +36,10 @@ fun AppIcon(entry: AppEntry, override: String?, color: Int, size: Dp, renderer: 
     val badges by MediaListener.badges.collectAsState()
     val pkg = entry.key.packageName
     val badged = pkg in badges && pkg !in GlitchSignals.eaten
-    if (badged) DisposableEffect(pkg) { onDispose { GlitchSignals.badgeSpots.remove(pkg) } }
-    Box(Modifier.size(size).then(if (badged) Modifier.onGloballyPositioned { GlitchSignals.badgeSpots[pkg] = it.boundsInRoot() } else Modifier)) {
+    // só a lista da tela inicial marca onde a bolinha está: a busca abre por cima e tem outra posição
+    val tracked = badged && tracksBadge
+    if (tracked) DisposableEffect(pkg) { onDispose { GlitchSignals.badgeSpots.remove(pkg) } }
+    Box(Modifier.size(size).then(if (tracked) Modifier.onGloballyPositioned { GlitchSignals.badgeSpots[pkg] = it.boundsInRoot() } else Modifier)) {
         if (b != null) Image(b, contentDescription = null, modifier = Modifier.size(size))
         if (badged) {
             Canvas(Modifier.size(size)) {

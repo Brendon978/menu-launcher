@@ -1,5 +1,6 @@
 package com.brendon978.menulauncher.pet
 
+import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.random.Random
@@ -84,6 +85,17 @@ object GlitchSignals {
     val badgeSpots = androidx.compose.runtime.mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>()
     /** Bolinhas comidas: ficam escondidas por [EATEN_MS]. */
     val eaten = androidx.compose.runtime.mutableStateMapOf<String, Long>()
+    private val eatScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+
+    /** Esconde a bolinha e devolve sozinho, mesmo se o Glitch sair da tela nesse meio-tempo. */
+    fun eat(pkg: String) {
+        eaten[pkg] = System.currentTimeMillis()
+        badgeSpots.remove(pkg)
+        eatScope.launch {
+            kotlinx.coroutines.delay(EATEN_MS)
+            eaten.remove(pkg)
+        }
+    }
     /** Tirou print da tela inicial. */
     val screenshots = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 }

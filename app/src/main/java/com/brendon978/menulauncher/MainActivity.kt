@@ -435,6 +435,10 @@ class MainActivity : ComponentActivity() {
             return
         }
         talk.value = "Ouvindo..."
+        lifecycleScope.launch {
+            kotlinx.coroutines.delay(15_000)
+            if (talk.value == "Ouvindo...") { voice.cancel(); talk.value = null } // o microfone não entregou nada
+        }
         voice.start { text ->
             if (text == null || !aiRepo.sendCommand(pkg, text)) {
                 talk.value = null

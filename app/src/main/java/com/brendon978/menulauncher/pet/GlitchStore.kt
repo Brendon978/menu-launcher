@@ -92,6 +92,7 @@ object GlitchBackup {
         "glitch.energy" to m.drives.energy.toString(), "glitch.boredom" to m.drives.boredom.toString(),
         "glitch.longing" to m.drives.longing.toString(), "glitch.curiosity" to m.drives.curiosity.toString(),
         "glitch.bond" to m.bond.toString(), "glitch.pokeExpect" to m.pokeExpect.toString(),
+        "glitch.duelBest" to m.duelBest.toString(),
     )
 
     fun fromExtras(x: Map<String, String>): GlitchMemory? {
@@ -103,6 +104,7 @@ object GlitchBackup {
             bond = bond.coerceIn(0f, 1f),
             lastSeen = System.currentTimeMillis(),
             pokeExpect = f("glitch.pokeExpect", 0f),
+            duelBest = x["glitch.duelBest"]?.toLongOrNull() ?: 0L,
         )
     }
 }
