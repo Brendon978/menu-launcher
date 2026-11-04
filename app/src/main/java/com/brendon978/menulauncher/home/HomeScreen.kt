@@ -163,6 +163,7 @@ private fun PetLayer(color: Color, musicPlaying: Boolean, settings: LauncherSett
             mischief = settings.glitchMischief,
             birthday = settings.birthday,
             area = Area(margin, margin, size.width - margin, size.height - margin),
+            named = reg.rects.mapValues { (_, it) -> Area(it.left - origin.x, it.top - origin.y, it.right - origin.x, it.bottom - origin.y) },
             obstacles = obstacles,
             accessory = runCatching { com.brendon978.menulauncher.pet.Accessory.valueOf(settings.glitchAccessory) }.getOrDefault(com.brendon978.menulauncher.pet.Accessory.NONE),
         )

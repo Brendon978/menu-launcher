@@ -14,7 +14,11 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
+import com.brendon978.menulauncher.pet.GlitchSignals
 import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.icons.IconRenderer
 import kotlinx.coroutines.Dispatchers
@@ -30,8 +34,10 @@ fun AppIcon(entry: AppEntry, override: String?, color: Int, size: Dp, renderer: 
     val b = bmp
     // bolinha de notificação: só aparece se o app tem notificação "de verdade"
     val badges by MediaListener.badges.collectAsState()
-    val badged = entry.key.packageName in badges
-    Box(Modifier.size(size)) {
+    val pkg = entry.key.packageName
+    val badged = pkg in badges && pkg !in GlitchSignals.eaten
+    if (badged) DisposableEffect(pkg) { onDispose { GlitchSignals.badgeSpots.remove(pkg) } }
+    Box(Modifier.size(size).then(if (badged) Modifier.onGloballyPositioned { GlitchSignals.badgeSpots[pkg] = it.boundsInRoot() } else Modifier)) {
         if (b != null) Image(b, contentDescription = null, modifier = Modifier.size(size))
         if (badged) {
             Canvas(Modifier.size(size)) {

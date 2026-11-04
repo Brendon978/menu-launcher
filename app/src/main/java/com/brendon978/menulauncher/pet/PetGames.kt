@@ -80,6 +80,10 @@ object GlitchSignals {
     @Volatile var lastLaunch: Pair<String, Long>? = null
     /** Último toque na tela inicial (coordenadas da janela), para os olhos dele seguirem. */
     @Volatile var lastTouch: Triple<Float, Float, Long>? = null
+    /** Onde estão as bolinhas de notificação na tela (pacote -> retângulo), para ele ir comer. */
+    val badgeSpots = androidx.compose.runtime.mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>()
+    /** Bolinhas comidas: ficam escondidas por [EATEN_MS]. */
+    val eaten = androidx.compose.runtime.mutableStateMapOf<String, Long>()
     /** Tirou print da tela inicial. */
     val screenshots = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 }

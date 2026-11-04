@@ -32,7 +32,7 @@ import kotlin.math.sin
 
 /** Brincadeiras que você começa tocando duas vezes no Glitch. */
 enum class GameKind(val label: String) {
-    PASS("Bola"), HIDE("Esconde-esconde"), TAG("Pega-pega"), JOKENPO("Jokenpô"), BUBBLES("Bolhas"),
+    PASS("Bola"), HIDE("Esconde-esconde"), TAG("Pega-pega"), JOKENPO("Jokenpô"), BUBBLES("Bolhas"), BUGS("Caça aos bugs"), DUEL("Duelo"),
 }
 
 @Composable
@@ -130,4 +130,38 @@ fun TouchCatcher(onDown: (Offset) -> Unit, onMove: (Offset) -> Unit, onUp: () ->
             .fillMaxSize()
             .pointerInputCatcher(onDown, onMove, onUp),
     )
+}
+
+/** Bicho de contorno: corpo, cabeça e pernas mexendo. */
+fun DrawScope.drawBug(color: Color, center: Offset, size: Float, t: Float) {
+    val wiggle = sin(t * 28f) * size * .18f
+    for (i in -1..1) {
+        val y = center.y + i * size * .45f
+        drawLine(color, Offset(center.x - size * .5f, y), Offset(center.x - size * 1.05f, y + wiggle), 1.8f, StrokeCap.Round)
+        drawLine(color, Offset(center.x + size * .5f, y), Offset(center.x + size * 1.05f, y - wiggle), 1.8f, StrokeCap.Round)
+    }
+    drawOval(Color(0xE60C0C0E), Offset(center.x - size * .6f, center.y - size * .85f), androidx.compose.ui.geometry.Size(size * 1.2f, size * 1.7f))
+    drawOval(color, Offset(center.x - size * .6f, center.y - size * .85f), androidx.compose.ui.geometry.Size(size * 1.2f, size * 1.7f), style = Stroke(2f))
+    drawCircle(color, size * .34f, Offset(center.x, center.y - size))
+    drawLine(color, Offset(center.x, center.y - size * .6f), Offset(center.x, center.y + size * .8f), 1.4f)
+}
+
+/** Placar do duelo, no meio da tela. */
+@Composable
+fun DuelPanel(color: Color, message: String, you: Int, him: Int, best: Long, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            message,
+            color = color,
+            fontSize = 44.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.background(Color(0xCC0C0C0E), RoundedCornerShape(14.dp)).padding(horizontal = 22.dp, vertical = 10.dp),
+        )
+        Text(
+            "Você $you x $him Glitch" + if (best > 0L) "  ·  recorde $best ms" else "",
+            color = color.copy(alpha = .85f),
+            fontSize = 14.sp,
+            modifier = Modifier.padding(top = 8.dp).background(Color(0xCC0C0C0E), RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
 }

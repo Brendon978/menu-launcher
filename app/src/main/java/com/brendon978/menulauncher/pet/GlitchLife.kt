@@ -109,3 +109,59 @@ const val POSE_MS = 2_400L
 
 /** Maior das duas, para o aviso não encurtar outro que já está na tela. */
 fun laterOf(a: Long, b: Long): Long = max(a, b)
+
+// ---- caça aos bugs ----
+
+data class Bug(val id: Int, val x: Float, val y: Float, val vx: Float, val vy: Float)
+
+/** Anda em linha reta e rebate nas bordas: bug fugindo pela tela. */
+fun moveBug(b: Bug, dt: Float, area: Area): Bug {
+    val x = b.x + b.vx * dt
+    val y = b.y + b.vy * dt
+    val vx = if (x < area.l || x > area.r) -b.vx else b.vx
+    val vy = if (y < area.t || y > area.b) -b.vy else b.vy
+    return b.copy(x = x.coerceIn(area.l, area.r), y = y.coerceIn(area.t, area.b), vx = vx, vy = vy)
+}
+
+fun bugScoreLine(you: Int, him: Int): String = when {
+    you > him -> "Você $you, eu $him. Tá, você venceu."
+    him > you -> "Eu $him, você $you. Exterminador nato!"
+    else -> "Empate: $you a $him."
+}
+
+// ---- duelo de reflexo ----
+
+const val DUEL_ROUNDS = 5
+
+enum class DuelRound { YOU, HIM }
+
+/** [earlyTap] é tocar antes do "JÁ!": ponto dele. Sem toque a tempo, também. */
+fun duelRound(tapMs: Long?, glitchMs: Long, earlyTap: Boolean): DuelRound = when {
+    earlyTap || tapMs == null -> DuelRound.HIM
+    tapMs <= glitchMs -> DuelRound.YOU
+    else -> DuelRound.HIM
+}
+
+/** Melhor tempo guardado; 0 significa que ainda não há recorde. */
+fun bestTime(best: Long, tapMs: Long): Long = if (best == 0L || tapMs < best) tapMs else best
+
+fun duelEndLine(you: Int, him: Int): String = if (you > him) "$you a $him. Dedo rápido, hein?" else "$him a $you pra mim. Treina mais!"
+
+// ---- comer notificações ----
+
+/** Bolinhas que ele já comeu voltam depois disso: comer nunca some com aviso de verdade. */
+const val EATEN_MS = 60_000L
+
+/** Quantas "refeições" cabem na barriga. */
+fun bellyAfterMeal(belly: Float): Float = (belly + .34f).coerceAtMost(1f)
+
+/** A barriga desce sozinha em cerca de 3 minutos. */
+fun bellyAfterTime(belly: Float, dtSec: Float): Float = (belly - dtSec / 180f).coerceAtLeast(0f)
+
+val EAT_LINES = listOf("Nham!", "Delícia de notificação.", "Essa tava crocante.", "Burp.")
+val STUFFED_LINES = listOf("Tô cheio...", "Chega de notificação!")
+
+// ---- sentar nas coisas ----
+
+/** Sentado em cima da lista, com as pernas balançando, ou pendurado embaixo do relógio. */
+enum class Perch { SIT, HANG }

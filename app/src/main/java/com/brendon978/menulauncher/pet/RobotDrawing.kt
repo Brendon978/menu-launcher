@@ -72,6 +72,8 @@ data class RobotPose(
     val accessory: Accessory = Accessory.NONE,
     /** Segurando uma cartinha (chegou notificação). */
     val letter: Boolean = false,
+    /** Barriga cheia de notificações: 0 normal, 1 estufado. */
+    val belly: Float = 0f,
     /** Para onde os olhos olham (-1 a 1 em cada eixo): seguem o seu dedo pela tela. */
     val lookX: Float = 0f,
     val lookY: Float = 0f,
@@ -109,8 +111,9 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     leg(52f, pose.legL, color, line)
                     leg(68f, pose.legR, color, line)
                     // corpo
-                    drawRoundRect(fillFor(color, BODY), Offset(44f, 80f), Size(32f, 44f), CornerRadius(8f))
-                    drawRoundRect(color, Offset(44f, 80f), Size(32f, 44f), CornerRadius(8f), style = line)
+                    val fat = 10f * pose.belly // a barriga cresce para os dois lados
+                    drawRoundRect(fillFor(color, BODY), Offset(44f - fat, 80f), Size(32f + fat * 2, 44f), CornerRadius(8f + fat))
+                    drawRoundRect(color, Offset(44f - fat, 80f), Size(32f + fat * 2, 44f), CornerRadius(8f + fat), style = line)
                     if (pose.back) {
                         // tampa traseira com 4 parafusos
                         drawRoundRect(color.copy(alpha = color.alpha * .7f), Offset(49f, 88f), Size(22f, 26f), CornerRadius(3f), style = Stroke(1.4f))
