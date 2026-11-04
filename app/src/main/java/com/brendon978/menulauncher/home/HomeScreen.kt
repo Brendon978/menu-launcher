@@ -162,6 +162,8 @@ private fun PetLayer(color: Color, musicPlaying: Boolean, settings: LauncherSett
             comments = settings.glitchComments,
             mischief = settings.glitchMischief,
             birthday = settings.birthday,
+            city = settings.weatherCity,
+            aiPackage = settings.aiPackage,
             area = Area(margin, margin, size.width - margin, size.height - margin),
             named = reg.rects.mapValues { (_, it) -> Area(it.left - origin.x, it.top - origin.y, it.right - origin.x, it.bottom - origin.y) },
             obstacles = obstacles,

@@ -86,6 +86,8 @@ fun RobotPet(
     comments: Boolean = true,
     mischief: Boolean = true,
     birthday: String = "",
+    city: String = "",
+    aiPackage: String? = null,
     named: Map<String, Area> = emptyMap(),
     area: Area,
     obstacles: List<Area>,
@@ -129,6 +131,8 @@ fun RobotPet(
     val mischiefNow by rememberUpdatedState(mischief)
     val commentsNow by rememberUpdatedState(comments)
     var game by remember { mutableStateOf<GameKind?>(null) }
+    val weather = GlitchWeather.current.value
+    val talking = GlitchTalk.state.value
     // barriga, poleiro, caça aos bugs e duelo
     var belly by remember { mutableFloatStateOf(0f) }
     var eatUntil by remember { mutableLongStateOf(0L) }
@@ -796,6 +800,7 @@ fun RobotPet(
         if (System.currentTimeMillis() - sp.at > 10 * 60_000L) return@LaunchedEffect
         val line = sp.from?.let { "$it: ${sp.text}" } ?: sp.text
         aiSpeechUntil = 0L
+        GlitchTalk.state.value = null
         say(line, (4_500L + line.length * 55L).coerceAtMost(12_000L))
         aiSpeechUntil = speechUntil
     }
@@ -855,6 +860,17 @@ fun RobotPet(
             poseUntil = System.currentTimeMillis() + POSE_MS
             say(POSE_LINES.random(brainRandom), POSE_MS)
         }
+    }
+    // clima: só com a cidade escrita nos Ajustes; comenta quando muda
+    LaunchedEffect(resumed, city) {
+        if (resumed) GlitchWeather.refresh(city, hour)
+    }
+    LaunchedEffect(weather, loaded) {
+        if (weather != null && loaded) { delay(2_500); say(weather.line, 2_200) }
+    }
+    // falando com a IA: mostra que ouviu e que ela está pensando
+    LaunchedEffect(talking) {
+        if (talking != null) say(talking, 25_000) else if (speech == "Ouvindo..." || speech == "Pensando...") speechUntil = 0L
     }
     // travessura não fica para sempre
     val mischiefState = GlitchMischief.current.value
@@ -1083,6 +1099,7 @@ fun RobotPet(
     // ---- rosto e pose ----
     val jkRevealing = jkGlitch != null && now < jkRevealUntil
     val face = when {
+        talking != null -> Face.SCAN
         eating -> Face.GIGGLE
         tiltShown != Tilt.LEVEL -> Face.SURPRISED
         posing -> Face.BLISS
@@ -1707,7 +1724,7 @@ fun RobotPet(
                 }
             },
     ) {
-        val dressed = pose.copy(lookX = lookX, lookY = lookY, belly = belly, accessory = wornAccessory(face, hour, dnd, headset, special, accessory))
+        val dressed = pose.copy(lookX = lookX, lookY = lookY, belly = belly, accessory = wornAccessory(face, hour, dnd, headset, special, accessory, weather))
         Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, dressed) }
     }
 
@@ -1813,6 +1830,8 @@ fun RobotPet(
             color = color,
             onPick = { startGame(it) },
             onClose = { menuOpen = false },
+            talkTo = aiPackage?.let { p -> runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(p, 0)).toString() }.getOrNull() },
+            onTalk = { menuOpen = false; GlitchTalk.requests.tryEmit(Unit) },
             modifier = Modifier.layout { m, c ->
                 val pl = m.measure(c.copy(minWidth = 0, minHeight = 0))
                 layout(pl.width, pl.height) {

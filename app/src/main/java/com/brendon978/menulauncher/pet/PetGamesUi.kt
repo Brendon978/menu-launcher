@@ -51,7 +51,7 @@ private fun Pill(text: String, color: Color, onClick: () -> Unit) {
 
 /** Menuzinho de brincadeiras (aparece em cima do Glitch). */
 @Composable
-fun PlayMenu(color: Color, onPick: (GameKind) -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun PlayMenu(color: Color, onPick: (GameKind) -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier, talkTo: String? = null, onTalk: () -> Unit = {}) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "Bora brincar de quê?",
@@ -60,6 +60,7 @@ fun PlayMenu(color: Color, onPick: (GameKind) -> Unit, onClose: () -> Unit, modi
             fontWeight = FontWeight.Bold,
             modifier = Modifier.background(Color(0xE60C0C0E), RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
         )
+        talkTo?.let { Pill("Falar com $it", color, onTalk) }
         GameKind.entries.forEach { g -> Pill(g.label, color) { onPick(g) } }
         Pill("Nada não", color.copy(alpha = .7f), onClose)
     }

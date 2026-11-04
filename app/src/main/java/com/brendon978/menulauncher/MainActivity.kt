@@ -123,6 +123,8 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        lifecycleScope.launch { settingsRepo.settings.collect { settingsSnapshot = it } }
+        lifecycleScope.launch { com.brendon978.menulauncher.pet.GlitchTalk.requests.collect { talkThroughGlitch() } }
         setContent { MaterialTheme(colorScheme = LAUNCHER_COLORS) { Content() } }
     }
 
@@ -423,6 +425,31 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /** Falar com a IA pelo Glitch: ele mostra que ouviu e a resposta volta no balão. */
+    private fun talkThroughGlitch() {
+        val pkg = settingsSnapshot?.aiPackage ?: return
+        val talk = com.brendon978.menulauncher.pet.GlitchTalk.state
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+            return
+        }
+        talk.value = "Ouvindo..."
+        voice.start { text ->
+            if (text == null || !aiRepo.sendCommand(pkg, text)) {
+                talk.value = null
+                toast("Não entendi")
+                return@start
+            }
+            talk.value = "Pensando..."
+            lifecycleScope.launch {
+                kotlinx.coroutines.delay(25_000)
+                if (talk.value == "Pensando...") talk.value = null // a IA não respondeu
+            }
+        }
+    }
+
+    private var settingsSnapshot: LauncherSettings? = null
 
     private fun toast(msg: String) = android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show()
 

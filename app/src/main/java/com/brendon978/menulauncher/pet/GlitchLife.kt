@@ -85,8 +85,10 @@ fun specialDay(day: Int, month: Int, birthday: String): SpecialDay? = when {
 }
 
 /** O que ele veste: dormir vence tudo; depois o fone; depois o chapéu da data; depois o que você escolheu. */
-fun wornAccessory(face: Face, hour: Int, dnd: Boolean, headset: Boolean, special: SpecialDay?, chosen: Accessory): Accessory =
-    sleepAccessory(face, hour, dnd, if (headset) Accessory.HEADPHONES else special?.hat ?: chosen)
+fun wornAccessory(face: Face, hour: Int, dnd: Boolean, headset: Boolean, special: SpecialDay?, chosen: Accessory, weather: Weather? = null): Accessory {
+    val awake = if (headset) Accessory.HEADPHONES else special?.hat ?: chosen.takeIf { it != Accessory.NONE } ?: weather?.wear ?: chosen
+    return sleepAccessory(face, hour, dnd, awake)
+}
 
 // ---- mexe na tela ----
 

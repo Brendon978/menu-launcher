@@ -148,3 +148,17 @@ Testado no S25 FE (Android 17, One UI 9): uma tela nossa por cima do bloqueio de
 
 Dormindo das 23h às 7h, na tela inicial e no bloqueio, ele usa gorrinho com pompom e tapa-olho, por cima de qualquer acessório escolhido, e o Zzz sobe bem acima da cabeça. No não perturbe de dia, só o tapa-olho. O notebook do trabalho passou a ter tela acesa e teclado, com as mãos nas laterais.
 
+## Vida no aparelho (2026-11-04)
+
+- **Sente o celular**: três trancos em 1 s deixam tonto; inclinado mais de cerca de 40°, escorrega para o lado de baixo; de cabeça para baixo, reclama e fica em pé em relação ao mundo. Acelerômetro só com a tela inicial à vista.
+- **Comenta**: ao voltar de um app, no máximo a cada 10 min e em 40% das vezes. Pode desligar.
+- **Travessuras**: entorta o relógio ou empurra o primeiro favorito por até 3 min; cutucar ele desfaz. Pode desligar.
+- **Print**: faz pose ao detectar captura da tela inicial.
+- **Datas**: Natal (20 a 25/12), Ano-Novo, Halloween e aniversário (campo nos Ajustes), com chapéu e fala do bom-dia.
+- **Comer notificações**: vai até a bolinha e come; a barriga enche e esvazia em cerca de 3 min. A notificação não é tocada, e a bolinha volta em 1 min.
+- **Poleiro**: senta em cima da lista ou se pendura embaixo do relógio, lugares sem nada tocável.
+- **Caça aos bugs** (25 s) e **Duelo** (5 rodadas de reflexo, com recorde salvo) no menu de brincadeiras.
+- **Clima**: só com a cidade escrita nos Ajustes (Open-Meteo, sem chave). Guarda-chuva, óculos ou cachecol, e o acessório escolhido vence.
+- **Falar com a IA**: pelo menu do Glitch; ele mostra "Ouvindo..." e "Pensando...", e a resposta volta no balão.
+- **Bloqueio**: cabinho carregando e cartinha quando chega notificação.
+

@@ -50,4 +50,6 @@ data class LauncherSettings(
     val glitchMischief: Boolean = true,
     /** Seu aniversário, "dia/mês" (vazio = sem festa). */
     val birthday: String = "",
+    /** Cidade para o clima do Glitch (vazia = ele não consulta a internet). */
+    val weatherCity: String = "",
 )

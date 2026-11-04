@@ -160,6 +160,15 @@ fun SettingsScreen(
                 label = { Text("Seu aniversário (dia/mês)") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
+            var cityText by rememberSaveable { mutableStateOf(settings.weatherCity) }
+            OutlinedTextField(
+                value = cityText,
+                onValueChange = { v -> cityText = v; onChange { it.copy(weatherCity = v) } },
+                singleLine = true,
+                label = { Text("Sua cidade, para o clima (opcional)") },
+                supportingText = { Text("Só o nome da cidade vai para o Open-Meteo. Vazio, ele não consulta nada.") },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             GlitchReset()
         }
 
@@ -187,6 +196,7 @@ fun SettingsScreen(
         BackupSection(settings, onChange)
 
         Section("Sistema")
+        UpdateRow()
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Dois toques no fundo apagam a tela", color = Color.White)
@@ -267,6 +277,41 @@ private fun Bar(label: String, value: Float) {
         }
         Text("${(value * 100).toInt()}%", color = Color.White.copy(alpha = .6f), fontSize = 12.sp, modifier = Modifier.width(44.dp).padding(start = 8.dp))
     }
+}
+
+/** Procura versão nova no GitHub; instalar sempre passa pela confirmação do Android. */
+@Composable
+private fun UpdateRow() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var status by androidx.compose.runtime.remember { mutableStateOf("Versão ${com.brendon978.menulauncher.BuildConfig.VERSION_NAME}") }
+    var busy by androidx.compose.runtime.remember { mutableStateOf(false) }
+    Text(
+        "Procurar atualização",
+        color = Color.White,
+        modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) {
+            busy = true
+            scope.launch {
+                val r = com.brendon978.menulauncher.update.Updater.latest()
+                when {
+                    r == null -> status = "Não consegui ver agora"
+                    !com.brendon978.menulauncher.update.isNewer(r, com.brendon978.menulauncher.BuildConfig.VERSION_CODE) -> status = "Já está na versão mais nova"
+                    !context.packageManager.canRequestPackageInstalls() -> {
+                        status = "Libere instalar apps do menu-launcher e toque de novo"
+                        context.startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:" + context.packageName)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                    else -> {
+                        status = "Baixando…"
+                        runCatching { com.brendon978.menulauncher.update.Updater.install(context, com.brendon978.menulauncher.update.Updater.download(context, r)) }
+                            .onSuccess { status = r.notes.ifBlank { "Pronto para instalar" } }
+                            .onFailure { status = "O download falhou" }
+                    }
+                }
+                busy = false
+            }
+        }.padding(top = 8.dp, bottom = 2.dp),
+    )
+    Text(status, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
 }
 
 /** Volta o Glitch ao zero: vontades, vínculo, diário, aprendizado, rancor e protestos. Acessório e ajustes ficam. */

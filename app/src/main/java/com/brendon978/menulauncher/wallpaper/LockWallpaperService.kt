@@ -238,7 +238,7 @@ class LockWallpaperService : WallpaperService() {
                 val k = if (current != null) ((now - actAt).toFloat() / current.durationMs).coerceIn(0f, 1f) else 0f
                 val pose = lockPose(current, k, if (forced) Mood.NORMAL else mood, (now - started) / 1000f).let {
                     it.copy(
-                        accessory = wornAccessory(it.face, hour, dnd, false, special, accessory),
+                        accessory = wornAccessory(it.face, hour, dnd, false, special, accessory, com.brendon978.menulauncher.pet.GlitchWeather.current.value),
                         letter = current == null && now < letterUntil && actsIn(mood),
                         armL = if (current == null && now < letterUntil && actsIn(mood)) -40f else it.armL,
                         armR = if (current == null && now < letterUntil && actsIn(mood)) 40f else it.armR,

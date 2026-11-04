@@ -37,6 +37,7 @@ enum class Accessory(val label: String, val choosable: Boolean = true) {
     SANTA_HAT("Gorro de Natal", choosable = false),
     WITCH_HAT("Chapéu de bruxa", choosable = false),
     PARTY_HAT("Chapéu de festa", choosable = false),
+    UMBRELLA("Guarda-chuva", choosable = false),
 }
 
 /**
@@ -135,6 +136,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                     }
                     if (pose.laptop) laptop(color, pose.phase)
                     if (pose.letter) envelope(color)
+                    bodyAccessory(color, pose.accessory, pose.phase)
                     // braços sanfonados (por cima da arma: as garrinhas seguram ela) (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
@@ -255,6 +257,20 @@ private fun DrawScope.headAccessory(c: Color, a: Accessory, back: Boolean) {
             drawArc(c, 180f, 180f, false, Offset(24f, 10f), androidx.compose.ui.geometry.Size(72f, 80f), style = st)
             drawRoundRect(c, Offset(18f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
             drawRoundRect(c, Offset(90f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
+        }
+        Accessory.UMBRELLA -> {
+            drawLine(c, Offset(60f, -22f), Offset(60f, 26f), 2.2f, StrokeCap.Round)
+            val top = Path().apply {
+                moveTo(16f, 4f)
+                cubicTo(22f, -30f, 98f, -30f, 104f, 4f)
+                quadraticTo(91f, -5f, 79f, 4f)
+                quadraticTo(69f, -5f, 60f, 4f)
+                quadraticTo(51f, -5f, 41f, 4f)
+                quadraticTo(29f, -5f, 16f, 4f)
+                close()
+            }
+            drawPath(top, fillFor(c, BODY))
+            drawPath(top, c, style = st)
         }
         Accessory.SANTA_HAT -> {
             val hat = Path().apply { moveTo(30f, 32f); cubicTo(36f, 8f, 66f, 0f, 90f, 14f); quadraticTo(100f, 20f, 102f, 34f); quadraticTo(90f, 24f, 88f, 32f); close() }
