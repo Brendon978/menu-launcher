@@ -41,6 +41,7 @@ object Backup {
         s.gestureDoubleTap?.let { p["gestureDoubleTap"] = it.encode() }
         p["showMostUsed"] = s.showMostUsed.toString()
         p["usage"] = s.usage.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
+        p["swipeAppActions"] = s.swipeAppActions.toString()
         p["showQuickActions"] = s.showQuickActions.toString()
         p["showNextEvent"] = s.showNextEvent.toString()
         p["timeProfiles"] = s.timeProfiles.toString()
@@ -94,6 +95,7 @@ object Backup {
             gestureDoubleTap = GestureChoice.decode(p.getProperty("gestureDoubleTap")),
             showMostUsed = p.getProperty("showMostUsed")?.toBooleanStrictOrNull() ?: d.showMostUsed,
             usage = pairs("usage").mapNotNull { (k, v) -> v.toFloatOrNull()?.let { k to it } }.toMap(),
+            swipeAppActions = p.getProperty("swipeAppActions")?.toBooleanStrictOrNull() ?: d.swipeAppActions,
             showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,
             showNextEvent = p.getProperty("showNextEvent")?.toBooleanStrictOrNull() ?: d.showNextEvent,
             timeProfiles = p.getProperty("timeProfiles")?.toBooleanStrictOrNull() ?: d.timeProfiles,

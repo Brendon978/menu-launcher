@@ -47,6 +47,8 @@ data class LauncherSettings(
     val usage: Map<AppKey, Float> = emptyMap(),
     /** Linha com os apps mais usados em cima dos favoritos. */
     val showMostUsed: Boolean = false,
+    /** Deslizar um app da lista para o lado abre as mesmas ações do toque longo. */
+    val swipeAppActions: Boolean = false,
     /** Atalhos rápidos (lanterna, Wi-Fi, internet, não perturbe) embaixo da data. */
     val showQuickActions: Boolean = false,
     /** Próximo compromisso da agenda embaixo da data (pede acesso à agenda). */

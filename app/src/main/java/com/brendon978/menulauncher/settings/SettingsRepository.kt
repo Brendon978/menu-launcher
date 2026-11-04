@@ -47,6 +47,7 @@ class SettingsRepository(private val context: Context) {
         val gestureDoubleTap = stringPreferencesKey("gesture_double_tap")
         val usage = stringSetPreferencesKey("usage")
         val showMostUsed = booleanPreferencesKey("show_most_used")
+        val swipeAppActions = booleanPreferencesKey("swipe_app_actions")
         val showQuickActions = booleanPreferencesKey("show_quick_actions")
         val showNextEvent = booleanPreferencesKey("show_next_event")
         val timeProfiles = booleanPreferencesKey("time_profiles")
@@ -96,6 +97,7 @@ class SettingsRepository(private val context: Context) {
             if (next.gestureDoubleTap != null) prefs[K.gestureDoubleTap] = next.gestureDoubleTap.encode() else prefs.remove(K.gestureDoubleTap)
             prefs[K.usage] = next.usage.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
             prefs[K.showMostUsed] = next.showMostUsed
+            prefs[K.swipeAppActions] = next.swipeAppActions
             prefs[K.showQuickActions] = next.showQuickActions
             prefs[K.showNextEvent] = next.showNextEvent
             prefs[K.timeProfiles] = next.timeProfiles
@@ -166,6 +168,7 @@ class SettingsRepository(private val context: Context) {
                 if (i < 0) null else AppKey.decode(entry.substring(0, i))?.let { k -> entry.substring(i + 1).toFloatOrNull()?.let { k to it } }
             }?.toMap() ?: d.usage,
             showMostUsed = this[K.showMostUsed] ?: d.showMostUsed,
+            swipeAppActions = this[K.swipeAppActions] ?: d.swipeAppActions,
             showQuickActions = this[K.showQuickActions] ?: d.showQuickActions,
             showNextEvent = this[K.showNextEvent] ?: d.showNextEvent,
             timeProfiles = this[K.timeProfiles] ?: d.timeProfiles,

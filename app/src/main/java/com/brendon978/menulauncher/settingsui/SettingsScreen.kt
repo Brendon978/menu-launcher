@@ -116,6 +116,7 @@ fun SettingsScreen(
 
         Section("Tela inicial")
         ToggleRow("Linha de mais usados", "No modo uma mão, os apps que você mais abre, em cima dos favoritos.", settings.showMostUsed) { v -> onChange { it.copy(showMostUsed = v) } }
+        ToggleRow("Deslizar um app para o lado", "Na lista da tela inicial, abre as mesmas opções de segurar o app.", settings.swipeAppActions) { v -> onChange { it.copy(swipeAppActions = v) } }
         ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
         ContactsToggle(settings.searchContacts) { v -> onChange { it.copy(searchContacts = v) } }

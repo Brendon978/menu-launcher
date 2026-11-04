@@ -123,6 +123,7 @@ fun OneHandMode(
                             onClick = { onLaunch(entry) },
                             onLongClick = { onAppLongPress(entry) },
                             tracksBadge = true,
+                            onSwipe = if (settings.swipeAppActions) ({ onAppLongPress(entry) }) else null,
                         )
                     }
                 }
