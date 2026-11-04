@@ -55,7 +55,7 @@ fun WallpaperRotationSection(settings: LauncherSettings, onChange: ((LauncherSet
         modifier = Modifier.fillMaxWidth().clickable { picker.launch(null) }.padding(top = 12.dp, bottom = 4.dp),
     )
     Text(
-        "$status. Toque para escolher a pasta. Troca só a tela inicial, ao voltar para ela; o bloqueio fica como está.",
+        "$status. Toque para escolher a pasta. Troca só a tela inicial, ao voltar para ela (tira vídeo ou GIF que esteja lá); o bloqueio fica como está.",
         color = Color.White.copy(alpha = 0.5f),
         fontSize = 12.sp,
         modifier = Modifier.padding(bottom = 8.dp),

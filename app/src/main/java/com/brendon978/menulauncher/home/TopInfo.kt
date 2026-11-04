@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.brendon978.menulauncher.pet.petObstacle
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,7 +60,7 @@ fun TopInfo(color: Color, modifier: Modifier = Modifier, showNextEvent: Boolean 
             },
         )
         Text(date, color = color.copy(alpha = 0.7f), fontSize = 13.sp)
-        screenTime?.let { Text(it, color = color.copy(alpha = 0.55f), fontSize = 12.sp) }
+        screenTime?.let { Text(it, color = color.copy(alpha = 0.55f), fontSize = 12.sp, modifier = Modifier.petObstacle("tempo-tela")) }
         if (showNextEvent) {
             // próximo compromisso, relido a cada minuto (fora da thread principal)
             val event by androidx.compose.runtime.produceState<String?>(null, now / 60_000) {
