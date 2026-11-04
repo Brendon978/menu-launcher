@@ -161,8 +161,9 @@ const val EATEN_MS = 60_000L
 /** Quantas "refeições" cabem na barriga. */
 fun bellyAfterMeal(belly: Float): Float = (belly + .34f).coerceAtMost(1f)
 
-/** A barriga desce sozinha em cerca de 3 minutos. */
-fun bellyAfterTime(belly: Float, dtSec: Float): Float = (belly - dtSec / 180f).coerceAtLeast(0f)
+/** A barriga desce sozinha em cerca de 3 minutos; andando, em cerca de 1. */
+fun bellyAfterTime(belly: Float, dtSec: Float, walking: Boolean = false): Float =
+    (belly - dtSec * (if (walking) 3f else 1f) / 180f).coerceAtLeast(0f)
 
 val EAT_LINES = listOf("Nham!", "Delícia de notificação.", "Essa tava crocante.", "Burp.")
 val STUFFED_LINES = listOf("Tô cheio...", "Chega de notificação!")

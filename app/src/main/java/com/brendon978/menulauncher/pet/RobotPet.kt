@@ -917,7 +917,7 @@ fun RobotPet(
 
     // barriga cheia vai descendo sozinha
     LaunchedEffect(belly > 0f) {
-        while (belly > 0f) { delay(5_000); belly = bellyAfterTime(belly, 5f) }
+        while (belly > 0f) { delay(1_000); belly = bellyAfterTime(belly, 1f, walking) }
     }
     LaunchedEffect(game == GameKind.BUGS) {
         if (game != GameKind.BUGS) return@LaunchedEffect

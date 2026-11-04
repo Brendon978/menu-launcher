@@ -60,4 +60,9 @@ class GlitchGamesTest {
         val poses = PhotoPose.entries.map { photoPose(it, false, 1f) }
         assertEquals(poses.size, poses.toSet().size)
     }
+
+    @Test fun andarEmagreceMaisRapido() {
+        assertEquals(.9f, bellyAfterTime(1f, 18f), .001f)
+        assertEquals(.7f, bellyAfterTime(1f, 18f, walking = true), .001f)
+    }
 }
