@@ -65,4 +65,11 @@ class GlitchGamesTest {
         assertEquals(.9f, bellyAfterTime(1f, 18f), .001f)
         assertEquals(.7f, bellyAfterTime(1f, 18f, walking = true), .001f)
     }
+
+    @Test fun glitchAcompanhaSeuRecorde() {
+        assertEquals(290L..480L, duelGlitchRange(0L))
+        assertEquals(171L..251L, duelGlitchRange(181L))
+        assertEquals("nunca fica impossível", 150L, duelGlitchRange(120L).first)
+        assertEquals("nem lento demais", 480L, duelGlitchRange(450L).last)
+    }
 }

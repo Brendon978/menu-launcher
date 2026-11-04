@@ -962,7 +962,7 @@ fun RobotPet(
                 while (duelTapped == 0L && System.currentTimeMillis() < deadline) delay(10)
             }
             val tapMs = duelTapped.takeIf { it > 0L && !duelEarly }?.let { it - duelGoAt }
-            val glitchMs = brainRandom.nextLong(DUEL_GLITCH_FASTEST, DUEL_GLITCH_SLOWEST)
+            val glitchMs = duelGlitchRange(duelBest).random(brainRandom)
             when (duelRound(tapMs, glitchMs, duelEarly)) {
                 DuelRound.YOU -> duelYou++
                 DuelRound.HIM -> duelHim++

@@ -135,9 +135,9 @@ fun bugScoreLine(you: Int, him: Int): String = when {
 
 const val DUEL_ROUNDS = 5
 
-/** Reflexo dele em ms: gente num celular costuma ficar entre 300 e 400, então a disputa é de verdade. */
-const val DUEL_GLITCH_FASTEST = 290L
-const val DUEL_GLITCH_SLOWEST = 480L
+/** Reflexo dele em ms: sem recorde, um adversário médio; com recorde, fica logo acima dele para a disputa ser de verdade. */
+fun duelGlitchRange(best: Long): LongRange =
+    if (best <= 0L) 290L..480L else (best - 10).coerceAtLeast(150L)..(best + 70).coerceAtMost(480L)
 
 enum class DuelRound { YOU, HIM }
 
