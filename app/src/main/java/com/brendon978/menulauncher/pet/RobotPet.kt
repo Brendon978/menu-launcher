@@ -553,6 +553,26 @@ fun RobotPet(
                         delay((ms * .12f).toLong())
                     }
                 }
+                Show.BUDDY -> {
+                    show = run
+                    if (buddyChase(run.variant)) {
+                        // corre atrás dele pela linha em que está, indo e voltando
+                        say(BUDDY_CHASE_LINES.random(brainRandom), 2_000)
+                        val span = widthPx * 2.2f
+                        val left = (start.x - span).coerceAtLeast(a.l)
+                        val right = (start.x + span).coerceAtMost(a.r - widthPx)
+                        repeat(3) { i ->
+                            val to = if (i % 2 == 0) right else left
+                            val dest = Offset(to, start.y)
+                            facingLeft = to < pos.value.x
+                            if (pathClear(pos.value.x to start.y, to to start.y, widthPx, heightPx, currentObstacles)) pos.animateTo(dest, tween((run.kind.ms / 3).toInt(), easing = LinearEasing))
+                            else delay(run.kind.ms / 3)
+                        }
+                    } else {
+                        say(BUDDY_PET_LINES.random(brainRandom), 2_400)
+                        delay(run.kind.ms)
+                    }
+                }
                 Show.WATER -> {
                     gardenSpot?.let { glitchTo(it) }
                     show = run.copy(at = System.currentTimeMillis())
@@ -691,7 +711,7 @@ fun RobotPet(
             return@LaunchedEffect
         }
         if (!marching && !protesting && game == null && activity == Activity.SHOW) {
-            val kind = pendingShow ?: pickShow(lastShow, hour, canWater(lastWaterDay, todayInt()), brainRandom)
+            val kind = pendingShow ?: pickShow(lastShow, hour, canWater(lastWaterDay, todayInt()), brainRandom, buddy != Buddy.NONE)
             pendingShow = null
             lastShow = kind
             runShow(ShowRun(kind, System.currentTimeMillis(), debugVariant++ + brainRandom.nextInt(12), kind == Show.CLONES && (debugBattle || battleHasEvil(brainRandom))))
@@ -1233,6 +1253,7 @@ fun RobotPet(
                 "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
                 "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
                 "noite" -> debugNight = !debugNight
+                "brincar" -> { pendingShow = Show.BUDDY; activity = Activity.SHOW }
                 "clones" -> { debugBattle = true; pendingShow = Show.CLONES; activity = Activity.SHOW }
                 "jetpack" -> { pendingShow = Show.JETPACK; activity = Activity.SHOW }
                 "skate" -> { pendingShow = Show.SKATE; activity = Activity.SHOW }
@@ -1851,7 +1872,11 @@ fun RobotPet(
                     if (!asleep && brainRandom.nextBoolean()) say(BUDDY_LINES.random(brainRandom), 1_500)
                 }
                 val side = if (facingLeft) -1f else 1f
+                val play = show?.takeIf { it.kind == Show.BUDDY }
                 val goal = when {
+                    // pega-pega: foge um pouco à frente dele; carinho: fica colado, ao alcance da mão
+                    play != null && buddyChase(play.variant) -> pos.value + Offset(widthPx * .5f + side * widthPx * 1.5f, heightPx * (.45f + .25f * sin(n / 170f)))
+                    play != null -> pos.value + Offset(widthPx * .5f + side * widthPx * .62f, if (buddy == Buddy.CAT) heightPx * .92f else heightPx * .55f)
                     n < strayUntil -> stray
                     buddy == Buddy.DRONE -> pos.value + Offset(widthPx * .5f + side * widthPx * .9f, heightPx * .12f + sin(n / 400f) * 8f)
                     else -> pos.value + Offset(widthPx * .5f - side * widthPx * .95f, heightPx * .94f)

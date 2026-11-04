@@ -176,3 +176,5 @@ Números curtos que ele faz sozinho, sorteados sem repetir o último. Ficam em `
 - **Bichinho**: mini drone ou gato-robô, nos Ajustes; às vezes escapa.
 - **Bloqueio**: também olha para a câmera e cochila em pé.
 
+- **Brincar com o bichinho** (só com bichinho ligado): pega-pega indo e voltando, ou carinho com ele colado na mão.
+

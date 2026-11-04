@@ -19,8 +19,13 @@ import kotlin.random.Random
 enum class Show(val ms: Long) {
     CLONES(15_000), JETPACK(5_000), SKATE(6_000), SCOOTER(6_000),
     COFFEE(5_000), PUSHUPS(6_000), WATER(5_000), BLOCKS(5_000), MAGIC(7_000), GRAFFITI(6_000),
-    PARACHUTE(2_600), DROP(1_600), BOX(2_400),
+    PARACHUTE(2_600), DROP(1_600), BOX(2_400), BUDDY(7_000),
 }
+
+/** Com o bichinho: variante par é pega-pega, ímpar é carinho. */
+fun buddyChase(variant: Int): Boolean = variant.mod(2) == 0
+val BUDDY_CHASE_LINES = listOf("Vem cá, pestinha!", "Te peguei! Quase.", "Foge não!")
+val BUDDY_PET_LINES = listOf("Quem é o bichinho mais lindo?", "Bom garoto!", "Tá bom, tá bom, carinho.")
 
 val ENTRANCES = listOf(Show.PARACHUTE, Show.DROP, Show.BOX)
 val VEHICLES = listOf(Show.JETPACK, Show.SKATE, Show.SCOOTER)
@@ -32,10 +37,11 @@ data class ShowRun(val kind: Show, val at: Long, val variant: Int = 0, val evil:
 }
 
 /** Sorteia sem repetir o último; o que depende de hora ou do dia fica de fora quando não cabe. */
-fun pickShow(previous: Show?, hour: Int, canWater: Boolean, random: Random): Show {
+fun pickShow(previous: Show?, hour: Int, canWater: Boolean, random: Random, hasBuddy: Boolean = true): Show {
     val options = Show.entries.filter { it !in ENTRANCES && it != previous }
         .filter { it != Show.COFFEE || hour in 7..11 }
         .filter { it != Show.WATER || canWater }
+        .filter { it != Show.BUDDY || hasBuddy }
     return options.random(random)
 }
 
@@ -195,6 +201,11 @@ fun DrawScope.drawBattle(
 fun showPose(run: ShowRun, k: Float, facingLeft: Boolean, t: Float): RobotPose? {
     val s = sin(t * 12f)
     return when (run.kind) {
+        Show.BUDDY -> if (buddyChase(run.variant)) {
+            RobotPose(Face.GIGGLE, facingLeft, legL = 22f * s, legR = -22f * s, armL = 40f, armR = -112f, lift = 3f * abs(s), phase = t)
+        } else {
+            RobotPose(Face.BLISS, facingLeft, armL = 8f, armR = -46f + 14f * sin(t * 6f), phase = t)
+        }
         Show.CLONES -> heroPose(battlePhase(k, run.evil), pickFinisher(run.variant), facingLeft, t)
         Show.JETPACK -> RobotPose(Face.GIGGLE, facingLeft, armL = 40f, armR = -40f, legL = 18f, legR = 8f, tilt = if (facingLeft) -10f else 10f, phase = t)
         Show.SKATE -> RobotPose(Face.BLISS, facingLeft, armL = 80f, armR = -80f, legL = 12f, legR = -12f, tilt = if (facingLeft) -6f else 6f, lift = 8f, phase = t)

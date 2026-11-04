@@ -73,4 +73,14 @@ class GlitchShowsTest {
         assertFalse(erased(100f, 100f))
         assertTrue(erased(151f, 100f))
     }
+
+    @Test fun semBichinhoNaoBrincaComEle() {
+        repeat(300) { assertTrue(pickShow(null, 12, true, Random(it), hasBuddy = false) != Show.BUDDY) }
+        assertTrue((0 until 300).any { pickShow(null, 12, true, Random(it), hasBuddy = true) == Show.BUDDY })
+    }
+
+    @Test fun brincadeiraTemDoisJeitos() {
+        assertTrue(buddyChase(0))
+        assertFalse(buddyChase(1))
+    }
 }
