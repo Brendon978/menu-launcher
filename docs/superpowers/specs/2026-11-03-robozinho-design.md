@@ -37,7 +37,7 @@ Quando mais de um vale ao mesmo tempo, vence o primeiro desta lista:
 2. **Dormindo**: das 23h às 7h. Fica parado, com os olhos em tracinho e o "Zzz" subindo.
 3. **Cansado**: bateria em 15% ou menos, sem estar carregando. Fica parado, com os olhos caídos e uma bateriazinha na telinha.
 4. **Música**: tem música tocando (a mesma informação do cartão de música). Para e dança no lugar, e a telinha vira um **equalizador**, só dentro dela.
-5. **Feliz**: por 1 minuto depois que as notificações chegam a zero (havia alguma e agora não há). Mostra um coração na telinha e pula.
+5. **Feliz**: por 5 segundos depois que as notificações chegam a zero (havia alguma e agora não há). Mostra um coração na telinha e pula.
 6. **Normal**: anda e para, pisca.
    - De vez em quando, numa média de uma vez a cada poucos minutos, ele **escaneia**: uma linha corre na telinha e a antena pisca.
    - Mais raramente, dá um **glitch**: some e reaparece em outro lugar livre.
@@ -78,7 +78,7 @@ As notificações e a música usam o acesso às notificações que o launcher j�
 ## Decisões minhas
 - Ele é desenhado em código (Canvas do Compose), a partir dos caminhos do esboço, para seguir a cor do traço e animar sem imagens.
 - A lógica de humor, irritação e escolha de destino é pura (sem Android) e testada na JVM. O desenho e as animações são conferidos por print no aparelho.
-- Os horários (23h–7h), o limite de bateria (15%), o tempo do "feliz" (1 min) e o ritmo da irritação são palpites meus, fáceis de ajustar.
+- Os horários (23h–7h), o limite de bateria (15%), o tempo do "feliz" (5 s, pedido do Brendon) e o ritmo da irritação são palpites meus, fáceis de ajustar.
 - Música: ele dança só quando a música está **tocando de fato** (pausada não conta, mesmo com o cartão ainda na tela). Isso vale mesmo com o cartão de música desligado nos Ajustes.
 - Toque durante qualquer humor (dormindo, cansado, dançando): a reação (risadinha, sério ou bravo) aparece por cima por um instante, e depois ele volta ao humor do momento. Tocar não acorda o robô de vez.
 - Contagem de notificações: o serviço de notificações que o launcher já tem passa a informar quantas notificações "de verdade" existem, sem contar as persistentes nem as de mídia.

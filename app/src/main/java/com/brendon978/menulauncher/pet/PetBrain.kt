@@ -12,7 +12,7 @@ enum class Reaction { GIGGLE, SERIOUS, ANGRY, MENACE, FLEE }
 const val SLEEP_FROM_HOUR = 23
 const val SLEEP_UNTIL_HOUR = 7
 const val TIRED_BATTERY = 15
-const val HAPPY_MS = 60_000L
+const val HAPPY_MS = 5_000L
 
 /** Prioridade da spec: dormindo > cansado > música > feliz > normal (o "bravo" vem do toque, por cima). */
 fun isNightHour(hour: Int): Boolean = hour >= SLEEP_FROM_HOUR || hour < SLEEP_UNTIL_HOUR
