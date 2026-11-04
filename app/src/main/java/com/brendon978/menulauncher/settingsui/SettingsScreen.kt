@@ -177,6 +177,7 @@ fun SettingsScreen(
 
         Section("Papel de parede")
         WallpaperSection()
+        WallpaperRotationSection(settings, onChange)
 
         if (settings.hiddenApps.isNotEmpty()) {
             Section("Apps escondidos")
@@ -223,7 +224,7 @@ private fun Section(title: String) {
 }
 
 @Composable
-private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
+internal fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text,
         color = if (selected) Color.Black else Color.White,

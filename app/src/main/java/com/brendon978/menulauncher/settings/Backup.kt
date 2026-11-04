@@ -1,6 +1,7 @@
 package com.brendon978.menulauncher.settings
 
 import com.brendon978.menulauncher.apps.AppKey
+import com.brendon978.menulauncher.wallpaper.WallpaperInterval
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.Properties
@@ -43,6 +44,10 @@ object Backup {
         p["glitchMischief"] = s.glitchMischief.toString()
         p["birthday"] = s.birthday
         p["weatherCity"] = s.weatherCity
+        p["wallpaperFolder"] = s.wallpaperFolder
+        p["wallpaperInterval"] = s.wallpaperInterval.name
+        p["wallpaperLastChange"] = s.wallpaperLastChange.toString()
+        p["wallpaperLastImage"] = s.wallpaperLastImage
         extra.forEach { (k, v) -> p[k] = v }
         return StringWriter().also { p.store(it, "menu-launcher") }.toString()
     }
@@ -89,6 +94,10 @@ object Backup {
             glitchMischief = p.getProperty("glitchMischief")?.toBooleanStrictOrNull() ?: d.glitchMischief,
             birthday = p.getProperty("birthday") ?: d.birthday,
             weatherCity = p.getProperty("weatherCity") ?: d.weatherCity,
+            wallpaperFolder = p.getProperty("wallpaperFolder") ?: d.wallpaperFolder,
+            wallpaperInterval = runCatching { WallpaperInterval.valueOf(p.getProperty("wallpaperInterval")) }.getOrDefault(d.wallpaperInterval),
+            wallpaperLastChange = p.getProperty("wallpaperLastChange")?.toLongOrNull() ?: d.wallpaperLastChange,
+            wallpaperLastImage = p.getProperty("wallpaperLastImage") ?: d.wallpaperLastImage,
         )
     }
 

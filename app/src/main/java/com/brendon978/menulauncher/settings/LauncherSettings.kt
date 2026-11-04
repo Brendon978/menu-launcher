@@ -1,6 +1,7 @@
 package com.brendon978.menulauncher.settings
 
 import com.brendon978.menulauncher.apps.AppKey
+import com.brendon978.menulauncher.wallpaper.WallpaperInterval
 
 enum class HomeMode { ONE_HAND, GRID }
 
@@ -52,4 +53,12 @@ data class LauncherSettings(
     val birthday: String = "",
     /** Cidade para o clima do Glitch (vazia = ele não consulta a internet). */
     val weatherCity: String = "",
+    /** Pasta do papel de parede que muda (URI da árvore; vazia = nenhuma). */
+    val wallpaperFolder: String = "",
+    /** Intervalo da troca; OFF não mexe no papel de parede. */
+    val wallpaperInterval: WallpaperInterval = WallpaperInterval.OFF,
+    /** Quando a última troca foi tentada, em milissegundos. */
+    val wallpaperLastChange: Long = 0,
+    /** Nome da última imagem aplicada (a próxima vem depois dela). */
+    val wallpaperLastImage: String = "",
 )

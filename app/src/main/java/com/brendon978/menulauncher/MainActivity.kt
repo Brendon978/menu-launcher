@@ -64,6 +64,9 @@ import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
 import com.brendon978.menulauncher.settingsui.SettingsScreen
+import com.brendon978.menulauncher.wallpaper.WallpaperApplier
+import com.brendon978.menulauncher.wallpaper.rotationDue
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Tema escuro neutro para as telas internas (ajustes, seletor): branco sobre quase preto. */
@@ -152,6 +155,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+
+            // voltou para a tela inicial por dentro do app (fechou os Ajustes, botão home)
+            LaunchedEffect(screen.value) { rotateWallpaperIfDue() }
 
             if (loaded == null) return@run // evita piscar a primeira abertura antes de ler os ajustes
 
@@ -377,6 +383,30 @@ class MainActivity : ComponentActivity() {
         musicRepo.refresh()
         isDefaultHome.value = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_HOME)
         hasMusicAccess.value = musicRepo.hasAccess()
+        rotateWallpaperIfDue()
+    }
+
+    private var rotating = false
+
+    /** Papel de parede que muda: sem serviço em segundo plano, só confere ao voltar para a tela inicial. */
+    private fun rotateWallpaperIfDue() {
+        if (rotating || screen.value != Screen.Home) return
+        rotating = true
+        lifecycleScope.launch {
+            try {
+                val s = settingsRepo.settings.first()
+                val now = System.currentTimeMillis()
+                if (!rotationDue(s.wallpaperInterval, s.wallpaperFolder, s.wallpaperLastChange, now)) return@launch
+                // marca antes: pasta com problema é tentada uma vez por intervalo, não a cada volta
+                settingsRepo.update { it.copy(wallpaperLastChange = now) }
+                val applied = runCatching {
+                    WallpaperApplier(applicationContext).applyNextFromFolder(s.wallpaperFolder, s.wallpaperLastImage)
+                }.getOrNull()
+                if (applied != null) settingsRepo.update { it.copy(wallpaperLastImage = applied) }
+            } finally {
+                rotating = false
+            }
+        }
     }
 
     @androidx.compose.runtime.Composable

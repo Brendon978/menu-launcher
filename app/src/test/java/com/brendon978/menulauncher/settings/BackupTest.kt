@@ -1,6 +1,7 @@
 package com.brendon978.menulauncher.settings
 
 import com.brendon978.menulauncher.apps.AppKey
+import com.brendon978.menulauncher.wallpaper.WallpaperInterval
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -19,6 +20,18 @@ class BackupTest {
             showMostUsed = true, showQuickActions = true, showNextEvent = true,
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
+    }
+
+    @Test fun rodadaTresVaiNoBackup() {
+        val s = LauncherSettings(
+            wallpaperFolder = "content://x/tree/primary%3AFundos", wallpaperInterval = WallpaperInterval.SIX_HOURS,
+            wallpaperLastChange = 1_800_000_000_000L, wallpaperLastImage = "praia.jpg",
+        )
+        assertEquals(s, Backup.decode(Backup.encode(s)))
+    }
+
+    @Test fun backupAntigoCaiNosPadroes() {
+        assertEquals(LauncherSettings(), Backup.decode("menu-launcher-backup=1"))
     }
 
     @Test fun arquivoEstranhoNaoQuebra() {

@@ -9,11 +9,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.apps.AppKey
+import com.brendon978.menulauncher.wallpaper.WallpaperInterval
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -48,6 +50,10 @@ class SettingsRepository(private val context: Context) {
         val glitchMischief = booleanPreferencesKey("glitch_mischief")
         val birthday = stringPreferencesKey("birthday")
         val weatherCity = stringPreferencesKey("weather_city")
+        val wallpaperFolder = stringPreferencesKey("wallpaper_folder")
+        val wallpaperInterval = stringPreferencesKey("wallpaper_interval")
+        val wallpaperLastChange = longPreferencesKey("wallpaper_last_change")
+        val wallpaperLastImage = stringPreferencesKey("wallpaper_last_image")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -87,6 +93,10 @@ class SettingsRepository(private val context: Context) {
             prefs[K.glitchMischief] = next.glitchMischief
             prefs[K.birthday] = next.birthday
             prefs[K.weatherCity] = next.weatherCity
+            prefs[K.wallpaperFolder] = next.wallpaperFolder
+            prefs[K.wallpaperInterval] = next.wallpaperInterval.name
+            prefs[K.wallpaperLastChange] = next.wallpaperLastChange
+            prefs[K.wallpaperLastImage] = next.wallpaperLastImage
         }
     }
 
@@ -150,6 +160,10 @@ class SettingsRepository(private val context: Context) {
             glitchMischief = this[K.glitchMischief] ?: d.glitchMischief,
             birthday = this[K.birthday] ?: d.birthday,
             weatherCity = this[K.weatherCity] ?: d.weatherCity,
+            wallpaperFolder = this[K.wallpaperFolder] ?: d.wallpaperFolder,
+            wallpaperInterval = this[K.wallpaperInterval]?.let { runCatching { WallpaperInterval.valueOf(it) }.getOrNull() } ?: d.wallpaperInterval,
+            wallpaperLastChange = this[K.wallpaperLastChange] ?: d.wallpaperLastChange,
+            wallpaperLastImage = this[K.wallpaperLastImage] ?: d.wallpaperLastImage,
         )
     }
 
