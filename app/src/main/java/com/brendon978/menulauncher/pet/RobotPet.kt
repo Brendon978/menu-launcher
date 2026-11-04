@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,6 +137,15 @@ fun RobotPet(
     var game by remember { mutableStateOf<GameKind?>(null) }
     val weather = GlitchWeather.current.value
     val talking = GlitchTalk.state.value
+    // visita de outro Glitch
+    var visitor by remember { mutableStateOf<Visitor?>(null) }
+    var visitScene by remember { mutableStateOf<VisitScene?>(null) }
+    var visitAt by remember { mutableLongStateOf(0L) }
+    var guestStand by remember { mutableStateOf(Offset.Zero) }
+    var guestEdge by remember { mutableStateOf(Offset.Zero) }
+    var visitHandsNow by remember { mutableStateOf(Hand.ROCK to Hand.PAPER) }
+    var guestLine by remember { mutableStateOf<String?>(null) }
+    var guestLineUntil by remember { mutableLongStateOf(0L) }
     // os dois juntos
     var fetchLanding by remember { mutableStateOf(Offset.Zero) }
     var buddyLine by remember { mutableStateOf<String?>(null) }
@@ -469,7 +479,8 @@ fun RobotPet(
     val shoved = now < shoveUntil
     val tickled = now < tickleUntil
     val asleep = mood == Mood.SLEEPING
-    val stillMood = shoved || tickled || dueling || eating || tiltShown != Tilt.LEVEL || posing || fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && game == null && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
+    val visiting = visitor != null
+    val stillMood = visiting || shoved || tickled || dueling || eating || tiltShown != Tilt.LEVEL || posing || fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && game == null && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -1135,6 +1146,36 @@ fun RobotPet(
         GlitchSignals.lastLaunch = null
     }
 
+    // visita: o outro Glitch chega, fazem as cenas sorteadas e ele vai embora
+    LaunchedEffect(visitor) {
+        val v = visitor ?: return@LaunchedEffect
+        val a = currentArea
+        try {
+            val here = pos.value
+            val fromRight = here.x + widthPx * 2.6f < a.r
+            guestStand = Offset(if (fromRight) here.x + widthPx * 1.6f else here.x - widthPx * 1.6f, here.y)
+            guestEdge = Offset(if (fromRight) a.r else a.l - widthPx, here.y)
+            for (scene in visitPlan(brainRandom)) {
+                if (scene == VisitScene.JOKENPO) visitHandsNow = visitHands(brainRandom)
+                visitScene = scene
+                visitAt = System.currentTimeMillis()
+                val (mine, theirs) = visitLines(scene, v.name, brainRandom)
+                say(mine, 1_700)
+                delay(1_100)
+                guestLine = theirs
+                guestLineUntil = System.currentTimeMillis() + 1_800
+                delay((scene.ms - 1_100).coerceAtLeast(0L))
+                if (scene == VisitScene.JOKENPO) {
+                    val r = jokenpo(visitHandsNow.first, visitHandsNow.second)
+                    say(if (r == Outcome.WIN) "Ganhei! A tela é minha!" else if (r == Outcome.DRAW) "Empate, de novo!" else "Roubou!", 1_600)
+                    delay(900)
+                }
+            }
+        } finally {
+            visitScene = null
+            visitor = null
+        }
+    }
     // saiu da tela inicial: jogo de reflexo não fica esperando
     LaunchedEffect(resumed) {
         if (!resumed && (game == GameKind.MEMORY || game == GameKind.FLY)) game = null
@@ -1383,6 +1424,7 @@ fun RobotPet(
                 "susto" -> { pendingShow = Show.SCARE; activity = Activity.SHOW }
                 "derruba" -> { towerBlocks = maxOf(towerBlocks, 3); pendingShow = Show.KNOCK; activity = Activity.SHOW }
                 "soneca" -> { pendingShow = Show.NAP_TOGETHER; activity = Activity.SHOW }
+                "visita" -> if (visitor == null) visitor = Visitor("Bit", androidx.compose.ui.graphics.Color(0xFF7FB7A4), Accessory.CAP, Buddy.CAT)
                 "brincar" -> { pendingShow = Show.BUDDY; activity = Activity.SHOW }
                 "clones" -> { debugBattle = true; pendingShow = Show.CLONES; activity = Activity.SHOW }
                 "jetpack" -> { pendingShow = Show.JETPACK; activity = Activity.SHOW }
@@ -1435,7 +1477,12 @@ fun RobotPet(
     val showNow = show?.takeIf { it.active(now) && !held && !flying && !menacing }
     val showK = showNow?.progress(now) ?: 0f
     val showPoseNow = showNow?.let { showPose(it, showK, facingLeft, t) }
+    val visitNow = visitScene?.takeIf { visitor != null }
+    val visitK = visitNow?.let { ((now - visitAt).toFloat() / it.ms).coerceIn(0f, 1f) } ?: 0f
+    val guestLeft = guestStand.x >= pos.value.x // ele fica à direita olhando para a esquerda, e vice-versa
+    val visitPair = visitNow?.let { visitPoses(it, visitK, t, guestLeft, visitHandsNow) }
     val face = when {
+        visitPair != null && !held && !flying -> visitPair.first.face
         shoved -> Face.DIZZY
         tickled -> Face.GIGGLE
         game == GameKind.FLY -> Face.GIGGLE
@@ -1482,6 +1529,7 @@ fun RobotPet(
         (if (facingLeft) -dx else dx).coerceIn(-1f, 1f) to dy.coerceIn(-1f, 1f)
     } else 0f to 0f
     val pose = when {
+        visitPair != null && !held && !flying -> visitPair.first
         shoved -> RobotPose(face, shoveDir < 0f, armL = 70f, armR = -70f, tilt = 82f * shoveDir, lift = -6f, phase = t)
         tickled -> RobotPose(face, facingLeft, armL = 60f + 30f * sin(t * 26f), armR = -60f - 30f * sin(t * 26f), tilt = 7f * sin(t * 26f), lift = 4f * abs(sin(t * 18f)), phase = t)
         game == GameKind.FLY -> RobotPose(face, false, armL = 40f, armR = -40f, legL = 18f, legR = 8f, tilt = 8f, phase = t)
@@ -2136,6 +2184,37 @@ fun RobotPet(
                         }
                     },
             )
+        }
+    }
+    // o visitante e o que ele traz
+    visitor?.let { v ->
+        visitNow?.let { scene ->
+            val at = guestPlace(scene, visitK, guestStand, guestEdge)
+            val guestPose = (visitPair?.second ?: RobotPose()).copy(accessory = visibleAccessory(v.accessory, visitPair?.second?.face ?: Face.NORMAL))
+            Canvas(Modifier.fillMaxSize()) {
+                translate(at.x, at.y) { drawRobot(v.color, guestPose, heightPx) }
+                if (v.buddy != Buddy.NONE) drawBuddy(v.color, v.buddy, at + Offset(if (at.x > pos.value.x) widthPx * 1.05f else -widthPx * .1f, heightPx * .92f), heightPx / 170f, t)
+                if (scene == VisitScene.BALL) drawCircle(color, heightPx * .05f, ballAt(visitK, pos.value + Offset(widthPx / 2, heightPx * .9f), at + Offset(widthPx / 2, heightPx * .9f), heightPx))
+            }
+            androidx.compose.material3.Text(
+                v.name,
+                color = v.color,
+                fontSize = 11.sp,
+                modifier = Modifier.offset { IntOffset(at.x.roundToInt(), (at.y + heightPx + 2f).roundToInt()) },
+            )
+            guestLine?.takeIf { now < guestLineUntil }?.let { line ->
+                SpeechBubble(
+                    text = line,
+                    color = v.color,
+                    modifier = Modifier.layout { m, c ->
+                        val p = m.measure(c.copy(minWidth = 0, minHeight = 0))
+                        layout(p.width, p.height) {
+                            val x = (at.x + widthPx / 2 - p.width / 2).coerceIn(area.l, (area.r - p.width).coerceAtLeast(area.l))
+                            p.place(x.roundToInt(), (at.y - p.height).coerceAtLeast(0f).roundToInt())
+                        }
+                    },
+                )
+            }
         }
     }
     showNow?.let { run ->
