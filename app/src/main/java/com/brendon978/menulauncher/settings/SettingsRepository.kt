@@ -37,6 +37,10 @@ class SettingsRepository(private val context: Context) {
         val hidden = stringSetPreferencesKey("hidden_apps")
         val folders = stringSetPreferencesKey("folders")
         val doubleTapLock = booleanPreferencesKey("double_tap_lock")
+        val usage = stringSetPreferencesKey("usage")
+        val showMostUsed = booleanPreferencesKey("show_most_used")
+        val showQuickActions = booleanPreferencesKey("show_quick_actions")
+        val showNextEvent = booleanPreferencesKey("show_next_event")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -65,6 +69,10 @@ class SettingsRepository(private val context: Context) {
             prefs[K.hidden] = next.hiddenApps.map { it.encode() }.toSet()
             prefs[K.folders] = next.folders.map { (name, keys) -> name + SEP + keys.joinToString("\n") { it.encode() } }.toSet()
             prefs[K.doubleTapLock] = next.doubleTapLock
+            prefs[K.usage] = next.usage.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
+            prefs[K.showMostUsed] = next.showMostUsed
+            prefs[K.showQuickActions] = next.showQuickActions
+            prefs[K.showNextEvent] = next.showNextEvent
         }
     }
 
@@ -111,6 +119,13 @@ class SettingsRepository(private val context: Context) {
                 if (i <= 0) null else entry.substring(0, i) to entry.substring(i + 1).split("\n").mapNotNull { AppKey.decode(it) }
             }?.toMap()?.toSortedMap() ?: d.folders,
             doubleTapLock = this[K.doubleTapLock] ?: d.doubleTapLock,
+            usage = this[K.usage]?.mapNotNull { entry ->
+                val i = entry.indexOf(SEP)
+                if (i < 0) null else AppKey.decode(entry.substring(0, i))?.let { k -> entry.substring(i + 1).toFloatOrNull()?.let { k to it } }
+            }?.toMap() ?: d.usage,
+            showMostUsed = this[K.showMostUsed] ?: d.showMostUsed,
+            showQuickActions = this[K.showQuickActions] ?: d.showQuickActions,
+            showNextEvent = this[K.showNextEvent] ?: d.showNextEvent,
         )
     }
 

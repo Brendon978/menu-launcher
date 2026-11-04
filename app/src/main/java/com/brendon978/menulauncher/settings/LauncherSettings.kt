@@ -30,4 +30,12 @@ data class LauncherSettings(
     val folders: Map<String, List<AppKey>> = emptyMap(),
     /** Tocar duas vezes no fundo apaga a tela (precisa do serviço de acessibilidade ligado). */
     val doubleTapLock: Boolean = false,
+    /** Quanto você usa cada app (para a linha de mais usados). */
+    val usage: Map<AppKey, Float> = emptyMap(),
+    /** Linha com os apps mais usados em cima dos favoritos. */
+    val showMostUsed: Boolean = false,
+    /** Atalhos rápidos (lanterna, Wi-Fi, internet, não perturbe) embaixo da data. */
+    val showQuickActions: Boolean = false,
+    /** Próximo compromisso da agenda embaixo da data (pede acesso à agenda). */
+    val showNextEvent: Boolean = false,
 )

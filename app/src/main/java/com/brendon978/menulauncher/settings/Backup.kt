@@ -32,6 +32,9 @@ object Backup {
         p["hiddenApps"] = s.hiddenApps.joinToString("\n") { it.encode() }
         p["folders"] = s.folders.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
         p["doubleTapLock"] = s.doubleTapLock.toString()
+        p["showMostUsed"] = s.showMostUsed.toString()
+        p["showQuickActions"] = s.showQuickActions.toString()
+        p["showNextEvent"] = s.showNextEvent.toString()
         extra.forEach { (k, v) -> p[k] = v }
         return StringWriter().also { p.store(it, "menu-launcher") }.toString()
     }
@@ -64,6 +67,9 @@ object Backup {
                 if (i <= 0) null else l.substring(0, i) to l.substring(i + 1).split(",").mapNotNull { AppKey.decode(it) }
             }.toMap(),
             doubleTapLock = p.getProperty("doubleTapLock")?.toBooleanStrictOrNull() ?: d.doubleTapLock,
+            showMostUsed = p.getProperty("showMostUsed")?.toBooleanStrictOrNull() ?: d.showMostUsed,
+            showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,
+            showNextEvent = p.getProperty("showNextEvent")?.toBooleanStrictOrNull() ?: d.showNextEvent,
         )
     }
 

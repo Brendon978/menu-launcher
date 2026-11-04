@@ -17,7 +17,8 @@ object FavoritesOps {
         val labels = s.customLabels.filterKeys { it in installed }
         val hidden = s.hiddenApps.filter { it in installed }.toSet()
         val folders = s.folders.mapValues { (_, v) -> v.filter { it in installed } }.filterValues { it.isNotEmpty() }
-        return if (favs == s.favorites && overrides == s.iconOverrides && labels == s.customLabels && hidden == s.hiddenApps && folders == s.folders) s
-        else s.copy(favorites = favs, iconOverrides = overrides, customLabels = labels, hiddenApps = hidden, folders = folders)
+        val usage = s.usage.filterKeys { it in installed }
+        return if (favs == s.favorites && overrides == s.iconOverrides && labels == s.customLabels && hidden == s.hiddenApps && folders == s.folders && usage == s.usage) s
+        else s.copy(favorites = favs, iconOverrides = overrides, customLabels = labels, hiddenApps = hidden, folders = folders, usage = usage)
     }
 }

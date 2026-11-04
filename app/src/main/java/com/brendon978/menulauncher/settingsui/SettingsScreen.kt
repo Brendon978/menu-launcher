@@ -102,6 +102,11 @@ fun SettingsScreen(
             Switch(settings.showMusic, onCheckedChange = { v -> onChange { it.copy(showMusic = v) } })
         }
 
+        Section("Tela inicial")
+        ToggleRow("Linha de mais usados", "Os apps que você mais abre, em cima dos favoritos.", settings.showMostUsed) { v -> onChange { it.copy(showMostUsed = v) } }
+        ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
+        NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
+
         Section("Favoritos")
         if (settings.favorites.isEmpty()) {
             Text("Nenhum. Segure um app na tela inicial para favoritar.", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
@@ -282,4 +287,30 @@ private fun BackupSection(settings: LauncherSettings, onChange: ((LauncherSettin
         color = Color.White.copy(alpha = .5f),
         fontSize = 12.sp,
     )
+}
+
+@Composable
+private fun ToggleRow(title: String, hint: String, value: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Color.White)
+            Text(hint, color = Color.White.copy(alpha = .5f), fontSize = 12.sp)
+        }
+        Switch(value, onCheckedChange = onToggle)
+    }
+}
+
+/** Ligar o próximo compromisso pede acesso à agenda na hora. */
+@Composable
+private fun NextEventToggle(value: Boolean, onToggle: (Boolean) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val ask = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+        onToggle(granted)
+        if (!granted) android.widget.Toast.makeText(context, "Sem acesso à agenda não dá pra mostrar o compromisso", android.widget.Toast.LENGTH_SHORT).show()
+    }
+    ToggleRow("Próximo compromisso", "Da sua agenda, embaixo da data (pede acesso à agenda).", value) { v ->
+        if (!v) onToggle(false)
+        else if (context.checkSelfPermission(android.Manifest.permission.READ_CALENDAR) == android.content.pm.PackageManager.PERMISSION_GRANTED) onToggle(true)
+        else ask.launch(android.Manifest.permission.READ_CALENDAR)
+    }
 }

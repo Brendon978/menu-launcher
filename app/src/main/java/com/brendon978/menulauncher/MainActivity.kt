@@ -186,6 +186,8 @@ class MainActivity : ComponentActivity() {
                     onLaunch = {
                         com.brendon978.menulauncher.pet.GlitchSignals.lastLaunch = it.key.packageName to System.currentTimeMillis()
                         appRepo.launch(it.key)
+                        val k = it.key
+                        updateSettings { st -> st.copy(usage = com.brendon978.menulauncher.settings.Usage.bump(st.usage, k)) }
                     },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
