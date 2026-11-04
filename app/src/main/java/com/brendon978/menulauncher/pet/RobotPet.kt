@@ -1237,7 +1237,7 @@ fun RobotPet(
         }
         perch == Perch.HANG && !walking -> {
             val s = sin(t * 2.5f)
-            RobotPose(face, facingLeft, legL = 6f * s, legR = -6f * s, armL = 165f, armR = -165f, tilt = 3f * s, blink = blink, phase = t)
+            RobotPose(face, facingLeft, legL = 6f * s, legR = -6f * s, armL = 122f, armR = -122f, tilt = 3f * s, blink = blink, phase = t)
         }
         mood == Mood.TIRED -> RobotPose(face, facingLeft, armL = 8f, armR = -8f, tilt = if (facingLeft) -4f else 4f, phase = t)
         else -> RobotPose(face, facingLeft, blink = blink, antennaOn = !scanning || (t * 3).toInt() % 2 == 0, phase = t)

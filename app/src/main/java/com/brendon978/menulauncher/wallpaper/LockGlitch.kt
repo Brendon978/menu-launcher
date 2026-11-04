@@ -43,10 +43,10 @@ fun lockPose(act: LockAct?, k: Float, mood: Mood, t: Float): RobotPose {
             val s = sin(t * 6f)
             RobotPose(Face.MUSIC, armL = -20f * s, armR = -20f * s, tilt = 4f * s, lift = 2f * abs(s), phase = t)
         }
-        act == LockAct.WAVE -> RobotPose(armL = 6f, armR = -150f + 22f * sin(k * 6f * PI.toFloat()), phase = t)
+        act == LockAct.WAVE -> RobotPose(armL = 6f, armR = -118f + 16f * sin(k * 6f * PI.toFloat()), phase = t)
         act == LockAct.LOOK -> RobotPose(lookX = wave, phase = t)
         act == LockAct.SCAN -> RobotPose(Face.SCAN, antennaOn = (t * 6).toInt() % 2 == 0, phase = t)
-        act == LockAct.STRETCH -> RobotPose(armL = 150f * abs(wave), armR = -150f * abs(wave), lift = 3f * abs(wave), phase = t) // positivo abre o braço esquerdo para fora
+        act == LockAct.STRETCH -> RobotPose(armL = 122f * abs(wave), armR = -122f * abs(wave), lift = 3f * abs(wave), phase = t) // positivo abre o braço esquerdo para fora
         act == LockAct.HOP -> RobotPose(Face.GIGGLE, armL = -30f, armR = 30f, lift = 9f * abs(wave), phase = t)
         else -> RobotPose(blink = if (t % 4.5f < .28f) .1f else 1f, phase = t)
     }

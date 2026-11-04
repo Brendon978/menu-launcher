@@ -189,15 +189,15 @@ enum class PhotoPose { VICTORY, FLEX, ONE_ARM, DAB, JUMP, HEART, COOL, SHRUG, RO
 fun pickPhotoPose(previous: PhotoPose?, random: Random): PhotoPose = PhotoPose.entries.filter { it != previous }.random(random)
 
 fun photoPose(kind: PhotoPose, facingLeft: Boolean, t: Float): RobotPose = when (kind) {
-    PhotoPose.VICTORY -> RobotPose(Face.BLISS, facingLeft, armL = 135f, armR = -135f, lift = 3f, phase = t)
+    PhotoPose.VICTORY -> RobotPose(Face.BLISS, facingLeft, armL = 125f, armR = -125f, lift = 3f, phase = t)
     PhotoPose.FLEX -> RobotPose(Face.SERIOUS, facingLeft, armL = 88f, armR = -88f, phase = t)
-    PhotoPose.ONE_ARM -> RobotPose(Face.GIGGLE, facingLeft, armL = 8f, armR = -165f, tilt = 3f, phase = t)
+    PhotoPose.ONE_ARM -> RobotPose(Face.GIGGLE, facingLeft, armL = 8f, armR = -128f, tilt = 3f, phase = t)
     PhotoPose.DAB -> RobotPose(Face.SERIOUS, facingLeft, armL = 125f, armR = 48f, tilt = -5f, headTilt = 14f, phase = t)
-    PhotoPose.JUMP -> RobotPose(Face.GIGGLE, facingLeft, legL = 22f, legR = -22f, armL = 150f, armR = -150f, lift = 12f, phase = t)
+    PhotoPose.JUMP -> RobotPose(Face.GIGGLE, facingLeft, legL = 22f, legR = -22f, armL = 122f, armR = -122f, lift = 12f, phase = t)
     PhotoPose.HEART -> RobotPose(Face.HEART, facingLeft, armL = 62f, armR = -62f, phase = t)
     PhotoPose.COOL -> RobotPose(Face.NORMAL, facingLeft, armL = 14f, armR = -14f, tilt = 7f, headTilt = -9f, phase = t)
     PhotoPose.SHRUG -> RobotPose(Face.CONFUSED, facingLeft, armL = 72f, armR = -72f, lift = 2f, phase = t)
-    PhotoPose.ROCK -> RobotPose(Face.MUSIC, facingLeft, legL = 12f, armL = 20f, armR = -150f, tilt = -5f, phase = t)
+    PhotoPose.ROCK -> RobotPose(Face.MUSIC, facingLeft, legL = 12f, armL = 20f, armR = -128f, tilt = -5f, phase = t)
     PhotoPose.TOUGH -> RobotPose(Face.ANGRY, facingLeft, legL = 10f, legR = -10f, armL = 26f, armR = -26f, phase = t)
 }
 
