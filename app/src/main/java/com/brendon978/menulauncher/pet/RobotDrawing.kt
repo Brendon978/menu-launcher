@@ -20,7 +20,11 @@ import kotlin.math.sin
 enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD, ROCK, PAPER, SCISSORS, CONFUSED }
 
 /** Acessórios do Glitch (tudo liberado, escolhe nos Ajustes). */
-enum class Accessory(val label: String) { NONE("Nenhum"), CAP("Boné"), SUNGLASSES("Óculos escuros"), HEADPHONES("Fone"), HELMET("Capacete"), SCARF("Cachecol"), BOWTIE("Gravatinha") }
+enum class Accessory(val label: String, val choosable: Boolean = true) {
+    NONE("Nenhum"), CAP("Boné"), SUNGLASSES("Óculos escuros"), HEADPHONES("Fone"), HELMET("Capacete"), SCARF("Cachecol"), BOWTIE("Gravatinha"),
+    /** Tapa-olho de dormir: ele põe sozinho no não perturbe. */
+    SLEEP_MASK("Tapa-olho", choosable = false),
+}
 
 /**
  * Pose de um quadro. Ângulos em graus; [phase] é um relógio em segundos para as animações do rosto.
@@ -200,6 +204,14 @@ private fun DrawScope.headAccessory(c: Color, a: Accessory, back: Boolean) {
             drawRoundRect(c, Offset(18f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
             drawRoundRect(c, Offset(90f, 42f), androidx.compose.ui.geometry.Size(12f, 22f), CornerRadius(4f))
         }
+        Accessory.SLEEP_MASK -> if (!back) {
+            // faixa em volta da cabeça e a máscara cobrindo a telinha, com olhos fechados desenhados
+            drawLine(c, Offset(30f, 56f), Offset(90f, 56f), 3f, StrokeCap.Round)
+            drawRoundRect(Color(0xFF0C0C0E), Offset(41f, 47f), Size(38f, 18f), CornerRadius(9f))
+            drawRoundRect(c, Offset(41f, 47f), Size(38f, 18f), CornerRadius(9f), style = st)
+            drawArc(c, 0f, 180f, false, Offset(46f, 52f), Size(10f, 6f), style = Stroke(1.6f, cap = StrokeCap.Round))
+            drawArc(c, 0f, 180f, false, Offset(64f, 52f), Size(10f, 6f), style = Stroke(1.6f, cap = StrokeCap.Round))
+        } else drawLine(c, Offset(30f, 56f), Offset(90f, 56f), 3f, StrokeCap.Round)
         Accessory.SUNGLASSES -> if (!back) {
             drawRoundRect(c, Offset(43f, 50f), androidx.compose.ui.geometry.Size(15f, 10f), CornerRadius(3f))
             drawRoundRect(c, Offset(62f, 50f), androidx.compose.ui.geometry.Size(15f, 10f), CornerRadius(3f))

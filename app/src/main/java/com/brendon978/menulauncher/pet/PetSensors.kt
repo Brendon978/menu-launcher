@@ -63,3 +63,20 @@ fun todayInt(now: Long = System.currentTimeMillis()): Int {
     val c = java.util.Calendar.getInstance().apply { timeInMillis = now }
     return c.get(java.util.Calendar.YEAR) * 10_000 + (c.get(java.util.Calendar.MONTH) + 1) * 100 + c.get(java.util.Calendar.DAY_OF_MONTH)
 }
+
+/** Não perturbe ligado? (qualquer filtro além de "tudo") */
+@Composable
+fun rememberDoNotDisturb(): Boolean {
+    val context = LocalContext.current
+    val nm = remember { context.getSystemService(android.app.NotificationManager::class.java) }
+    fun check() = nm.currentInterruptionFilter.let { it != android.app.NotificationManager.INTERRUPTION_FILTER_ALL && it != android.app.NotificationManager.INTERRUPTION_FILTER_UNKNOWN }
+    var on by remember { mutableStateOf(check()) }
+    DisposableEffect(nm) {
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context?, i: android.content.Intent?) { on = check() }
+        }
+        context.registerReceiver(r, android.content.IntentFilter(android.app.NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED))
+        onDispose { context.unregisterReceiver(r) }
+    }
+    return on
+}

@@ -92,6 +92,7 @@ fun RobotPet(
     // ---- entradas do celular ----
     val battery = rememberBattery()
     val headset = rememberHeadset()
+    val dnd = rememberDoNotDisturb()
     val online = rememberOnline()
     val notifications by MediaListener.count.collectAsState()
     var prevNotif by remember { mutableStateOf<Int?>(null) }
@@ -113,7 +114,8 @@ fun RobotPet(
         }
     }
     val hour = remember(now / 60_000) { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
-    val phoneMood = baseMood(hour, battery.level, battery.charging, musicPlaying, happyUntil, now)
+    // não perturbe: dorme junto (como se fosse noite)
+    val phoneMood = if (dnd) Mood.SLEEPING else baseMood(hour, battery.level, battery.charging, musicPlaying, happyUntil, now)
 
     // ---- cérebro do Glitch: vontades, vínculo e o que ele decidiu fazer ----
     val context = LocalContext.current
@@ -575,6 +577,7 @@ fun RobotPet(
             System.currentTimeMillis() < protestUntil -> "Em protesto"
             menacing -> "Apontando a arma pra você"
             marching -> "Marchando, bravo"
+            dnd -> "Dormindo (não perturbe)"
             night -> "Dormindo (é noite)"
             batteryTired -> "Cansado (bateria baixa)"
             mood == Mood.DANCING -> "Dançando"
@@ -1262,7 +1265,11 @@ fun RobotPet(
                 }
             },
     ) {
-        val dressed = pose.copy(accessory = if (headset) Accessory.HEADPHONES else accessory)
+        val dressed = pose.copy(accessory = when {
+            dnd && face == Face.SLEEP -> Accessory.SLEEP_MASK
+            headset -> Accessory.HEADPHONES
+            else -> accessory
+        })
         Canvas(Modifier.size(with(density) { widthPx.toDp() }, ROBOT_HEIGHT)) { drawRobot(color, dressed) }
     }
 

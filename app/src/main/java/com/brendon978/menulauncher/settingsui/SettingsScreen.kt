@@ -128,7 +128,7 @@ fun SettingsScreen(
         if (settings.showPet) {
             Text("Acessório", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                com.brendon978.menulauncher.pet.Accessory.entries.forEach { a ->
+                com.brendon978.menulauncher.pet.Accessory.entries.filter { it.choosable }.forEach { a ->
                     Chip(a.label, settings.glitchAccessory == a.name) { onChange { it.copy(glitchAccessory = a.name) } }
                 }
             }
