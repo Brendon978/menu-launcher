@@ -60,6 +60,7 @@ object Backup {
         p["wallpaperInterval"] = s.wallpaperInterval.name
         p["wallpaperLastChange"] = s.wallpaperLastChange.toString()
         p["wallpaperLastImage"] = s.wallpaperLastImage
+        p["glitchBuddy"] = s.glitchBuddy
         extra.forEach { (k, v) -> p[k] = v }
         return StringWriter().also { p.store(it, "menu-launcher") }.toString()
     }
@@ -122,6 +123,7 @@ object Backup {
             wallpaperInterval = runCatching { WallpaperInterval.valueOf(p.getProperty("wallpaperInterval")) }.getOrDefault(d.wallpaperInterval),
             wallpaperLastChange = p.getProperty("wallpaperLastChange")?.toLongOrNull() ?: d.wallpaperLastChange,
             wallpaperLastImage = p.getProperty("wallpaperLastImage") ?: d.wallpaperLastImage,
+            glitchBuddy = p.getProperty("glitchBuddy") ?: d.glitchBuddy,
         )
     }
 

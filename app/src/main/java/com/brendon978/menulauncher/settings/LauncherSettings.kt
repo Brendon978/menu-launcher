@@ -85,4 +85,6 @@ data class LauncherSettings(
     val wallpaperLastChange: Long = 0,
     /** Nome da última imagem aplicada (a próxima vem depois dela). */
     val wallpaperLastImage: String = "",
+    /** Bichinho que segue o Glitch (enum Buddy). */
+    val glitchBuddy: String = "DRONE",
 )

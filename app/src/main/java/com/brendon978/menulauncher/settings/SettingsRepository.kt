@@ -66,6 +66,7 @@ class SettingsRepository(private val context: Context) {
         val wallpaperInterval = stringPreferencesKey("wallpaper_interval")
         val wallpaperLastChange = longPreferencesKey("wallpaper_last_change")
         val wallpaperLastImage = stringPreferencesKey("wallpaper_last_image")
+        val glitchBuddy = stringPreferencesKey("glitch_buddy")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -121,6 +122,7 @@ class SettingsRepository(private val context: Context) {
             prefs[K.wallpaperInterval] = next.wallpaperInterval.name
             prefs[K.wallpaperLastChange] = next.wallpaperLastChange
             prefs[K.wallpaperLastImage] = next.wallpaperLastImage
+            prefs[K.glitchBuddy] = next.glitchBuddy
         }
     }
 
@@ -200,6 +202,7 @@ class SettingsRepository(private val context: Context) {
             wallpaperInterval = this[K.wallpaperInterval]?.let { runCatching { WallpaperInterval.valueOf(it) }.getOrNull() } ?: d.wallpaperInterval,
             wallpaperLastChange = this[K.wallpaperLastChange] ?: d.wallpaperLastChange,
             wallpaperLastImage = this[K.wallpaperLastImage] ?: d.wallpaperLastImage,
+            glitchBuddy = this[K.glitchBuddy] ?: d.glitchBuddy,
         )
     }
 
