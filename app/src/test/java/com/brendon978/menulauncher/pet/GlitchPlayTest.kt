@@ -70,4 +70,10 @@ class GlitchPlayTest {
     @Test fun falaSozinhoComCalma() {
         repeat(100) { assertTrue(nextIdleGapMs(Random(it)) >= 120_000L) }
     }
+
+    @Test fun vooEsperaOPrimeiroToque() {
+        val s = FlyState(800f, started = false)
+        assertEquals(800f, flyStep(s, 1f, world, Random(1)).y)
+        assertTrue(flyTap(s, world).started)
+    }
 }

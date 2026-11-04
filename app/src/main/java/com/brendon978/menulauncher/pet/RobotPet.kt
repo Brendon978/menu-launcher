@@ -1185,6 +1185,10 @@ fun RobotPet(
         if (game != GameKind.MEMORY) return@LaunchedEffect
         memorySeq = emptyList()
         memoryLost = false
+        // sai de cima dos blocos: toque neles não pode cair nele
+        val c = currentArea
+        val center = Offset((c.l + c.r) / 2, (c.t + c.b) / 2)
+        (0 until 20).mapNotNull { spot(null, 0f) }.maxByOrNull { (it - center).getDistance() }?.let { glitchTo(it) }
         while (game == GameKind.MEMORY && !memoryLost) {
             memorySeq = memorySeq + brainRandom.nextInt(4)
             memoryPos = 0
@@ -1217,7 +1221,9 @@ fun RobotPet(
         val world = FlyWorld(a, a.l + widthPx * .8f, widthPx, heightPx)
         flyWorld = world
         pos.snapTo(Offset(world.x, (a.t + a.b) / 2))
-        fly = FlyState(pos.value.y, vy = world.thrust)
+        fly = FlyState(pos.value.y, started = false)
+        say("Toca pra começar!", 2_000)
+        val waitFrom = System.currentTimeMillis()
         var last = 0L
         while (game == GameKind.FLY) {
             val dt = androidx.compose.runtime.withFrameNanos { nanos ->
@@ -1227,6 +1233,7 @@ fun RobotPet(
             }
             val s = flyStep(fly ?: break, dt, world, brainRandom)
             fly = s
+            if (!s.started && System.currentTimeMillis() - waitFrom > 10_000) { game = null; break } // ninguém jogou
             pos.snapTo(Offset(world.x, s.y))
             if (s.crashed) {
                 dizzyUntil = System.currentTimeMillis() + 2_000

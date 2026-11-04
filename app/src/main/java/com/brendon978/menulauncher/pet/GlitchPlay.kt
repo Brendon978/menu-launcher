@@ -87,21 +87,22 @@ fun MemoryPanel(color: Color, lit: Int?, enabled: Boolean, score: Int, best: Int
 /** Um muro com abertura: o centro da abertura é [gapY]. */
 data class FlyWall(val x: Float, val gapY: Float, val passed: Boolean = false)
 
-data class FlyState(val y: Float, val vy: Float = 0f, val walls: List<FlyWall> = emptyList(), val score: Int = 0, val crashed: Boolean = false)
+data class FlyState(val y: Float, val vy: Float = 0f, val walls: List<FlyWall> = emptyList(), val score: Int = 0, val crashed: Boolean = false, val started: Boolean = true)
 
 /** Medidas do voo, proporcionais ao tamanho dele. */
 data class FlyWorld(val area: Area, val x: Float, val w: Float, val h: Float) {
-    val gravity get() = h * 15f
-    val thrust get() = -h * 4.6f
+    val gravity get() = h * 10f
+    val thrust get() = -h * 3.6f
     val speed get() = h * 2.5f
     val gap get() = h * 2.7f
     val wall get() = h * .7f
     val spacing get() = h * 3.6f
 }
 
-fun flyTap(s: FlyState, world: FlyWorld): FlyState = s.copy(vy = world.thrust)
+fun flyTap(s: FlyState, world: FlyWorld): FlyState = s.copy(vy = world.thrust, started = true)
 
 fun flyStep(s: FlyState, dt: Float, world: FlyWorld, random: Random): FlyState {
+    if (!s.started) return s // parado no ar até o primeiro toque
     val a = world.area
     val vy = s.vy + world.gravity * dt
     val y = s.y + vy * dt
