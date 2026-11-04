@@ -52,4 +52,6 @@ data class LauncherSettings(
     val birthday: String = "",
     /** Cidade para o clima do Glitch (vazia = ele não consulta a internet). */
     val weatherCity: String = "",
+    /** Bichinho que segue o Glitch (enum Buddy). */
+    val glitchBuddy: String = "DRONE",
 )

@@ -146,6 +146,12 @@ fun SettingsScreen(
                     Chip(a.label, settings.glitchAccessory == a.name) { onChange { it.copy(glitchAccessory = a.name) } }
                 }
             }
+            Text("Bichinho", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.brendon978.menulauncher.pet.Buddy.entries.forEach { p ->
+                    Chip(p.label, settings.glitchBuddy == p.name) { onChange { it.copy(glitchBuddy = p.name) } }
+                }
+            }
             GlitchPanel()
             ToggleRow("Comentários", "Ele comenta o app de onde você voltou, de vez em quando.", settings.glitchComments) { v -> onChange { it.copy(glitchComments = v) } }
             ToggleRow("Travessuras", "Ele entorta o relógio e empurra um favorito; cutucar faz ele arrumar.", settings.glitchMischief) { v -> onChange { it.copy(glitchMischief = v) } }

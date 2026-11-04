@@ -163,6 +163,7 @@ private fun PetLayer(color: Color, musicPlaying: Boolean, settings: LauncherSett
             mischief = settings.glitchMischief,
             birthday = settings.birthday,
             city = settings.weatherCity,
+            buddy = runCatching { com.brendon978.menulauncher.pet.Buddy.valueOf(settings.glitchBuddy) }.getOrDefault(com.brendon978.menulauncher.pet.Buddy.NONE),
             aiPackage = settings.aiPackage,
             area = Area(margin, margin, size.width - margin, size.height - margin),
             named = reg.rects.mapValues { (_, it) -> Area(it.left - origin.x, it.top - origin.y, it.right - origin.x, it.bottom - origin.y) },

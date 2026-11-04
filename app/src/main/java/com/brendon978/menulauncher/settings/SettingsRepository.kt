@@ -48,6 +48,7 @@ class SettingsRepository(private val context: Context) {
         val glitchMischief = booleanPreferencesKey("glitch_mischief")
         val birthday = stringPreferencesKey("birthday")
         val weatherCity = stringPreferencesKey("weather_city")
+        val glitchBuddy = stringPreferencesKey("glitch_buddy")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { it.toSettings() }
@@ -87,6 +88,7 @@ class SettingsRepository(private val context: Context) {
             prefs[K.glitchMischief] = next.glitchMischief
             prefs[K.birthday] = next.birthday
             prefs[K.weatherCity] = next.weatherCity
+            prefs[K.glitchBuddy] = next.glitchBuddy
         }
     }
 
@@ -150,6 +152,7 @@ class SettingsRepository(private val context: Context) {
             glitchMischief = this[K.glitchMischief] ?: d.glitchMischief,
             birthday = this[K.birthday] ?: d.birthday,
             weatherCity = this[K.weatherCity] ?: d.weatherCity,
+            glitchBuddy = this[K.glitchBuddy] ?: d.glitchBuddy,
         )
     }
 

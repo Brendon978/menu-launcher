@@ -43,6 +43,7 @@ object Backup {
         p["glitchMischief"] = s.glitchMischief.toString()
         p["birthday"] = s.birthday
         p["weatherCity"] = s.weatherCity
+        p["glitchBuddy"] = s.glitchBuddy
         extra.forEach { (k, v) -> p[k] = v }
         return StringWriter().also { p.store(it, "menu-launcher") }.toString()
     }
@@ -89,6 +90,7 @@ object Backup {
             glitchMischief = p.getProperty("glitchMischief")?.toBooleanStrictOrNull() ?: d.glitchMischief,
             birthday = p.getProperty("birthday") ?: d.birthday,
             weatherCity = p.getProperty("weatherCity") ?: d.weatherCity,
+            glitchBuddy = p.getProperty("glitchBuddy") ?: d.glitchBuddy,
         )
     }
 
