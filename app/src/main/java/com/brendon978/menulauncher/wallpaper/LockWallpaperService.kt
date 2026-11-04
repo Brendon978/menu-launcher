@@ -19,15 +19,18 @@ import androidx.compose.ui.graphics.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.brendon978.menulauncher.pet.Accessory
 import com.brendon978.menulauncher.pet.Mood
 import com.brendon978.menulauncher.pet.ROBOT_ASPECT
+import com.brendon978.menulauncher.pet.SpecialDay
+import com.brendon978.menulauncher.pet.specialDay
+import com.brendon978.menulauncher.pet.wornAccessory
 import com.brendon978.menulauncher.pet.SLEEP_FROM_HOUR
 import com.brendon978.menulauncher.pet.baseMood
 import com.brendon978.menulauncher.pet.drawRobot
-import com.brendon978.menulauncher.pet.sleepAccessory
 import com.brendon978.menulauncher.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +72,11 @@ class LockWallpaperService : WallpaperService() {
         private var forced = false
         private var debugNight = false
         private var hour = 12
+        private var charging = false
+        private var special: SpecialDay? = null
+        private var debugSpecial: SpecialDay? = null
+        private var birthday = ""
+        private var letterUntil = 0L
         private var debugReceiver: android.content.BroadcastReceiver? = null
         private val started = System.currentTimeMillis()
 
@@ -89,6 +97,12 @@ class LockWallpaperService : WallpaperService() {
                 debugReceiver = object : android.content.BroadcastReceiver() {
                     override fun onReceive(c: android.content.Context, i: Intent) {
                         if (i.getStringExtra("acao") == "NOITE") { debugNight = !debugNight; readMood(System.currentTimeMillis()); return }
+                        if (i.getStringExtra("acao") == "CARTA") { letterUntil = System.currentTimeMillis() + 3_000; return }
+                        if (i.getStringExtra("acao") == "DATA") {
+                            debugSpecial = SpecialDay.entries.getOrNull((debugSpecial?.ordinal ?: -1) + 1)
+                            readMood(System.currentTimeMillis())
+                            return
+                        }
                         act = runCatching { LockAct.valueOf(i.getStringExtra("acao").orEmpty()) }.getOrNull() ?: return
                         forced = true
                         actAt = System.currentTimeMillis()
@@ -100,6 +114,13 @@ class LockWallpaperService : WallpaperService() {
                 SettingsRepository(applicationContext).settings.collect { s ->
                     stroke = Color(s.strokeColor)
                     accessory = runCatching { Accessory.valueOf(s.glitchAccessory) }.getOrDefault(Accessory.NONE)
+                    birthday = s.birthday
+                }
+            }
+            // chegou notificação com o bloqueio à vista: aparece com a cartinha
+            scope.launch {
+                com.brendon978.menulauncher.music.MediaListener.arrived.collect {
+                    if (visible) letterUntil = System.currentTimeMillis() + 3_000
                 }
             }
         }
@@ -119,6 +140,8 @@ class LockWallpaperService : WallpaperService() {
             loadBackground()
             readMood(now)
             nextActAt = wakeActDelay(random)?.let { now + it } ?: (now + nextActGap(random))
+            // tem novidade esperando: de vez em quando já acorda com a cartinha na mão
+            if (actsIn(mood) && com.brendon978.menulauncher.music.MediaListener.badges.value.isNotEmpty() && random.nextBoolean()) letterUntil = now + 3_000
             handler.post(frame)
         }
 
@@ -140,10 +163,12 @@ class LockWallpaperService : WallpaperService() {
             val battery = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)?.takeIf { it >= 0 }
             val status = battery?.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-            val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+            charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
             val music = getSystemService(AudioManager::class.java).isMusicActive
             dnd = getSystemService(NotificationManager::class.java).currentInterruptionFilter > NotificationManager.INTERRUPTION_FILTER_ALL
-            hour = if (debugNight) SLEEP_FROM_HOUR else Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val cal = Calendar.getInstance()
+            hour = if (debugNight) SLEEP_FROM_HOUR else cal.get(Calendar.HOUR_OF_DAY)
+            special = debugSpecial ?: specialDay(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, birthday)
             mood = if (dnd) Mood.SLEEPING else baseMood(hour, level, charging, music, 0L, now)
         }
 
@@ -180,6 +205,19 @@ class LockWallpaperService : WallpaperService() {
             background = runCatching { BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample }) }.getOrNull()
         }
 
+        /** Cabinho saindo das costas dele até a base da tela, como na tela inicial. */
+        private fun drawCable(c: Canvas, x: Float, y: Float, w: Float, color: Color) {
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2.6f
+                strokeCap = Paint.Cap.ROUND
+                this.color = color.copy(alpha = .8f).toArgb()
+            }
+            val endX = x + w * .8f
+            val endY = c.height.toFloat()
+            c.drawPath(android.graphics.Path().apply { moveTo(x, y); cubicTo(x + w, y, endX - w * .3f, endY - w * .8f, endX, endY) }, paint)
+        }
+
         private fun drawBackground(c: Canvas) {
             c.drawColor(android.graphics.Color.rgb(12, 14, 20))
             val b = background ?: return
@@ -199,12 +237,20 @@ class LockWallpaperService : WallpaperService() {
                 val current = act
                 val k = if (current != null) ((now - actAt).toFloat() / current.durationMs).coerceIn(0f, 1f) else 0f
                 val pose = lockPose(current, k, if (forced) Mood.NORMAL else mood, (now - started) / 1000f).let {
-                    it.copy(accessory = sleepAccessory(it.face, hour, dnd, accessory))
+                    it.copy(
+                        accessory = wornAccessory(it.face, hour, dnd, false, special, accessory),
+                        letter = current == null && now < letterUntil && actsIn(mood),
+                        armL = if (current == null && now < letterUntil && actsIn(mood)) -40f else it.armL,
+                        armR = if (current == null && now < letterUntil && actsIn(mood)) 40f else it.armR,
+                    )
                 }
                 val h = c.height * LOCK_ROBOT_HEIGHT
                 val w = h * ROBOT_ASPECT
+                val x = c.width * LOCK_ROBOT_X
+                val y = c.height * LOCK_ROBOT_FEET - h
+                if (charging) drawCable(c, x + w * .5f, y + h * .62f, w, stroke)
                 canvasScope.draw(Density(1f), LayoutDirection.Ltr, ComposeCanvas(c), Size(w, h)) {
-                    translate(c.width * LOCK_ROBOT_X, c.height * LOCK_ROBOT_FEET - h) { drawRobot(stroke, pose) }
+                    translate(x, y) { drawRobot(stroke, pose) }
                 }
             } finally {
                 runCatching { holder.unlockCanvasAndPost(c) }

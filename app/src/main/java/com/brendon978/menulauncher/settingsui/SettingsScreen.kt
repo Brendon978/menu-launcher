@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.apps.AppKey
 import com.brendon978.menulauncher.settings.FavoritesOps
+import com.brendon978.menulauncher.settings.activeFavorites
+import com.brendon978.menulauncher.settings.editFavorites
 import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.Backup
@@ -106,18 +108,30 @@ fun SettingsScreen(
         ToggleRow("Linha de mais usados", "No modo uma mão, os apps que você mais abre, em cima dos favoritos.", settings.showMostUsed) { v -> onChange { it.copy(showMostUsed = v) } }
         ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
+        ContactsToggle(settings.searchContacts) { v -> onChange { it.copy(searchContacts = v) } }
 
         Section("Favoritos")
-        if (settings.favorites.isEmpty()) {
+        ToggleRow("Favoritos por horário", "Listas diferentes de dia, no trabalho (seg. a sex., 8h às 18h) e à noite (19h às 7h).", settings.timeProfiles) { v -> onChange { it.copy(timeProfiles = v) } }
+        var editing by rememberSaveable { mutableStateOf(com.brendon978.menulauncher.settings.currentProfile()) }
+        if (settings.timeProfiles) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
+                com.brendon978.menulauncher.settings.TimeProfile.entries.forEach { p -> Chip(p.label, editing == p) { editing = p } }
+            }
+        }
+        val shownFavorites = settings.activeFavorites(editing)
+        if (shownFavorites.isEmpty()) {
             Text("Nenhum. Segure um app na tela inicial para favoritar.", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
         }
-        settings.favorites.forEachIndexed { i, key ->
+        shownFavorites.forEachIndexed { i, key ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 Text(apps[key]?.label ?: key.packageName, color = Color.White, modifier = Modifier.weight(1f))
-                SmallButton("↑", enabled = i > 0) { onChange { it.copy(favorites = FavoritesOps.move(it.favorites, i, i - 1)) } }
-                SmallButton("↓", enabled = i < settings.favorites.lastIndex) { onChange { it.copy(favorites = FavoritesOps.move(it.favorites, i, i + 1)) } }
-                SmallButton("✕", enabled = true) { onChange { it.copy(favorites = FavoritesOps.toggle(it.favorites, key)) } }
+                SmallButton("↑", enabled = i > 0) { onChange { s -> s.editFavorites(editing) { FavoritesOps.move(it, i, i - 1) } } }
+                SmallButton("↓", enabled = i < shownFavorites.lastIndex) { onChange { s -> s.editFavorites(editing) { FavoritesOps.move(it, i, i + 1) } } }
+                SmallButton("✕", enabled = true) { onChange { s -> s.editFavorites(editing) { FavoritesOps.toggle(it, key) } } }
             }
+        }
+        if (settings.timeProfiles) {
+            Text("Para adicionar a outro horário, segure um app enquanto estiver nele; aqui dá para ordenar e tirar.", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
         }
 
         Section("Glitch")
@@ -133,6 +147,19 @@ fun SettingsScreen(
                 }
             }
             GlitchPanel()
+            ToggleRow("Comentários", "Ele comenta o app de onde você voltou, de vez em quando.", settings.glitchComments) { v -> onChange { it.copy(glitchComments = v) } }
+            ToggleRow("Travessuras", "Ele entorta o relógio e empurra um favorito; cutucar faz ele arrumar.", settings.glitchMischief) { v -> onChange { it.copy(glitchMischief = v) } }
+            var birthdayText by rememberSaveable { mutableStateOf(settings.birthday) }
+            OutlinedTextField(
+                value = birthdayText,
+                onValueChange = { v ->
+                    birthdayText = v
+                    if (v.isBlank() || com.brendon978.menulauncher.pet.parseBirthday(v) != null) onChange { it.copy(birthday = v.trim()) }
+                },
+                singleLine = true,
+                label = { Text("Seu aniversário (dia/mês)") },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             GlitchReset()
         }
 
@@ -335,6 +362,19 @@ private fun ToggleRow(title: String, hint: String, value: Boolean, onToggle: (Bo
 }
 
 /** Ligar o próximo compromisso pede acesso à agenda na hora. */
+@Composable
+private fun ContactsToggle(value: Boolean, onToggle: (Boolean) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val ask = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+        onToggle(granted)
+    }
+    ToggleRow("Contatos na busca", "Encontra pessoas ao buscar (pede acesso aos contatos).", value) { v ->
+        if (!v) onToggle(false)
+        else if (context.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) == android.content.pm.PackageManager.PERMISSION_GRANTED) onToggle(true)
+        else ask.launch(android.Manifest.permission.READ_CONTACTS)
+    }
+}
+
 @Composable
 private fun NextEventToggle(value: Boolean, onToggle: (Boolean) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current

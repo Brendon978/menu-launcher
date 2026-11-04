@@ -80,4 +80,6 @@ object GlitchSignals {
     @Volatile var lastLaunch: Pair<String, Long>? = null
     /** Último toque na tela inicial (coordenadas da janela), para os olhos dele seguirem. */
     @Volatile var lastTouch: Triple<Float, Float, Long>? = null
+    /** Tirou print da tela inicial. */
+    val screenshots = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 }

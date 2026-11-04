@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -40,13 +41,18 @@ fun TopInfo(color: Color, modifier: Modifier = Modifier, showNextEvent: Boolean 
     val is24h = android.text.format.DateFormat.is24HourFormat(context)
     val time = remember(now, is24h) { SimpleDateFormat(if (is24h) "HH:mm" else "h:mm", PT_BR).format(Date(now)) }
     val date = remember(now) { SimpleDateFormat("EEE, d 'de' MMMM", PT_BR).format(Date(now)) }
+    // travessura do Glitch: entorta o relógio até você cutucar ele
+    val clockTilt by androidx.compose.animation.core.animateFloatAsState(
+        if (com.brendon978.menulauncher.pet.GlitchMischief.current.value == com.brendon978.menulauncher.pet.Mischief.CLOCK) -8f else 0f,
+        label = "relogio",
+    )
     Column(modifier) {
         Text(
             time,
             color = color,
             fontSize = 52.sp,
             fontWeight = FontWeight.ExtraLight,
-            modifier = Modifier.clickable(remember { MutableInteractionSource() }, indication = null) {
+            modifier = Modifier.graphicsLayer { rotationZ = clockTilt }.clickable(remember { MutableInteractionSource() }, indication = null) {
                 runCatching {
                     context.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }

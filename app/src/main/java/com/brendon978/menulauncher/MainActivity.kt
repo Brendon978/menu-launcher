@@ -57,6 +57,9 @@ import com.brendon978.menulauncher.music.MusicControls
 import com.brendon978.menulauncher.music.MusicRepository
 import com.brendon978.menulauncher.onboarding.FirstRunScreen
 import com.brendon978.menulauncher.settings.FavoritesOps
+import com.brendon978.menulauncher.settings.activeFavorites
+import com.brendon978.menulauncher.settings.currentProfile
+import com.brendon978.menulauncher.settings.editFavorites
 import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
@@ -271,9 +274,9 @@ class MainActivity : ComponentActivity() {
             sheetFor.value?.let { entry ->
                 AppActionsSheet(
                     label = entry.label,
-                    isFavorite = entry.key in settings.favorites,
+                    isFavorite = entry.key in settings.activeFavorites(currentProfile()),
                     canUninstall = canUninstall(entry.key),
-                    onToggleFavorite = { updateSettings { it.copy(favorites = FavoritesOps.toggle(it.favorites, entry.key)) } },
+                    onToggleFavorite = { updateSettings { it.editFavorites(currentProfile()) { f -> FavoritesOps.toggle(f, entry.key) } } },
                     onChangeIcon = { screen.value = Screen.IconPicker(entry) },
                     onAppInfo = { openAppInfo(entry.key) },
                     onUninstall = { uninstall(entry.key) },
@@ -350,6 +353,21 @@ class MainActivity : ComponentActivity() {
         } else {
             startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS))
         }
+    }
+
+    // print da tela inicial: o Glitch faz pose
+    private val screenCapture = ScreenCaptureCallback {
+        com.brendon978.menulauncher.pet.GlitchSignals.screenshots.tryEmit(Unit)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        registerScreenCaptureCallback(mainExecutor, screenCapture)
+    }
+
+    override fun onStop() {
+        unregisterScreenCaptureCallback(screenCapture)
+        super.onStop()
     }
 
     override fun onResume() {
