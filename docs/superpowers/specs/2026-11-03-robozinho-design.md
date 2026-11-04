@@ -188,3 +188,7 @@ Números curtos que ele faz sozinho, sorteados sem repetir o último. Ficam em `
 - **Voo**: tocar sobe; desviar dos muros, recorde salvo.
 - **Falas soltas**: a cada 2 a 5 min, conforme hora e vínculo; segue o interruptor de comentários.
 
+## Glitch e bichinho (2026-11-04)
+
+Sozinhos: buscar a bolinha, bichinho na cabeça dele, roubar o parafuso (ele corre atrás), susto, derrubar a torrinha (com 3 ou mais blocos) e cochilo juntos. Um reage ao outro: consola quando ele está triste, foge quando ele está bravo e ajuda na caça aos bugs. Com você: vai atrás do seu dedo por um instante depois de cada toque, responde ao toque com a própria voz e, com carinho, mostra coração e o Glitch às vezes fica com ciúme.
+

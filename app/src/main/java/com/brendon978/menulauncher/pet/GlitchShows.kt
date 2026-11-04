@@ -20,10 +20,55 @@ enum class Show(val ms: Long) {
     CLONES(15_000), JETPACK(5_000), SKATE(6_000), SCOOTER(6_000),
     COFFEE(5_000), PUSHUPS(6_000), WATER(5_000), BLOCKS(5_000), MAGIC(7_000), GRAFFITI(6_000),
     PARACHUTE(2_600), DROP(1_600), BOX(2_400), BUDDY(7_000),
+    ON_HEAD(8_000), FETCH(8_000), SCARE(5_000), KNOCK(5_000), NAP_TOGETHER(9_000),
 }
 
+/** Os que precisam do bichinho. */
+val DUO_SHOWS = listOf(Show.BUDDY, Show.ON_HEAD, Show.FETCH, Show.SCARE, Show.KNOCK, Show.NAP_TOGETHER)
+
 /** Com o bichinho: variante par é pega-pega, ímpar é carinho. */
-fun buddyChase(variant: Int): Boolean = variant.mod(2) == 0
+fun buddyChase(variant: Int): Boolean = variant.mod(3) != 1
+
+/** Terceiro jeito: o bichinho rouba o parafuso e ele corre atrás. */
+fun buddySteals(variant: Int): Boolean = variant.mod(3) == 2
+
+/** Onde o bichinho vai em cada momento das brincadeiras a dois. [hero] é o canto do robô; [ball], a bolinha; [tower], a torrinha. */
+fun duoGoal(run: ShowRun, k: Float, hero: Offset, width: Float, height: Float, side: Float, ball: Offset, tower: Offset, n: Long): Offset? = when (run.kind) {
+    Show.BUDDY -> if (buddyChase(run.variant)) hero + Offset(width * .5f + side * width * 1.5f, height * (.45f + .25f * sin(n / 170f)))
+    else hero + Offset(width * .5f + side * width * .62f, height * .55f)
+    Show.ON_HEAD -> hero + Offset(width * .5f, -height * .04f)
+    Show.FETCH -> if (k < .62f) ball else hero + Offset(width * .5f + side * width * .7f, height * .7f)
+    Show.SCARE -> if (k < .4f) hero + Offset(width * .5f - side * width * .35f, height * .5f) else hero + Offset(width * .5f + side * width * .7f, height * .4f)
+    Show.KNOCK -> if (k < .55f) tower else hero + Offset(width * .5f + side * width * 2.2f, height * .8f)
+    Show.NAP_TOGETHER -> hero + Offset(width * .5f + side * width * .75f, height * .94f)
+    else -> null
+}
+
+/** Bolinha do "buscar": sai da mão dele, cai longe e volta com o bichinho. */
+fun fetchBall(k: Float, hand: Offset, landing: Offset, buddy: Offset): Offset = when {
+    k < .2f -> {
+        val p = k / .2f
+        hand + (landing - hand) * p + Offset(0f, -sin(p * PI.toFloat()) * 120f)
+    }
+    k < .45f -> landing
+    else -> buddy
+}
+
+val BUDDY_VOICE = mapOf(Buddy.CAT to listOf("Miau!", "Prrr...", "Mrrau?"), Buddy.DRONE to listOf("Bip-bip!", "Bzzz!", "Bip?"))
+val BUDDY_JEALOUS_LINES = listOf("E eu, hein?!", "Carinho aqui também!", "Ele nem é tudo isso.")
+val BUDDY_CONSOLE_LINES = listOf("Valeu, parceiro.", "Só você me entende.")
+val BUDDY_SCARED_LINE = "Fica longe, ele tá nervoso!"
+val KNOCK_LINES = listOf("Foi você, né?!", "MINHA TORRE! De novo?!", "Seu pestinha!")
+val FETCH_LINES = listOf("Vai buscar!", "Pega!", "Traz aqui!")
+val SCARE_LINES = listOf("AAAH! Quase morri!", "Isso não tem graça!", "Tá, teve graça.")
+val ON_HEAD_LINES = listOf("Tá confortável aí?", "Virei poleiro agora?", "Pesa nada, pode ficar.")
+val NAP_LINES = listOf("Cochilinho rápido...", "Só cinco minutinhos...")
+
+/** Carinho nele: arrastou o bastante por cima. */
+fun buddyPetted(rubbed: Float, reach: Float): Boolean = rubbed > reach * 1.2f
+
+/** O dedo atrai o bichinho por um instante depois de cada toque. */
+fun fingerAttracts(touchAt: Long, now: Long): Boolean = now - touchAt in 0..2_200
 val BUDDY_CHASE_LINES = listOf("Vem cá, pestinha!", "Te peguei! Quase.", "Foge não!")
 val BUDDY_PET_LINES = listOf("Quem é o bichinho mais lindo?", "Bom garoto!", "Tá bom, tá bom, carinho.")
 
@@ -37,11 +82,12 @@ data class ShowRun(val kind: Show, val at: Long, val variant: Int = 0, val evil:
 }
 
 /** Sorteia sem repetir o último; o que depende de hora ou do dia fica de fora quando não cabe. */
-fun pickShow(previous: Show?, hour: Int, canWater: Boolean, random: Random, hasBuddy: Boolean = true): Show {
+fun pickShow(previous: Show?, hour: Int, canWater: Boolean, random: Random, hasBuddy: Boolean = true, tower: Int = 0): Show {
     val options = Show.entries.filter { it !in ENTRANCES && it != previous }
         .filter { it != Show.COFFEE || hour in 7..11 }
         .filter { it != Show.WATER || canWater }
-        .filter { it != Show.BUDDY || hasBuddy }
+        .filter { it !in DUO_SHOWS || hasBuddy }
+        .filter { it != Show.KNOCK || tower >= 3 }
     return options.random(random)
 }
 
@@ -206,6 +252,14 @@ fun showPose(run: ShowRun, k: Float, facingLeft: Boolean, t: Float): RobotPose? 
         } else {
             RobotPose(Face.BLISS, facingLeft, armL = 8f, armR = -46f + 14f * sin(t * 6f), phase = t)
         }
+        Show.ON_HEAD -> RobotPose(Face.BLISS, facingLeft, armL = 8f, armR = -8f, headTilt = 3f * sin(t * 2f), phase = t)
+        Show.FETCH -> if (k < .2f) RobotPose(Face.GIGGLE, facingLeft, armL = 10f, armR = -130f + 200f * k, phase = t)
+        else RobotPose(Face.GIGGLE, facingLeft, armL = 60f, armR = -60f, lift = 4f * abs(sin(t * 5f)), phase = t)
+        Show.SCARE -> if (k < .4f) RobotPose(Face.NORMAL, facingLeft, phase = t)
+        else if (k < .7f) RobotPose(Face.SURPRISED, facingLeft, armL = 120f, armR = -120f, lift = 24f * sin((k - .4f) / .3f * PI.toFloat()), phase = t)
+        else RobotPose(Face.GIGGLE, facingLeft, armL = 20f, armR = -20f, phase = t)
+        Show.KNOCK -> if (k < .55f) RobotPose(Face.NORMAL, facingLeft, phase = t) else RobotPose(Face.ANGRY, facingLeft, armL = 25f, armR = -118f + 16f * sin(t * 14f), phase = t)
+        Show.NAP_TOGETHER -> RobotPose(Face.SLEEP, facingLeft, armL = 8f, armR = -8f, headTilt = 6f, phase = t)
         Show.CLONES -> heroPose(battlePhase(k, run.evil), pickFinisher(run.variant), facingLeft, t)
         Show.JETPACK -> RobotPose(Face.GIGGLE, facingLeft, armL = 40f, armR = -40f, legL = 18f, legR = 8f, tilt = if (facingLeft) -10f else 10f, phase = t)
         Show.SKATE -> RobotPose(Face.BLISS, facingLeft, armL = 80f, armR = -80f, legL = 12f, legR = -12f, tilt = if (facingLeft) -6f else 6f, lift = 8f, phase = t)
@@ -228,6 +282,7 @@ fun showPose(run: ShowRun, k: Float, facingLeft: Boolean, t: Float): RobotPose? 
 }
 
 val SHOW_LINES = mapOf(
+    Show.ON_HEAD to ON_HEAD_LINES.first(),
     Show.JETPACK to "Saindo da frente!", Show.SKATE to "Radical!", Show.SCOOTER to "Bi-bi!",
     Show.COFFEE to "Café primeiro, gente depois.", Show.PUSHUPS to "Um... dois... três...", Show.WATER to "Cresce, plantinha!",
     Show.BLOCKS to "Mais um andar!", Show.MAGIC to "Respeitável público...", Show.GRAFFITI to "Arte urbana.",
