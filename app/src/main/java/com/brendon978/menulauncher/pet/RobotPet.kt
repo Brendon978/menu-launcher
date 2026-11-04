@@ -680,7 +680,7 @@ fun RobotPet(
         if (System.currentTimeMillis() - sp.at > 10 * 60_000L) return@LaunchedEffect
         val line = sp.from?.let { "$it: ${sp.text}" } ?: sp.text
         aiSpeechUntil = 0L
-        say(line, (2_500L + line.length * 45L).coerceAtMost(9_000L))
+        say(line, (4_500L + line.length * 55L).coerceAtMost(12_000L))
         aiSpeechUntil = speechUntil
     }
 
