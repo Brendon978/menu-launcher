@@ -134,3 +134,13 @@ Nada aqui bloqueia app: é só reação visual na tela inicial (decisão do Bren
 - **Dramático**: com vínculo abaixo de 70%, a raiva às vezes (12%) vira um desmaio fingido, deitado com tontura por 2,8 s.
 - **Bilhete triste**: quando fica triste, deixa um post-it perto do canto, um por vez. A tristeza não passa sozinha: dura até a carência baixar com atenção (toque gentil ou carinho).
 - **Olhos que seguem**: por 2,5 s depois de um toque em qualquer ponto da tela inicial, os olhos olham para lá. O toque é só observado, nunca consumido.
+
+## Tela de bloqueio (2026-11-04)
+
+Testado no S25 FE (Android 17, One UI 9): uma tela nossa por cima do bloqueio desliga a digital com a tela acesa e vira duas telas de bloqueio. Por isso o Glitch mora no papel de parede do bloqueio: a tela continua sendo a da Samsung, com digital direta, notificações e atalhos, e o papel de parede da tela inicial não muda (a prévia do sistema oferece aplicar só no bloqueio).
+
+- Pequeno e quieto, no canto de baixo, em cima de uma imagem de fundo escolhida nos Ajustes. Não recebe toque.
+- O bloqueio fica à vista por poucos segundos: em cerca de 40% das vezes que a tela acende ele faz uma coisa curta (acenar, olhar em volta, escanear, se espreguiçar, pular); depois, só de 20 a 45 s adiante.
+- Dorme de noite e no não perturbe, fica cansado com bateria baixa e dança de leve com música.
+- Só desenha à vista, e parado redesenha poucas vezes por segundo.
+
