@@ -30,6 +30,7 @@ class BackupTest {
             gestureDown = GestureChoice(GestureAction.TORCH), gestureUp = GestureChoice(GestureAction.APP, b),
             gestureDoubleTap = GestureChoice(GestureAction.CAMERA),
             swipeAppActions = true, showNote = true, noteText = "pão = 2\nleite #1 ✓", showScreenTime = true,
+            showContacts = true, contactShortcuts = listOf(ContactShortcut("content://com.android.contacts/contacts/lookup/ab/1", "Maria = Silva")),
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
     }

@@ -52,6 +52,8 @@ class SettingsRepository(private val context: Context) {
         val showNote = booleanPreferencesKey("show_note")
         val noteText = stringPreferencesKey("note_text")
         val showScreenTime = booleanPreferencesKey("show_screen_time")
+        val showContacts = booleanPreferencesKey("show_contacts")
+        val contactShortcuts = stringPreferencesKey("contact_shortcuts")
         val showNextEvent = booleanPreferencesKey("show_next_event")
         val timeProfiles = booleanPreferencesKey("time_profiles")
         val profileFavorites = stringSetPreferencesKey("profile_favorites")
@@ -105,6 +107,8 @@ class SettingsRepository(private val context: Context) {
             prefs[K.showNote] = next.showNote
             prefs[K.noteText] = next.noteText
             prefs[K.showScreenTime] = next.showScreenTime
+            prefs[K.showContacts] = next.showContacts
+            prefs[K.contactShortcuts] = ContactOps.encode(next.contactShortcuts)
             prefs[K.showNextEvent] = next.showNextEvent
             prefs[K.timeProfiles] = next.timeProfiles
             prefs[K.profileFavorites] = next.profileFavorites.map { (name, keys) -> name + SEP + keys.joinToString("\n") { it.encode() } }.toSet()
@@ -179,6 +183,8 @@ class SettingsRepository(private val context: Context) {
             showNote = this[K.showNote] ?: d.showNote,
             noteText = this[K.noteText] ?: d.noteText,
             showScreenTime = this[K.showScreenTime] ?: d.showScreenTime,
+            showContacts = this[K.showContacts] ?: d.showContacts,
+            contactShortcuts = ContactOps.decode(this[K.contactShortcuts]),
             showNextEvent = this[K.showNextEvent] ?: d.showNextEvent,
             timeProfiles = this[K.timeProfiles] ?: d.timeProfiles,
             profileFavorites = this[K.profileFavorites]?.mapNotNull { entry ->

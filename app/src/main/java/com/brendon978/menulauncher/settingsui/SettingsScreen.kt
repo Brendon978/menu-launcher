@@ -121,6 +121,7 @@ fun SettingsScreen(
         ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
         ToggleRow("Bloco de notas", "Uma nota curta na tela inicial; tocar edita.", settings.showNote) { v -> onChange { it.copy(showNote = v) } }
         ScreenTimeToggle(settings.showScreenTime, hasUsageAccess) { v -> onChange { it.copy(showScreenTime = v) } }
+        ContactsSection(settings, onChange)
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
         ContactsToggle(settings.searchContacts) { v -> onChange { it.copy(searchContacts = v) } }
 
@@ -411,14 +412,14 @@ private fun BackupSection(settings: LauncherSettings, onChange: ((LauncherSettin
         modifier = Modifier.fillMaxWidth().clickable { import.launch(arrayOf("text/plain", "application/octet-stream", "*/*")) }.padding(vertical = 12.dp),
     )
     Text(
-        "Favoritos, cores, nomes, apps escondidos, IA, acessório e a memória do Glitch (vínculo e vontades).",
+        "Favoritos, cores, nomes, apps escondidos, gestos, nota, IA, acessório e a memória do Glitch (vínculo e vontades).",
         color = Color.White.copy(alpha = .5f),
         fontSize = 12.sp,
     )
 }
 
 @Composable
-private fun ToggleRow(title: String, hint: String, value: Boolean, onToggle: (Boolean) -> Unit) {
+internal fun ToggleRow(title: String, hint: String, value: Boolean, onToggle: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
         Column(Modifier.weight(1f)) {
             Text(title, color = Color.White)

@@ -57,6 +57,10 @@ data class LauncherSettings(
     val noteText: String = "",
     /** Tempo de tela de hoje embaixo da data (pede o acesso a uso de apps). */
     val showScreenTime: Boolean = false,
+    /** Atalhos de contatos na tela inicial. */
+    val showContacts: Boolean = false,
+    /** Os contatos escolhidos, na ordem em que entraram. */
+    val contactShortcuts: List<ContactShortcut> = emptyList(),
     /** Próximo compromisso da agenda embaixo da data (pede acesso à agenda). */
     val showNextEvent: Boolean = false,
     /** Favoritos diferentes de dia, no trabalho e à noite. */

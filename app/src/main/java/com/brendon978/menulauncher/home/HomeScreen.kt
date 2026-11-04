@@ -70,7 +70,7 @@ fun HomeScreen(
     val swipeUp by rememberUpdatedState(onSwipeUp)
     val doubleTap by rememberUpdatedState(onEmptyDoubleTap)
     val listensDoubleTap = settings.listensDoubleTap()
-    val growsTop = settings.showNote || screenTime != null
+    val growsTop = settings.showNote || settings.showContacts || screenTime != null
     var topHeight by remember { mutableIntStateOf(0) }
     CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
@@ -168,6 +168,7 @@ fun HomeScreen(
 @Composable
 private fun TopExtras(settings: LauncherSettings, color: Color, onNoteChange: (String) -> Unit) {
     if (settings.showNote) QuickNote(settings.noteText, color, onNoteChange)
+    if (settings.showContacts && settings.contactShortcuts.isNotEmpty()) ContactShortcutsRow(settings.contactShortcuts, color)
 }
 
 /** Camada do robozinho: a tela inteira, menos o que está marcado como obstáculo (com folga). */
