@@ -45,6 +45,7 @@ object Backup {
         p["showQuickActions"] = s.showQuickActions.toString()
         p["showNote"] = s.showNote.toString()
         p["noteText"] = s.noteText
+        p["showScreenTime"] = s.showScreenTime.toString()
         p["showNextEvent"] = s.showNextEvent.toString()
         p["timeProfiles"] = s.timeProfiles.toString()
         p["profileFavorites"] = s.profileFavorites.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
@@ -101,6 +102,7 @@ object Backup {
             showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,
             showNote = p.getProperty("showNote")?.toBooleanStrictOrNull() ?: d.showNote,
             noteText = p.getProperty("noteText") ?: d.noteText,
+            showScreenTime = p.getProperty("showScreenTime")?.toBooleanStrictOrNull() ?: d.showScreenTime,
             showNextEvent = p.getProperty("showNextEvent")?.toBooleanStrictOrNull() ?: d.showNextEvent,
             timeProfiles = p.getProperty("timeProfiles")?.toBooleanStrictOrNull() ?: d.timeProfiles,
             profileFavorites = lines("profileFavorites").mapNotNull { l ->

@@ -57,6 +57,8 @@ fun HomeScreen(
     onSwipeUp: () -> Unit = {},
     onEmptyDoubleTap: () -> Unit = {},
     onNoteChange: (String) -> Unit = {},
+    /** Texto do tempo de tela; null não mostra nada. */
+    screenTime: String? = null,
     musicPlaying: Boolean = false,
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
@@ -68,7 +70,7 @@ fun HomeScreen(
     val swipeUp by rememberUpdatedState(onSwipeUp)
     val doubleTap by rememberUpdatedState(onEmptyDoubleTap)
     val listensDoubleTap = settings.listensDoubleTap()
-    val growsTop = settings.showNote
+    val growsTop = settings.showNote || screenTime != null
     var topHeight by remember { mutableIntStateOf(0) }
     CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
@@ -115,7 +117,7 @@ fun HomeScreen(
                         .padding(start = 22.dp, end = 22.dp, top = 24.dp)
                         .petObstacle("top"),
                 ) {
-                    TopInfo(color, showNextEvent = settings.showNextEvent)
+                    TopInfo(color, showNextEvent = settings.showNextEvent, screenTime = screenTime)
                     if (settings.showQuickActions) QuickActions(color)
                     TopExtras(settings, color, onNoteChange)
                     musicSlotTop()
@@ -137,7 +139,7 @@ fun HomeScreen(
             HomeMode.GRID -> Column(Modifier.fillMaxSize()) {
                 Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 24.dp, bottom = 12.dp)) {
                     Column {
-                        TopInfo(color, showNextEvent = settings.showNextEvent)
+                        TopInfo(color, showNextEvent = settings.showNextEvent, screenTime = screenTime)
                         if (settings.showQuickActions) QuickActions(color)
                         TopExtras(settings, color, onNoteChange)
                     }

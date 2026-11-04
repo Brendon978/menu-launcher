@@ -50,6 +50,7 @@ fun SettingsScreen(
     settings: LauncherSettings,
     apps: Map<AppKey, AppEntry>,
     onChange: ((LauncherSettings) -> LauncherSettings) -> Unit,
+    hasUsageAccess: Boolean,
     onSetDefaultLauncher: () -> Unit,
     aiSection: @Composable () -> Unit,
     onClose: () -> Unit,
@@ -119,6 +120,7 @@ fun SettingsScreen(
         ToggleRow("Deslizar um app para o lado", "Na lista da tela inicial, abre as mesmas opções de segurar o app.", settings.swipeAppActions) { v -> onChange { it.copy(swipeAppActions = v) } }
         ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
         ToggleRow("Bloco de notas", "Uma nota curta na tela inicial; tocar edita.", settings.showNote) { v -> onChange { it.copy(showNote = v) } }
+        ScreenTimeToggle(settings.showScreenTime, hasUsageAccess) { v -> onChange { it.copy(showScreenTime = v) } }
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
         ContactsToggle(settings.searchContacts) { v -> onChange { it.copy(searchContacts = v) } }
 
@@ -423,6 +425,19 @@ private fun ToggleRow(title: String, hint: String, value: Boolean, onToggle: (Bo
             Text(hint, color = Color.White.copy(alpha = .5f), fontSize = 12.sp)
         }
         Switch(value, onCheckedChange = onToggle)
+    }
+}
+
+/** Ligar sem o acesso leva à tela do sistema; enquanto ele não for liberado, a tela inicial não mostra nada. */
+@Composable
+private fun ScreenTimeToggle(value: Boolean, hasAccess: Boolean, onToggle: (Boolean) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val hint = if (value && !hasAccess) "Falta liberar o menu-launcher em Acesso a uso de apps." else "Discreto, embaixo da data (pede o acesso a uso de apps)."
+    ToggleRow("Tempo de tela", hint, value) { v ->
+        onToggle(v)
+        if (v && !hasAccess) runCatching {
+            context.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
     }
 }
 

@@ -28,7 +28,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
@@ -44,7 +46,11 @@ import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.apps.AppKey
 import com.brendon978.menulauncher.apps.AppRepository
 import com.brendon978.menulauncher.home.HomeScreen
+import com.brendon978.menulauncher.home.SCREEN_TIME_MIN_GAP
 import com.brendon978.menulauncher.home.SearchScreen
+import com.brendon978.menulauncher.home.hasUsageAccess
+import com.brendon978.menulauncher.home.queryScreenTime
+import com.brendon978.menulauncher.home.shouldRefreshScreenTime
 import com.brendon978.menulauncher.icons.AppFilter
 import com.brendon978.menulauncher.icons.IconRenderer
 import com.brendon978.menulauncher.menu.AppActionsSheet
@@ -70,8 +76,12 @@ import com.brendon978.menulauncher.settings.usesTorchGesture
 import com.brendon978.menulauncher.settingsui.SettingsScreen
 import com.brendon978.menulauncher.wallpaper.WallpaperApplier
 import com.brendon978.menulauncher.wallpaper.rotationDue
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Tema escuro neutro para as telas internas (ajustes, seletor): branco sobre quase preto. */
 private val LAUNCHER_COLORS = darkColorScheme(
@@ -108,6 +118,9 @@ class MainActivity : ComponentActivity() {
     private val foldering = mutableStateOf<AppEntry?>(null)
     private val isDefaultHome = mutableStateOf(false)
     private val hasMusicAccess = mutableStateOf(false)
+    private val hasUsageStats = mutableStateOf(false)
+    private val screenTime = mutableStateOf<String?>(null)
+    private var screenTimeQueried = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,6 +145,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch { settingsRepo.settings.collect { settingsSnapshot = it } }
         lifecycleScope.launch { com.brendon978.menulauncher.pet.GlitchTalk.requests.collect { talkThroughGlitch() } }
+        watchScreenTime()
         setContent { MaterialTheme(colorScheme = LAUNCHER_COLORS) { Content() } }
     }
 
@@ -212,6 +226,7 @@ class MainActivity : ComponentActivity() {
                     onSwipeDown = { runGesture(settings.gestureDown, torch) },
                     onSwipeUp = { runGesture(settings.gestureUp, torch) },
                     onEmptyDoubleTap = { runGesture(settings.doubleTapChoice(), torch) },
+                    screenTime = screenTime.value,
                     onNoteChange = { text -> updateSettings { it.copy(noteText = text) } },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
@@ -249,6 +264,7 @@ class MainActivity : ComponentActivity() {
                     settings = settings,
                     apps = byKey,
                     onChange = ::updateSettings,
+                    hasUsageAccess = hasUsageStats.value,
                     onSetDefaultLauncher = ::requestHomeRole,
                     aiSection = {
                         val candidates = remember { aiRepo.discover() }
@@ -412,7 +428,39 @@ class MainActivity : ComponentActivity() {
         musicRepo.refresh()
         isDefaultHome.value = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_HOME)
         hasMusicAccess.value = musicRepo.hasAccess()
+        hasUsageStats.value = hasUsageAccess(this)
         rotateWallpaperIfDue()
+    }
+
+    /** Tempo de tela: só com a opção ligada e o launcher visível, no máximo uma consulta por minuto. */
+    private fun watchScreenTime() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                settingsRepo.settings.map { it.showScreenTime }.distinctUntilChanged().collectLatest { on ->
+                    if (!on) {
+                        screenTime.value = null
+                        screenTimeQueried = 0
+                        return@collectLatest
+                    }
+                    while (true) {
+                        refreshScreenTime()
+                        kotlinx.coroutines.delay(SCREEN_TIME_MIN_GAP)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun refreshScreenTime() {
+        if (!hasUsageAccess(this)) {
+            screenTime.value = null
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (!shouldRefreshScreenTime(now, screenTimeQueried)) return
+        screenTimeQueried = now
+        val text = withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { queryScreenTime(applicationContext, now) }.getOrNull() }
+        screenTime.value = text
     }
 
     private var rotating = false

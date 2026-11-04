@@ -55,6 +55,8 @@ data class LauncherSettings(
     val showNote: Boolean = false,
     /** O texto da nota. */
     val noteText: String = "",
+    /** Tempo de tela de hoje embaixo da data (pede o acesso a uso de apps). */
+    val showScreenTime: Boolean = false,
     /** Próximo compromisso da agenda embaixo da data (pede acesso à agenda). */
     val showNextEvent: Boolean = false,
     /** Favoritos diferentes de dia, no trabalho e à noite. */
