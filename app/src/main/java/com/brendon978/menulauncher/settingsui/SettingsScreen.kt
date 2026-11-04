@@ -133,6 +133,7 @@ fun SettingsScreen(
                 }
             }
             GlitchPanel()
+            GlitchReset()
         }
 
         Section("IA")
@@ -238,6 +239,39 @@ private fun Bar(label: String, value: Float) {
             Box(Modifier.fillMaxWidth(value.coerceIn(0f, 1f)).height(8.dp).background(Color.White.copy(alpha = .85f), RoundedCornerShape(4.dp)))
         }
         Text("${(value * 100).toInt()}%", color = Color.White.copy(alpha = .6f), fontSize = 12.sp, modifier = Modifier.width(44.dp).padding(start = 8.dp))
+    }
+}
+
+/** Volta o Glitch ao zero: vontades, vínculo, diário, aprendizado, rancor e protestos. Acessório e ajustes ficam. */
+@Composable
+private fun GlitchReset() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var asking by androidx.compose.runtime.remember { mutableStateOf(false) }
+    Text(
+        "Zerar o Glitch",
+        color = Color.White,
+        modifier = Modifier.fillMaxWidth().clickable { asking = true }.padding(vertical = 12.dp),
+    )
+    if (asking) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { asking = false },
+            title = { Text("Zerar o Glitch?") },
+            text = { Text("Ele esquece tudo: vínculo, vontades, diário, o que aprendeu e o que você aprontou. Não dá para desfazer.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    asking = false
+                    scope.launch {
+                        val live = com.brendon978.menulauncher.pet.GlitchLive
+                        live.importing = true // o Glitch da tela não pode salvar por cima
+                        com.brendon978.menulauncher.pet.GlitchStore(context.applicationContext)
+                            .save(com.brendon978.menulauncher.pet.GlitchMemory(lastSeen = System.currentTimeMillis()))
+                        (context as? android.app.Activity)?.recreate()
+                    }
+                }) { Text("Zerar") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { asking = false }) { Text("Cancelar") } },
+        )
     }
 }
 
