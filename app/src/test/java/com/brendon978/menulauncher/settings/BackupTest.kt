@@ -26,6 +26,7 @@ class BackupTest {
         val s = LauncherSettings(
             wallpaperFolder = "content://x/tree/primary%3AFundos", wallpaperInterval = WallpaperInterval.SIX_HOURS,
             wallpaperLastChange = 1_800_000_000_000L, wallpaperLastImage = "praia.jpg",
+            strokeAuto = StrokeAuto.BY_TIME, strokeDay = 0xFF7FB7A4.toInt(), strokeNight = 0xFFC9A27E.toInt(),
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
     }

@@ -75,17 +75,7 @@ fun SettingsScreen(
         }
 
         Section("Cor do traço")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            COLOR_CHOICES.forEach { c ->
-                Box(
-                    Modifier
-                        .size(36.dp)
-                        .background(Color(c), CircleShape)
-                        .border(if (c == settings.strokeColor) 3.dp else 1.dp, Color.White.copy(alpha = if (c == settings.strokeColor) 1f else 0.3f), CircleShape)
-                        .clickable { onChange { it.copy(strokeColor = c) } },
-                )
-            }
-        }
+        ColorRow(settings.strokeColor) { c -> onChange { it.copy(strokeColor = c) } }
         var hex by rememberSaveable { mutableStateOf("") }
         OutlinedTextField(
             value = hex,
@@ -97,6 +87,26 @@ fun SettingsScreen(
             placeholder = { Text("ou digite um hex, ex.: #A0C4FF") },
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         )
+        Text("Cor automática", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            com.brendon978.menulauncher.settings.StrokeAuto.entries.forEach { m ->
+                Chip(m.label, settings.strokeAuto == m) { onChange { it.copy(strokeAuto = m) } }
+            }
+        }
+        if (settings.strokeAuto == com.brendon978.menulauncher.settings.StrokeAuto.BY_TIME) {
+            Text("Dia (7h às 19h)", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
+            ColorRow(settings.strokeDay) { c -> onChange { it.copy(strokeDay = c) } }
+            Text("Noite", color = Color.White.copy(alpha = .75f), fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp))
+            ColorRow(settings.strokeNight) { c -> onChange { it.copy(strokeNight = c) } }
+        }
+        if (settings.strokeAuto == com.brendon978.menulauncher.settings.StrokeAuto.BY_WALLPAPER) {
+            Text(
+                "Usa a cor principal do papel de parede, clareada para dar contraste. Se ele não informar cor, vale a cor escolhida acima.",
+                color = Color.White.copy(alpha = .5f),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
 
         Section("Música")
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -221,6 +231,21 @@ fun SettingsScreen(
 @Composable
 private fun Section(title: String) {
     Text(title, color = Color.White.copy(alpha = 0.55f), fontSize = 13.sp, modifier = Modifier.padding(top = 24.dp, bottom = 10.dp))
+}
+
+@Composable
+private fun ColorRow(selected: Int, onPick: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        COLOR_CHOICES.forEach { c ->
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .background(Color(c), CircleShape)
+                    .border(if (c == selected) 3.dp else 1.dp, Color.White.copy(alpha = if (c == selected) 1f else 0.3f), CircleShape)
+                    .clickable { onPick(c) },
+            )
+        }
+    }
 }
 
 @Composable

@@ -20,6 +20,9 @@ object Backup {
         p["mode"] = s.mode.name
         p["favorites"] = s.favorites.joinToString("\n") { it.encode() }
         p["strokeColor"] = s.strokeColor.toString()
+        p["strokeAuto"] = s.strokeAuto.name
+        p["strokeDay"] = s.strokeDay.toString()
+        p["strokeNight"] = s.strokeNight.toString()
         p["iconOverrides"] = s.iconOverrides.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
         p["showMusic"] = s.showMusic.toString()
         p["firstRunDone"] = s.firstRunDone.toString()
@@ -64,6 +67,9 @@ object Backup {
             mode = runCatching { HomeMode.valueOf(p.getProperty("mode")) }.getOrDefault(d.mode),
             favorites = lines("favorites").mapNotNull { AppKey.decode(it) },
             strokeColor = p.getProperty("strokeColor")?.toIntOrNull() ?: d.strokeColor,
+            strokeAuto = runCatching { StrokeAuto.valueOf(p.getProperty("strokeAuto")) }.getOrDefault(d.strokeAuto),
+            strokeDay = p.getProperty("strokeDay")?.toIntOrNull() ?: d.strokeDay,
+            strokeNight = p.getProperty("strokeNight")?.toIntOrNull() ?: d.strokeNight,
             iconOverrides = pairs("iconOverrides"),
             showMusic = p.getProperty("showMusic")?.toBooleanStrictOrNull() ?: d.showMusic,
             firstRunDone = p.getProperty("firstRunDone")?.toBooleanStrictOrNull() ?: d.firstRunDone,

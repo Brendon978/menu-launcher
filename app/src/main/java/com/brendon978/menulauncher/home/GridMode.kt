@@ -44,6 +44,7 @@ import com.brendon978.menulauncher.settings.LauncherSettings
 fun GridMode(
     apps: List<AppEntry>,
     settings: LauncherSettings,
+    strokeColor: Int,
     renderer: IconRenderer,
     onLaunch: (AppEntry) -> Unit,
     onAppLongPress: (AppEntry) -> Unit,
@@ -53,7 +54,7 @@ fun GridMode(
 ) {
     val items = remember(apps, settings.folders) { FolderOps.gridItems(apps, settings.folders) }
     var openFolder by remember { mutableStateOf<String?>(null) }
-    val color = Color(settings.strokeColor)
+    val color = Color(strokeColor)
     Column(modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(76.dp),
@@ -63,7 +64,7 @@ fun GridMode(
             items(items, key = { if (it is GridItem.App) it.entry.key.encode() else "pasta:" + it.label }) { item ->
                 when (item) {
                     is GridItem.App -> GridCell(item.entry.label, color, onClick = { onLaunch(item.entry) }, onLongClick = { onAppLongPress(item.entry) }) {
-                        AppIcon(item.entry, settings.iconOverrides[item.entry.key], settings.strokeColor, 28.dp, renderer)
+                        AppIcon(item.entry, settings.iconOverrides[item.entry.key], strokeColor, 28.dp, renderer)
                     }
                     is GridItem.Folder -> GridCell(item.name, color, onClick = { openFolder = item.name }, onLongClick = { openFolder = item.name }) {
                         // pasta: moldura com até 4 mini ícones
@@ -71,7 +72,7 @@ fun GridMode(
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 item.apps.take(4).chunked(2).forEach { row ->
                                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        row.forEach { AppIcon(it, settings.iconOverrides[it.key], settings.strokeColor, 11.dp, renderer) }
+                                        row.forEach { AppIcon(it, settings.iconOverrides[it.key], strokeColor, 11.dp, renderer) }
                                     }
                                 }
                             }
@@ -83,7 +84,7 @@ fun GridMode(
         musicSlotBottom()
         // Na grade não há barra de letras: a busca fica fixa embaixo, na zona do polegar.
         SearchPillButton(
-            color = Color(settings.strokeColor),
+            color = color,
             onClick = onSearch,
             modifier = Modifier.padding(horizontal = 22.dp).padding(top = 8.dp),
         )
@@ -105,7 +106,7 @@ fun GridMode(
             ) {
                 items(f.apps, key = { it.key.encode() }) { entry ->
                     GridCell(entry.label, color, onClick = { openFolder = null; onLaunch(entry) }, onLongClick = { openFolder = null; onAppLongPress(entry) }) {
-                        AppIcon(entry, settings.iconOverrides[entry.key], settings.strokeColor, 28.dp, renderer)
+                        AppIcon(entry, settings.iconOverrides[entry.key], strokeColor, 28.dp, renderer)
                     }
                 }
             }

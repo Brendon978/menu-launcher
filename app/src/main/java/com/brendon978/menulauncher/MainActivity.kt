@@ -142,7 +142,8 @@ class MainActivity : ComponentActivity() {
             val visibleApps = remember(apps, settings.customLabels, settings.hiddenApps) { organize(apps, settings.customLabels, settings.hiddenApps) }
             val labeledApps = remember(apps, settings.customLabels) { apps.map { withLabel(it, settings.customLabels) } }
             val byKey = remember(labeledApps) { labeledApps.associateBy { it.key } }
-            val color = Color(settings.strokeColor)
+            val stroke = com.brendon978.menulauncher.home.rememberStrokeColor(settings)
+            val color = Color(stroke)
             val current = music.takeIf { settings.showMusic }
 
             // App desinstalado sai dos favoritos e das trocas de ícone.
@@ -193,6 +194,7 @@ class MainActivity : ComponentActivity() {
                     homeOnTop = screen.value == Screen.Home,
                     apps = visibleApps,
                     settings = settings,
+                    strokeColor = stroke,
                     renderer = renderer,
                     resetSignal = resetSignal.intValue,
                     onLaunch = {
@@ -211,7 +213,7 @@ class MainActivity : ComponentActivity() {
                     },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
-                    overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps) },
+                    overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps, stroke) },
                     // Pedido do Brendon: controles logo abaixo do cartão, no topo (modo uma mão).
                     musicSlotTop = {
                         current?.let {
@@ -233,6 +235,7 @@ class MainActivity : ComponentActivity() {
                 Screen.Search -> SearchScreen(
                     apps = labeledApps,
                     settings = settings,
+                    strokeColor = stroke,
                     renderer = renderer,
                     onLaunch = {
                         launchCounted(it.key)
@@ -410,19 +413,19 @@ class MainActivity : ComponentActivity() {
     }
 
     @androidx.compose.runtime.Composable
-    private fun AiOverlay(settings: LauncherSettings, apps: List<AppEntry>) {
+    private fun AiOverlay(settings: LauncherSettings, apps: List<AppEntry>, stroke: Int) {
         val pkg = settings.aiPackage ?: return
         val activity = settings.aiActivity ?: return
         val px = with(androidx.compose.ui.platform.LocalDensity.current) { 34.dp.roundToPx() }
-        val symbol by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, pkg, activity, settings.strokeColor, apps) {
+        val symbol by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, pkg, activity, stroke, apps) {
             value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                aiRepo.symbol(pkg, activity, px, settings.strokeColor)?.asImageBitmap()
-                    ?: apps.firstOrNull { it.key.packageName == pkg }?.let { renderer.iconFor(it, null, px, settings.strokeColor) }
+                aiRepo.symbol(pkg, activity, px, stroke)?.asImageBitmap()
+                    ?: apps.firstOrNull { it.key.packageName == pkg }?.let { renderer.iconFor(it, null, px, stroke) }
             }
         }
         AiSymbol(
             symbol = symbol,
-            color = Color(settings.strokeColor),
+            color = Color(stroke),
             xFraction = settings.aiX,
             yFraction = settings.aiY,
             listening = listening.value,

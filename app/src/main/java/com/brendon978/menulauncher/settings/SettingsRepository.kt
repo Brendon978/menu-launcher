@@ -26,6 +26,9 @@ class SettingsRepository(private val context: Context) {
         val mode = stringPreferencesKey("mode")
         val favorites = stringPreferencesKey("favorites")
         val strokeColor = intPreferencesKey("stroke_color")
+        val strokeAuto = stringPreferencesKey("stroke_auto")
+        val strokeDay = intPreferencesKey("stroke_day")
+        val strokeNight = intPreferencesKey("stroke_night")
         val overrides = stringSetPreferencesKey("icon_overrides")
         val showMusic = booleanPreferencesKey("show_music")
         val firstRunDone = booleanPreferencesKey("first_run_done")
@@ -64,6 +67,9 @@ class SettingsRepository(private val context: Context) {
             prefs[K.mode] = next.mode.name
             prefs[K.favorites] = next.favorites.joinToString("\n") { it.encode() }
             prefs[K.strokeColor] = next.strokeColor
+            prefs[K.strokeAuto] = next.strokeAuto.name
+            prefs[K.strokeDay] = next.strokeDay
+            prefs[K.strokeNight] = next.strokeNight
             prefs[K.overrides] = next.iconOverrides.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
             prefs[K.showMusic] = next.showMusic
             prefs[K.firstRunDone] = next.firstRunDone
@@ -121,6 +127,9 @@ class SettingsRepository(private val context: Context) {
             mode = this[K.mode]?.let { runCatching { HomeMode.valueOf(it) }.getOrNull() } ?: d.mode,
             favorites = this[K.favorites]?.split("\n")?.mapNotNull { AppKey.decode(it) } ?: d.favorites,
             strokeColor = this[K.strokeColor] ?: d.strokeColor,
+            strokeAuto = this[K.strokeAuto]?.let { runCatching { StrokeAuto.valueOf(it) }.getOrNull() } ?: d.strokeAuto,
+            strokeDay = this[K.strokeDay] ?: d.strokeDay,
+            strokeNight = this[K.strokeNight] ?: d.strokeNight,
             iconOverrides = this[K.overrides]?.mapNotNull { entry ->
                 val i = entry.indexOf(SEP)
                 if (i < 0) null else AppKey.decode(entry.substring(0, i))?.let { it to entry.substring(i + 1) }

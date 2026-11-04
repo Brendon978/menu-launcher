@@ -61,6 +61,7 @@ import com.brendon978.menulauncher.settings.LauncherSettings
 fun SearchScreen(
     apps: List<AppEntry>,
     settings: LauncherSettings,
+    strokeColor: Int,
     renderer: IconRenderer,
     onLaunch: (AppEntry) -> Unit,
     onAppLongPress: (AppEntry) -> Unit,
@@ -94,21 +95,21 @@ fun SearchScreen(
                 AppRow(
                     entry = entry,
                     override = settings.iconOverrides[entry.key],
-                    color = settings.strokeColor,
+                    color = strokeColor,
                     renderer = renderer,
                     onClick = { onLaunch(entry) },
                     onLongClick = { onAppLongPress(entry) },
                 )
             }
         }
-        val strokeColor = Color(settings.strokeColor)
+        val lineColor = Color(strokeColor)
         contacts.forEach { (name, uri) ->
-            ResultLine("Contato · $name", strokeColor) {
+            ResultLine("Contato · $name", lineColor) {
                 runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
         }
         system.forEach { t ->
-            ResultLine("Ajuste · ${t.label}", strokeColor) {
+            ResultLine("Ajuste · ${t.label}", lineColor) {
                 runCatching { context.startActivity(android.content.Intent(t.action).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
         }
@@ -119,7 +120,7 @@ fun SearchScreen(
         math?.let { r ->
             Text(
                 "= $r",
-                color = strokeColor,
+                color = lineColor,
                 fontSize = 30.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Light,
                 modifier = Modifier
@@ -135,7 +136,7 @@ fun SearchScreen(
         if (query.isNotBlank() && math == null) {
             Text(
                 "Buscar “${query.trim()}” na web",
-                color = strokeColor.copy(alpha = .8f),
+                color = lineColor.copy(alpha = .8f),
                 fontSize = 14.sp,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -148,7 +149,7 @@ fun SearchScreen(
         SearchField(
             value = query,
             onValueChange = { query = it },
-            color = Color(settings.strokeColor),
+            color = lineColor,
             onGo = { results.firstOrNull()?.let(onLaunch) },
             modifier = Modifier
                 .padding(top = 8.dp)

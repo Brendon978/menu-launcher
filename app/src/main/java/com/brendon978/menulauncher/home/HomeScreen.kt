@@ -39,6 +39,8 @@ fun HomeScreen(
     homeOnTop: Boolean,
     apps: List<AppEntry>,
     settings: LauncherSettings,
+    /** A cor efetiva do traço (ver rememberStrokeColor). */
+    strokeColor: Int,
     renderer: IconRenderer,
     resetSignal: Int,
     onLaunch: (AppEntry) -> Unit,
@@ -54,7 +56,7 @@ fun HomeScreen(
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
 ) {
-    val color = Color(settings.strokeColor)
+    val color = Color(strokeColor)
     val obstacles = remember { PetObstacles() }
     CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
@@ -102,6 +104,7 @@ fun HomeScreen(
                 OneHandMode(
                     apps = apps,
                     settings = settings,
+                    strokeColor = strokeColor,
                     renderer = renderer,
                     resetSignal = resetSignal,
                     onLaunch = onLaunch,
@@ -122,6 +125,7 @@ fun HomeScreen(
                 GridMode(
                     apps = apps,
                     settings = settings,
+                    strokeColor = strokeColor,
                     renderer = renderer,
                     onLaunch = onLaunch,
                     onAppLongPress = onAppLongPress,

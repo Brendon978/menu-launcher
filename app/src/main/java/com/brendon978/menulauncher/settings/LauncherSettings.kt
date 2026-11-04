@@ -9,6 +9,12 @@ data class LauncherSettings(
     val mode: HomeMode = HomeMode.ONE_HAND,
     val favorites: List<AppKey> = emptyList(),
     val strokeColor: Int = 0xFFFFFFFF.toInt(),
+    /** Cor do traço automática; desligada vale [strokeColor]. */
+    val strokeAuto: StrokeAuto = StrokeAuto.OFF,
+    /** Cor de dia (7h às 19h) no modo por horário. */
+    val strokeDay: Int = 0xFFFFFFFF.toInt(),
+    /** Cor de noite no modo por horário. */
+    val strokeNight: Int = 0xFFE6E1D6.toInt(),
     /** valor = nome do drawable do Lawnicons */
     val iconOverrides: Map<AppKey, String> = emptyMap(),
     val showMusic: Boolean = true,

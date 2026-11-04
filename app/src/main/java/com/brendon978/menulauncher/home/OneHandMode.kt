@@ -41,6 +41,7 @@ import com.brendon978.menulauncher.settings.activeFavorites
 fun OneHandMode(
     apps: List<AppEntry>,
     settings: LauncherSettings,
+    strokeColor: Int,
     renderer: IconRenderer,
     resetSignal: Int,
     onLaunch: (AppEntry) -> Unit,
@@ -68,7 +69,7 @@ fun OneHandMode(
         if (com.brendon978.menulauncher.pet.GlitchMischief.current.value == com.brendon978.menulauncher.pet.Mischief.ICON) 46.dp else 0.dp,
         label = "empurrao",
     )
-    val color = Color(settings.strokeColor)
+    val color = Color(strokeColor)
 
     val shown = if (selected == LetterIndex.STAR) favorites else groups[selected].orEmpty()
     val header = when {
@@ -101,7 +102,7 @@ fun OneHandMode(
                         most.forEach { entry ->
                             androidx.compose.foundation.layout.Box(
                                 Modifier.combinedClickableCompat(onClick = { onLaunch(entry) }, onLongClick = { onAppLongPress(entry) }),
-                            ) { AppIcon(entry, settings.iconOverrides[entry.key], settings.strokeColor, 28.dp, renderer) }
+                            ) { AppIcon(entry, settings.iconOverrides[entry.key], strokeColor, 28.dp, renderer) }
                         }
                     }
                 }
@@ -117,7 +118,7 @@ fun OneHandMode(
                         AppRow(
                             entry = entry,
                             override = settings.iconOverrides[entry.key],
-                            color = settings.strokeColor,
+                            color = strokeColor,
                             renderer = renderer,
                             onClick = { onLaunch(entry) },
                             onLongClick = { onAppLongPress(entry) },
