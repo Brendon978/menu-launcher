@@ -132,5 +132,5 @@ Nada aqui bloqueia app: é só reação visual na tela inicial (decisão do Bren
 - **Rancor**: depois de castigo ou fuga, por 3 min a risadinha vira cara séria com resmungo e não ganha vínculo. Carinho perdoa antes.
 - **Medo da placa**: levar ele no colo até a placa do castigo faz ele reclamar uma vez a cada aproximação.
 - **Dramático**: com vínculo abaixo de 70%, a raiva às vezes (12%) vira um desmaio fingido, deitado com tontura por 2,8 s.
-- **Bilhete triste**: quando fica triste, deixa um post-it perto do canto, um por vez.
+- **Bilhete triste**: quando fica triste, deixa um post-it perto do canto, um por vez. A tristeza não passa sozinha: dura até a carência baixar com atenção (toque gentil ou carinho).
 - **Olhos que seguem**: por 2,5 s depois de um toque em qualquer ponto da tela inicial, os olhos olham para lá. O toque é só observado, nunca consumido.

@@ -236,17 +236,13 @@ private fun SearchPillFrame(
     }
 }
 
-/** Busca na web pelo app de busca do celular; sem ele, abre no navegador. */
+/** Abre a busca do Google no navegador padrão. */
 private fun searchWeb(context: android.content.Context, q: String) {
-    val search = android.content.Intent(android.content.Intent.ACTION_WEB_SEARCH)
-        .putExtra(android.app.SearchManager.QUERY, q)
-        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(search) }.onFailure {
-        runCatching {
-            context.startActivity(
-                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/search?q=" + android.net.Uri.encode(q)))
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
+    // link direto: vai para o navegador padrão, sem o seletor de apps do Android
+    runCatching {
+        context.startActivity(
+            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/search?q=" + android.net.Uri.encode(q)))
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }
 }

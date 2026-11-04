@@ -75,7 +75,7 @@ fun decide(d: Drives, bond: Float, music: Boolean, random: Random): Activity {
         Activity.EXPLORE to max(0f, d.curiosity - .3f) * 1.1f,
         Activity.DANCE to if (dances) .9f else 0f,
         Activity.SULK to if (bond < .3f) (.3f - bond) / .3f + (if (music) .3f else 0f) else 0f,
-        Activity.SAD to if (d.longing > .75f && d.boredom > .5f) (d.longing - .75f) * 3f + (if (bond < .5f) .15f else 0f) else 0f,
+        Activity.SAD to if (d.longing > .75f && d.boredom > .5f) (d.longing - .75f) * 4f + (if (bond < .5f) .15f else 0f) else 0f,
         Activity.PLAY to if (d.energy > .5f && d.longing < .6f) (d.boredom - .25f) * 1.2f + (d.energy - .5f) * .3f else 0f,
         Activity.PRANK to if (d.energy > .35f && d.longing < .5f && d.boredom > .45f) (d.boredom - .4f) * 1.4f else 0f,
         Activity.WANDER to .45f,
@@ -84,6 +84,10 @@ fun decide(d: Drives, bond: Float, music: Boolean, random: Random): Activity {
         .mapValues { it.value + random.nextFloat() * .15f }
         .maxBy { it.value }.key
 }
+
+/** Tristeza não passa sozinha: ele fica no canto até receber atenção. */
+fun nextActivity(current: Activity, d: Drives, bond: Float, music: Boolean, random: Random): Activity =
+    if (current == Activity.SAD && d.longing > .6f) Activity.SAD else decide(d, bond, music, random)
 
 /** Vínculo depois de uma reação ao toque: carinho aproxima, raiva afasta. */
 fun bondAfter(bond: Float, r: Reaction): Float = (bond + when (r) {

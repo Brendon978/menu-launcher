@@ -204,7 +204,7 @@ fun RobotPet(
     LaunchedEffect(loaded) {
         if (!loaded) return@LaunchedEffect
         while (true) {
-            activity = decide(drives, bond, musicNow, brainRandom)
+            activity = nextActivity(activity, drives, bond, musicNow, brainRandom)
             delay(brainRandom.nextLong(7_000, 13_000))
         }
     }
@@ -445,10 +445,13 @@ fun RobotPet(
             if (notes.none { it.text in SAD_NOTES }) {
                 val nw = with(density) { 110.dp.toPx() }
                 val nh = with(density) { 60.dp.toPx() }
-                val ny = pos.value.y.coerceIn(a.t, a.b - nh)
-                listOf(pos.value.x - nw, pos.value.x + widthPx).map { it.coerceIn(a.l, a.r - nw) }
-                    .firstOrNull { noteFits(it, ny, nw, nh) }
-                    ?.let { nx -> notes = (notes + PostItNote(++noteSeq, SAD_NOTES.random(brainRandom), nx, ny, brainRandom.nextFloat() * 8f - 4f)).takeLast(4) }
+                val p = pos.value
+                val self = Area(p.x, p.y, p.x + widthPx, p.y + heightPx)
+                // ao lado, embaixo ou em cima dele: nunca por cima dele nem do que se usa
+                listOf(Offset(p.x - nw, p.y), Offset(p.x + widthPx, p.y), Offset(p.x, p.y + heightPx), Offset(p.x, p.y - nh))
+                    .map { Offset(it.x.coerceIn(a.l, a.r - nw), it.y.coerceIn(a.t, a.b - nh)) }
+                    .firstOrNull { !self.intersects(Area(it.x, it.y, it.x + nw, it.y + nh)) && noteFits(it.x, it.y, nw, nh) }
+                    ?.let { notes = (notes + PostItNote(++noteSeq, SAD_NOTES.random(brainRandom), it.x, it.y, brainRandom.nextFloat() * 8f - 4f)).takeLast(4) }
             }
             return@LaunchedEffect
         }
@@ -1241,9 +1244,11 @@ fun RobotPet(
                             awaitFirstDown().consume()
                             while (true) {
                                 val ch = awaitPointerEvent().changes.first()
+                                // lê antes de consumir: depois de consumido o movimento vem zerado
+                                val moved = ch.positionChange()
                                 ch.consume()
                                 if (!ch.pressed) break
-                                drag += ch.positionChange()
+                                drag += moved
                             }
                             // arrastou para longe: joga fora; pouquinho: só muda de lugar
                             if (drag.getDistance() > with(density) { 60.dp.toPx() }) {
@@ -1300,12 +1305,14 @@ fun RobotPet(
                     val early = withTimeoutOrNull(PICKUP_HOLD_MS) {
                         while (true) {
                             val ev = awaitPointerEvent()
+                            // lê antes de consumir: depois de consumido o movimento vem zerado
+                            val moved = ev.changes.first().positionChange().getDistance()
                             ev.changes.forEach { it.consume() }
                             if (ev.changes.count { it.pressed } >= 2) return@withTimeoutOrNull "spin"
                             val ch = ev.changes.first()
                             if (!ch.pressed) return@withTimeoutOrNull "up"
                             xs += placedAt.x + ch.position.x
-                            travel += ch.positionChange().getDistance()
+                            travel += moved
                             if (countReversals(xs, minRub) >= 2) return@withTimeoutOrNull "rub"
                             if (travel >= slop) return@withTimeoutOrNull "move"
                         }

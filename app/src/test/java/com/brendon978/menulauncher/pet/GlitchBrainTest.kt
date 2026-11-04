@@ -172,4 +172,17 @@ class GlitchBrainTest {
         for (i in 1..6) { val (n, f) = p.poke(i * 300L); p = n; fled = fled || f }
         assertTrue(fled)
     }
+
+    @Test fun tristezaDuraAteReceberAtencao() {
+        val carente = Drives(energy = .6f, boredom = 1f, longing = 1f, curiosity = .2f)
+        repeat(50) { assertEquals(Activity.SAD, nextActivity(Activity.SAD, carente, .5f, false, Random(it))) }
+        val atendido = onEvent(carente, GlitchEvent.GENTLE_TAP).clamped()
+        assertTrue((0 until 50).any { nextActivity(Activity.SAD, atendido, .5f, false, Random(it)) != Activity.SAD })
+    }
+
+    @Test fun bemCarenteFicaTristeMaisDoQuePedeAtencao() {
+        val carente = Drives(energy = .6f, boredom = 1f, longing = 1f, curiosity = .2f)
+        val c = (0 until 300).map { decide(carente, .5f, false, Random(it)) }.groupingBy { it }.eachCount()
+        assertTrue((c[Activity.SAD] ?: 0) > (c[Activity.SEEK_ATTENTION] ?: 0))
+    }
 }
