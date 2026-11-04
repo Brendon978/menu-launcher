@@ -51,4 +51,13 @@ class GlitchGamesTest {
         assertEquals("não cabe em nenhum dos dois: encosta no fim da tela", 400f, menuTop(450f, 100f, 600f, tela))
         assertEquals("maior que a tela: começa no topo", 0f, menuTop(500f, 100f, 1_200f, tela))
     }
+
+    @Test fun poseDeFotoNaoRepeteEmSeguida() {
+        repeat(200) { assertTrue(pickPhotoPose(PhotoPose.DAB, kotlin.random.Random(it)) != PhotoPose.DAB) }
+    }
+
+    @Test fun cadaPoseDeFotoEDiferente() {
+        val poses = PhotoPose.entries.map { photoPose(it, false, 1f) }
+        assertEquals(poses.size, poses.toSet().size)
+    }
 }

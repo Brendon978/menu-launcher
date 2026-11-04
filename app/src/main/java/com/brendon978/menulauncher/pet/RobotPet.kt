@@ -128,6 +128,7 @@ fun RobotPet(
     var poseUntil by remember { mutableLongStateOf(0L) }
     var lastComment by remember { mutableLongStateOf(0L) }
     var photoUntil by remember { mutableLongStateOf(0L) }
+    var photoPoseKind by remember { mutableStateOf(PhotoPose.VICTORY) }
     var debugSpecial by remember { mutableStateOf<SpecialDay?>(null) }
     val mischiefNow by rememberUpdatedState(mischief)
     val commentsNow by rememberUpdatedState(comments)
@@ -870,6 +871,7 @@ fun RobotPet(
     LaunchedEffect(Unit) {
         GlitchSignals.screenshots.collect {
             if (System.currentTimeMillis() < photoUntil) return@collect // foi ele quem tirou
+            photoPoseKind = pickPhotoPose(photoPoseKind, brainRandom)
             poseUntil = System.currentTimeMillis() + POSE_MS
             say(POSE_LINES.random(brainRandom), POSE_MS)
         }
@@ -1122,7 +1124,7 @@ fun RobotPet(
         talking != null -> Face.SCAN
         eating -> Face.GIGGLE
         tiltShown != Tilt.LEVEL -> Face.SURPRISED
-        posing -> Face.BLISS
+        posing -> photoPose(photoPoseKind, facingLeft, t).face
         fainted -> Face.DIZZY
         jkRevealing -> when (jkGlitch) { Hand.ROCK -> Face.ROCK; Hand.PAPER -> Face.PAPER; else -> Face.SCISSORS }
         flinching || spinning -> Face.SURPRISED
@@ -1163,7 +1165,7 @@ fun RobotPet(
     val pose = when {
         tiltShown == Tilt.UPSIDE_DOWN -> RobotPose(face, facingLeft, armL = 150f, armR = -150f, rotation = 180f, phase = t)
         tiltShown != Tilt.LEVEL -> RobotPose(face, tiltShown == Tilt.LEFT, armL = 70f, armR = -70f, tilt = if (tiltShown == Tilt.LEFT) -12f else 12f, phase = t)
-        posing -> RobotPose(face, facingLeft, armL = 135f, armR = -135f, lift = 3f, phase = t)
+        posing -> photoPose(photoPoseKind, facingLeft, t)
         eating -> RobotPose(face, facingLeft, armL = -20f, armR = 20f, lift = 2f * abs(sin(t * 14f)), phase = t)
         // desmaio dramático: tomba de lado e fica estendido
         fainted && !held && !flying -> RobotPose(face, facingLeft, armL = 70f, armR = -70f, tilt = 88f, lift = -2f, phase = t)
@@ -1251,6 +1253,7 @@ fun RobotPet(
         menuOpen = false
         photoUntil = System.currentTimeMillis() + 7_000
         poseUntil = photoUntil
+        photoPoseKind = pickPhotoPose(photoPoseKind, brainRandom)
         brainScope.launch {
             for (n in listOf("3", "2", "1")) { say(n, 900); delay(900) }
             speechUntil = 0L
