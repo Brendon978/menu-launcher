@@ -127,6 +127,7 @@ fun RobotPet(
     var tiltShown by remember { mutableStateOf(Tilt.LEVEL) }
     var poseUntil by remember { mutableLongStateOf(0L) }
     var lastComment by remember { mutableLongStateOf(0L) }
+    var photoUntil by remember { mutableLongStateOf(0L) }
     var debugSpecial by remember { mutableStateOf<SpecialDay?>(null) }
     val mischiefNow by rememberUpdatedState(mischief)
     val commentsNow by rememberUpdatedState(comments)
@@ -356,6 +357,7 @@ fun RobotPet(
     // brincadeiras que você começa (toque duplo no Glitch)
     var pendingGame by remember { mutableStateOf<GameKind?>(null) }
     var pendingProtest by remember { mutableIntStateOf(0) }
+    var pendingPhoto by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var lastTapAt by remember { mutableLongStateOf(0L) }
     var lastBallTouch by remember { mutableLongStateOf(0L) }
@@ -867,6 +869,7 @@ fun RobotPet(
     // tirou print: faz pose
     LaunchedEffect(Unit) {
         GlitchSignals.screenshots.collect {
+            if (System.currentTimeMillis() < photoUntil) return@collect // foi ele quem tirou
             poseUntil = System.currentTimeMillis() + POSE_MS
             say(POSE_LINES.random(brainRandom), POSE_MS)
         }
@@ -1080,6 +1083,7 @@ fun RobotPet(
                 "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
                 "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
                 "noite" -> debugNight = !debugNight
+                "foto" -> pendingPhoto++
                 "bugs" -> pendingGame = GameKind.BUGS
                 "duelo" -> pendingGame = GameKind.DUEL
                 "poleiro" -> activity = Activity.PERCH
@@ -1242,6 +1246,26 @@ fun RobotPet(
     val pad = with(density) { TOUCH_PAD.toPx() }
     var placedAt by remember { mutableStateOf(Offset.Zero) }
 
+    /** Ele conta, faz pose e tira o print: sai de primeira, sem balão na frente. */
+    fun takePhoto() {
+        menuOpen = false
+        photoUntil = System.currentTimeMillis() + 7_000
+        poseUntil = photoUntil
+        brainScope.launch {
+            for (n in listOf("3", "2", "1")) { say(n, 900); delay(900) }
+            speechUntil = 0L
+            delay(350)
+            if (!com.brendon978.menulauncher.system.LockService.screenshot()) {
+                poseUntil = 0L
+                say("Liga a acessibilidade do launcher pra eu tirar foto!", 3_000)
+            } else {
+                delay(1_200)
+                poseUntil = 0L
+                say(POSE_LINES.random(brainRandom), 2_400)
+            }
+        }
+    }
+
     fun gameTap(p: Offset) {
         if (game == GameKind.DUEL) {
             if (duelGoAt > 0L) { if (duelTapped == 0L) duelTapped = System.currentTimeMillis() } else if (duelMessage == "Espera...") duelEarly = true
@@ -1327,6 +1351,7 @@ fun RobotPet(
         }
     }
     LaunchedEffect(pendingProtest) { if (pendingProtest > 0) startProtest(System.currentTimeMillis()) }
+    LaunchedEffect(pendingPhoto) { if (pendingPhoto > 0) takePhoto() }
 
     fun onTap() {
         val tapNow = System.currentTimeMillis()
@@ -1858,6 +1883,7 @@ fun RobotPet(
             onClose = { menuOpen = false },
             talkTo = aiPackage?.let { p -> runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(p, 0)).toString() }.getOrNull() },
             onTalk = { menuOpen = false; GlitchTalk.requests.tryEmit(Unit) },
+            onPhoto = { takePhoto() },
             modifier = Modifier.layout { m, c ->
                 val pl = m.measure(c.copy(minWidth = 0, minHeight = 0))
                 layout(pl.width, pl.height) {

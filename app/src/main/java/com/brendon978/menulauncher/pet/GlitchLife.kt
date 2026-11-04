@@ -106,8 +106,8 @@ val MISCHIEF_FIXED_LINES = listOf("Tá, tá, arrumei.", "Foi sem querer!", "Tava
 
 val POSE_LINES = listOf("Saí bem?", "Pega meu lado bom!", "Manda pro grupo!", "Xiiis!")
 
-/** O aviso de print só chega depois da foto: a pose dura o bastante para dar tempo de um segundo print. */
-const val POSE_MS = 6_000L
+/** Pose depois de um print comum: o aviso só chega com a foto já tirada. Para sair na foto, use "Tirar foto". */
+const val POSE_MS = 3_000L
 
 /** Maior das duas, para o aviso não encurtar outro que já está na tela. */
 fun laterOf(a: Long, b: Long): Long = max(a, b)
