@@ -320,6 +320,8 @@ fun RobotPet(
     var spinDeg by remember { mutableFloatStateOf(0f) }
     var spinning by remember { mutableStateOf(false) }
     var flinchUntil by remember { mutableLongStateOf(0L) }
+    var letterUntil by remember { mutableLongStateOf(0L) }
+    var lastLetterAt by remember { mutableLongStateOf(0L) }
     var rootBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
     // ---- andar ----
@@ -603,6 +605,21 @@ fun RobotPet(
         if (!held) corner = null
     }
 
+    // chegou notificação nova: ele aparece com uma cartinha (no máximo uma a cada 20 s)
+    LaunchedEffect(loaded) {
+        if (!loaded) return@LaunchedEffect
+        MediaListener.arrived.collect { pkg ->
+            val n = System.currentTimeMillis()
+            if (!resumed || game != null || night || n - lastLetterAt < 20_000) return@collect
+            lastLetterAt = n
+            letterUntil = n + 2_800
+            val label = runCatching {
+                context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(pkg, 0)).toString()
+            }.getOrDefault("alguém")
+            say(listOf("Chegou coisa do $label!", "Cartinha do $label!", "Ó, $label te chamando.").random(brainRandom), 2_400)
+        }
+    }
+
     // rotina: bom dia de manhã, "vai dormir" de madrugada
     LaunchedEffect(resumed, loaded) {
         if (!resumed || !loaded) return@LaunchedEffect
@@ -752,7 +769,9 @@ fun RobotPet(
     }
     val blinkCycle = t % 4f
     val blink = if (blinkCycle in 3.75f..3.9f) .1f else 1f
+    val holdingLetter = now < letterUntil
     val pose = when {
+        holdingLetter && !held && !flying -> RobotPose(face, facingLeft, armL = -40f, armR = 40f, lift = 2f * abs(sin(t * 6f)), blink = blink, phase = t, letter = true)
         spinning -> RobotPose(face, facingLeft, armL = 110f, armR = -110f, rotation = spinDeg, phase = t)
         flinching -> RobotPose(face, facingLeft, armL = -150f, armR = 150f, lift = -4f, phase = t)
         jkCounting -> RobotPose(face, facingLeft, armL = 10f, armR = -70f + 25f * sin(t * 22f), phase = t)

@@ -53,6 +53,8 @@ data class RobotPose(
     /** Giro do corpo inteiro (pião), em graus. */
     val rotation: Float = 0f,
     val accessory: Accessory = Accessory.NONE,
+    /** Segurando uma cartinha (chegou notificação). */
+    val letter: Boolean = false,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -92,6 +94,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                         GunHold.NONE -> Unit
                     }
                     if (pose.laptop) laptop(color, pose.phase)
+                    if (pose.letter) envelope(color)
                     // braços sanfonados (por cima da arma: as garrinhas seguram ela) (iguais às pernas) com mão de 3 garrinhas; abertos 10° para fora
                     arm(40f, 10f + pose.armL, color, line)
                     arm(80f, -10f + pose.armR, color, line)
@@ -224,6 +227,15 @@ private fun DrawScope.bodyAccessory(c: Color, a: Accessory, t: Float) {
         }
         else -> Unit
     }
+}
+
+/** Cartinha na frente do peito: envelope com a aba em V e um coraçãozinho de selo. */
+private fun DrawScope.envelope(c: Color) {
+    val st = Stroke(1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    drawRoundRect(Color(0xFF0C0C0E), Offset(44f, 96f), Size(32f, 20f), CornerRadius(2f))
+    drawRoundRect(c, Offset(44f, 96f), Size(32f, 20f), CornerRadius(2f), style = st)
+    drawPath(Path().apply { moveTo(44f, 97f); lineTo(60f, 108f); lineTo(76f, 97f) }, c, style = st)
+    drawCircle(c, 1.6f, Offset(70f, 111f))
 }
 
 /** Braço de tubo com anéis, girando no ombro (topo), e mão de três garrinhas. */

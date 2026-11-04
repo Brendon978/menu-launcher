@@ -1,6 +1,11 @@
 package com.brendon978.menulauncher.home
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import com.brendon978.menulauncher.music.MediaListener
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -23,5 +28,18 @@ fun AppIcon(entry: AppEntry, override: String?, color: Int, size: Dp, renderer: 
         value = withContext(Dispatchers.Default) { renderer.iconFor(entry, override, px, color) }
     }
     val b = bmp
-    if (b == null) Box(Modifier.size(size)) else Image(b, contentDescription = null, modifier = Modifier.size(size))
+    // bolinha de notificação: só aparece se o app tem notificação "de verdade"
+    val badges by MediaListener.badges.collectAsState()
+    val badged = entry.key.packageName in badges
+    Box(Modifier.size(size)) {
+        if (b != null) Image(b, contentDescription = null, modifier = Modifier.size(size))
+        if (badged) {
+            Canvas(Modifier.size(size)) {
+                val r = this.size.minDimension * .17f
+                val c = Offset(this.size.width - r * .6f, r * .6f)
+                drawCircle(Color(0xFF0C0C0E), r + 1.6f, c)
+                drawCircle(Color(color), r, c)
+            }
+        }
+    }
 }
