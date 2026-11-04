@@ -155,3 +155,31 @@ val CELEBRATE_LINES = listOf("Você é demais!", "Melhor humano!", "Eba!!", "Te 
 val PROTEST_SIGNS = listOf("ABAIXO O DEDO!", "GREVE!", "RESPEITO PROS ROBÔS!", "CHEGA DE CUTUCADA!", "DIREITOS JÁ!")
 val PUNISH_SIGNS = listOf("INJUSTIÇA!", "EU NÃO FIZ NADA!", "TÔ DE MAL", "VOU FUGIR", "PQP")
 val PUNISH_LINES = listOf("Isso é injusto!", "Tá bom, fico aqui...", "Hmpf.", "Vou lembrar disso.", "Que palhaçada.")
+
+// ---- protesto em estágios, rancor e drama ----
+/** Protestos seguidos na mesma hora vão escalando: reclamação, greve, revolução. */
+enum class ProtestStage { COMPLAINT, STRIKE, REVOLUTION }
+
+fun protestStage(protestsInLastHour: Int): ProtestStage = when {
+    protestsInLastHour <= 1 -> ProtestStage.COMPLAINT
+    protestsInLastHour == 2 -> ProtestStage.STRIKE
+    else -> ProtestStage.REVOLUTION
+}
+
+fun recentProtests(times: List<Long>, now: Long): List<Long> = times.filter { now - it < 3_600_000L }
+
+/** Rancor: depois de castigo ou fuga, por 3 minutos ele não acha graça em nada (carinho perdoa antes). */
+const val GRUDGE_MS = 3 * 60_000L
+fun grudgeUntil(now: Long): Long = now + GRUDGE_MS
+fun holdsGrudge(until: Long, now: Long): Boolean = now < until
+
+/** Às vezes, bravo e sem muito vínculo, ele finge que morreu. */
+fun faints(bond: Float, random: Random): Boolean = bond < .7f && random.nextFloat() < .12f
+
+val STRIKE_SIGNS = listOf("GREVE GERAL!", "PAREI!", "NÃO TRABALHO MAIS!")
+val REVOLUTION_SIGNS = listOf("REVOLUÇÃO!", "ABAIXO O DEDO!", "O PODER É DOS ROBÔS!")
+val STRIKE_LINES = listOf("Tô de greve.", "Não falo com patrão.", "Fala com o sindicato.")
+val GRUDGE_LINES = listOf("Ainda tô bravo.", "Não tem graça.", "Lembra do castigo?", "Hmpf.")
+val CORNER_FEAR_LINES = listOf("Não! Lá não!", "Tudo menos o cantinho!", "Eu me comporto!")
+val DRAMA_LINES = listOf("Você me matou...", "Diga à IRIS que eu a amei.", "Adeus, mundo cruel.", "Vejo a luz...", "Foi bom enquanto durou.")
+val SAD_NOTES = listOf("Ninguém me ama", "Tô aqui, tá?", "Volta logo", "Saudade :(")
