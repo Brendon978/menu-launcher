@@ -135,6 +135,10 @@ fun bugScoreLine(you: Int, him: Int): String = when {
 
 const val DUEL_ROUNDS = 5
 
+/** Reflexo dele em ms: gente num celular costuma ficar entre 300 e 400, então a disputa é de verdade. */
+const val DUEL_GLITCH_FASTEST = 290L
+const val DUEL_GLITCH_SLOWEST = 480L
+
 enum class DuelRound { YOU, HIM }
 
 /** [earlyTap] é tocar antes do "JÁ!": ponto dele. Sem toque a tempo, também. */

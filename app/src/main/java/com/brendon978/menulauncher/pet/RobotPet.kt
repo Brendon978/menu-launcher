@@ -949,12 +949,15 @@ fun RobotPet(
             if (game != GameKind.DUEL) return@LaunchedEffect
             if (!duelEarly) {
                 duelMessage = "JÁ!"
+                // o cronômetro só parte quando o "JÁ!" já foi desenhado, não quando foi pedido
+                androidx.compose.runtime.withFrameNanos { }
+                androidx.compose.runtime.withFrameNanos { }
                 duelGoAt = System.currentTimeMillis()
                 val deadline = duelGoAt + 1_200
                 while (duelTapped == 0L && System.currentTimeMillis() < deadline) delay(10)
             }
             val tapMs = duelTapped.takeIf { it > 0L && !duelEarly }?.let { it - duelGoAt }
-            val glitchMs = brainRandom.nextLong(230, 430)
+            val glitchMs = brainRandom.nextLong(DUEL_GLITCH_FASTEST, DUEL_GLITCH_SLOWEST)
             when (duelRound(tapMs, glitchMs, duelEarly)) {
                 DuelRound.YOU -> duelYou++
                 DuelRound.HIM -> duelHim++
@@ -963,7 +966,7 @@ fun RobotPet(
             duelMessage = when {
                 duelEarly -> "Queimou!"
                 tapMs == null -> "Dormiu?"
-                else -> "$tapMs ms"
+                else -> "$tapMs x $glitchMs ms"
             }
             delay(1_300)
         }
