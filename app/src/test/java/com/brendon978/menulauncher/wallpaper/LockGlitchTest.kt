@@ -48,4 +48,10 @@ class LockGlitchTest {
         val parado = lockPose(null, 0f, Mood.NORMAL, 1f)
         LockAct.entries.forEach { assertNotEquals(it.name, parado, lockPose(it, .25f, Mood.NORMAL, 1f)) }
     }
+
+    @Test fun espreguicarAbreOsBracosParaFora() {
+        val p = lockPose(LockAct.STRETCH, .25f, Mood.NORMAL, 1f)
+        assertTrue(p.armL > 90f)
+        assertTrue(p.armR < -90f)
+    }
 }

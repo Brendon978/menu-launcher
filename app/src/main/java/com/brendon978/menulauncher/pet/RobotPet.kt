@@ -817,6 +817,8 @@ fun RobotPet(
                 "revolucao" -> { protestTimes = List(2) { System.currentTimeMillis() }; pendingProtest++ }
                 "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
                 "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
+                "ak" -> { reaction = Reaction.MENACE; reactionUntil = System.currentTimeMillis() + 5_000 }
+                "marcha" -> marchUntil = System.currentTimeMillis() + 8_000
                 "menu" -> menuOpen = true
                 "bola2" -> pendingGame = GameKind.PASS
                 "esconde" -> pendingGame = GameKind.HIDE

@@ -103,7 +103,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                         // tampa traseira com 4 parafusos
                         drawRoundRect(color.copy(alpha = color.alpha * .7f), Offset(49f, 88f), Size(22f, 26f), CornerRadius(3f), style = Stroke(1.4f))
                         for ((sx, sy) in listOf(51.5f to 90.5f, 68.5f to 90.5f, 51.5f to 111.5f, 68.5f to 111.5f)) drawCircle(color, 1f, Offset(sx, sy))
-                    } else {
+                    } else if (pose.gun == GunHold.NONE) { // armado, o peito fica livre para a arma aparecer
                         // painel do peito com LEDs acesos e respiros
                         drawRoundRect(fillFor(color, SCREEN), Offset(49f, 86f), Size(22f, 14f), CornerRadius(3f))
                         drawRoundRect(color, Offset(49f, 86f), Size(22f, 14f), CornerRadius(3f), style = Stroke(1.4f))

@@ -64,6 +64,9 @@ class LockWallpaperService : WallpaperService() {
         private var lastAct: LockAct? = null
         private var actAt = 0L
         private var nextActAt = Long.MAX_VALUE
+        /** Só em build de teste: dispara uma ação mesmo dançando ou dormindo. */
+        private var forced = false
+        private var debugReceiver: android.content.BroadcastReceiver? = null
         private val started = System.currentTimeMillis()
 
         private val frame = object : Runnable {
@@ -79,6 +82,16 @@ class LockWallpaperService : WallpaperService() {
 
         override fun onCreate(surfaceHolder: SurfaceHolder) {
             super.onCreate(surfaceHolder)
+            if (com.brendon978.menulauncher.BuildConfig.DEBUG && !isPreview) {
+                debugReceiver = object : android.content.BroadcastReceiver() {
+                    override fun onReceive(c: android.content.Context, i: Intent) {
+                        act = runCatching { LockAct.valueOf(i.getStringExtra("acao").orEmpty()) }.getOrNull() ?: return
+                        forced = true
+                        actAt = System.currentTimeMillis()
+                    }
+                }
+                registerReceiver(debugReceiver, IntentFilter("com.brendon978.menulauncher.DEBUG_LOCK_ACT"), android.content.Context.RECEIVER_EXPORTED)
+            }
             scope.launch {
                 SettingsRepository(applicationContext).settings.collect { s ->
                     stroke = Color(s.strokeColor)
@@ -112,6 +125,7 @@ class LockWallpaperService : WallpaperService() {
 
         override fun onDestroy() {
             handler.removeCallbacks(frame)
+            debugReceiver?.let { unregisterReceiver(it) }
             scope.cancel()
             background?.recycle()
             super.onDestroy()
@@ -135,6 +149,7 @@ class LockWallpaperService : WallpaperService() {
                 current != null && now - actAt >= current.durationMs -> {
                     lastAct = current
                     act = null
+                    forced = false
                     nextActAt = now + nextActGap(random)
                 }
                 current == null && now >= nextActAt && actsIn(mood) -> {
@@ -179,7 +194,7 @@ class LockWallpaperService : WallpaperService() {
                 drawBackground(c)
                 val current = act
                 val k = if (current != null) ((now - actAt).toFloat() / current.durationMs).coerceIn(0f, 1f) else 0f
-                val pose = lockPose(current, k, mood, (now - started) / 1000f).let {
+                val pose = lockPose(current, k, if (forced) Mood.NORMAL else mood, (now - started) / 1000f).let {
                     it.copy(accessory = if (dnd && it.face == Face.SLEEP) Accessory.SLEEP_MASK else accessory)
                 }
                 val h = c.height * LOCK_ROBOT_HEIGHT
