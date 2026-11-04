@@ -2210,7 +2210,9 @@ fun RobotPet(
                         val p = m.measure(c.copy(minWidth = 0, minHeight = 0))
                         layout(p.width, p.height) {
                             val x = (at.x + widthPx / 2 - p.width / 2).coerceIn(area.l, (area.r - p.width).coerceAtLeast(area.l))
-                            p.place(x.roundToInt(), (at.y - p.height).coerceAtLeast(0f).roundToInt())
+                            // com o outro falando, sobe uma linha para os balões não se cobrirem
+                            val above = if (speech != null && now < speechUntil) p.height + with(density) { 6.dp.toPx() } else 0f
+                            p.place(x.roundToInt(), (at.y - p.height - above).coerceAtLeast(0f).roundToInt())
                         }
                     },
                 )
