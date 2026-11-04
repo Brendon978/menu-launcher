@@ -103,7 +103,7 @@ fun SettingsScreen(
         }
 
         Section("Tela inicial")
-        ToggleRow("Linha de mais usados", "Os apps que você mais abre, em cima dos favoritos.", settings.showMostUsed) { v -> onChange { it.copy(showMostUsed = v) } }
+        ToggleRow("Linha de mais usados", "No modo uma mão, os apps que você mais abre, em cima dos favoritos.", settings.showMostUsed) { v -> onChange { it.copy(showMostUsed = v) } }
         ToggleRow("Atalhos rápidos", "Lanterna, Wi-Fi, internet e não perturbe embaixo da data.", settings.showQuickActions) { v -> onChange { it.copy(showQuickActions = v) } }
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
 

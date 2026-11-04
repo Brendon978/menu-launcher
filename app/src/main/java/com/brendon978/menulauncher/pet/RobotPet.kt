@@ -81,6 +81,7 @@ private const val PICKUP_HOLD_MS = 650L
 fun RobotPet(
     color: Color,
     musicPlaying: Boolean,
+    homeOnTop: Boolean = true,
     area: Area,
     obstacles: List<Area>,
     accessory: Accessory = Accessory.NONE,
@@ -135,7 +136,13 @@ fun RobotPet(
     val brainRandom = remember { Random(System.nanoTime() + 3) }
     var speech by remember { mutableStateOf<String?>(null) }
     var speechUntil by remember { mutableLongStateOf(0L) }
-    fun say(line: String, ms: Long = 2_200) { speech = line; speechUntil = System.currentTimeMillis() + ms }
+    // fala de IA não pode ser cortada por bom dia, trabalho ou resmungo
+    var aiSpeechUntil by remember { mutableLongStateOf(0L) }
+    fun say(line: String, ms: Long = 2_200) {
+        if (System.currentTimeMillis() < aiSpeechUntil) return
+        speech = line
+        speechUntil = System.currentTimeMillis() + ms
+    }
     val brainScope = androidx.compose.runtime.rememberCoroutineScope()
     fun save() {
         if (GlitchLive.importing) return
@@ -175,6 +182,11 @@ fun RobotPet(
     }
     val night = phoneMood == Mood.SLEEPING
     val batteryTired = phoneMood == Mood.TIRED
+    // os efeitos longos abaixo não reiniciam: leem daqui o valor de agora
+    val nightNow by rememberUpdatedState(night)
+    val tiredNow by rememberUpdatedState(batteryTired)
+    val musicNow by rememberUpdatedState(musicPlaying)
+    val chargingNow by rememberUpdatedState(battery.charging)
     // vontades andam com o tempo (só com a tela inicial à vista)
     LaunchedEffect(loaded) {
         if (!loaded) return@LaunchedEffect
@@ -182,8 +194,8 @@ fun RobotPet(
         while (true) {
             delay(1_000)
             if (!resumed) continue
-            drives = tick(drives, 1f, TickCtx(napping = activity == Activity.NAP || night, night = night, batteryLow = batteryTired, music = musicPlaying))
-            if (battery.charging) drives = drives.copy(energy = drives.energy + 1f / 300f).clamped()
+            drives = tick(drives, 1f, TickCtx(napping = activity == Activity.NAP || nightNow, night = nightNow, batteryLow = tiredNow, music = musicNow))
+            if (chargingNow) drives = drives.copy(energy = drives.energy + 1f / 300f).clamped()
             if (++n % 30 == 0) save()
         }
     }
@@ -191,7 +203,7 @@ fun RobotPet(
     LaunchedEffect(loaded) {
         if (!loaded) return@LaunchedEffect
         while (true) {
-            activity = decide(drives, bond, musicPlaying, brainRandom)
+            activity = decide(drives, bond, musicNow, brainRandom)
             delay(brainRandom.nextLong(7_000, 13_000))
         }
     }
@@ -343,6 +355,8 @@ fun RobotPet(
     var visible by remember { mutableFloatStateOf(1f) }
     val currentArea by rememberUpdatedState(area)
     val currentObstacles by rememberUpdatedState(obstacles)
+    // post-it consome o toque: nunca em cima de algo que se usa
+    fun noteFits(x: Float, y: Float, w: Float, h: Float) = currentObstacles.none { it.intersects(Area(x, y, x + w, y + h)) }
     // marchando, ele anda mesmo que estivesse dormindo, cansado ou dançando
     val protesting = now < protestUntil
     val punished = punishment?.active(now) == true
@@ -377,7 +391,7 @@ fun RobotPet(
 
     // moonwalk: atravessa a tela de verdade, deslizando para trás (olha para um lado e vai para o outro)
     var moonFacingLeft by remember { mutableStateOf(false) }
-    val moonwalking = mood == Mood.DANCING && danceMove == DanceMove.MOONWALK && !menacing
+    val moonwalking = mood == Mood.DANCING && danceMove == DanceMove.MOONWALK && !menacing && !fainted && !striking
     LaunchedEffect(moonwalking) {
         if (!moonwalking || !pos.value.isSpecified) return@LaunchedEffect
         val here = pos.value
@@ -429,9 +443,10 @@ fun RobotPet(
             if (notes.none { it.text in SAD_NOTES }) {
                 val nw = with(density) { 110.dp.toPx() }
                 val nh = with(density) { 60.dp.toPx() }
-                val nx = (pos.value.x + (if (pos.value.x > (a.l + a.r) / 2) -nw else widthPx)).coerceIn(a.l, a.r - nw)
                 val ny = pos.value.y.coerceIn(a.t, a.b - nh)
-                notes = (notes + PostItNote(++noteSeq, SAD_NOTES.random(brainRandom), nx, ny, brainRandom.nextFloat() * 8f - 4f)).takeLast(4)
+                listOf(pos.value.x - nw, pos.value.x + widthPx).map { it.coerceIn(a.l, a.r - nw) }
+                    .firstOrNull { noteFits(it, ny, nw, nh) }
+                    ?.let { nx -> notes = (notes + PostItNote(++noteSeq, SAD_NOTES.random(brainRandom), nx, ny, brainRandom.nextFloat() * 8f - 4f)).takeLast(4) }
             }
             return@LaunchedEffect
         }
@@ -442,8 +457,10 @@ fun RobotPet(
             val nw = with(density) { 110.dp.toPx() }
             val nh = with(density) { 60.dp.toPx() }
             val at = Offset((pos.value.x - nw / 3).coerceIn(a.l, a.r - nw), (pos.value.y - nh * .2f).coerceIn(a.t, a.b - nh))
-            notes = (notes + PostItNote(++noteSeq, POSTIT_LINES.random(brainRandom), at.x, at.y, brainRandom.nextFloat() * 10f - 5f)).takeLast(4)
-            say("Hehe...", 1_200)
+            if (noteFits(at.x, at.y, nw, nh)) {
+                notes = (notes + PostItNote(++noteSeq, POSTIT_LINES.random(brainRandom), at.x, at.y, brainRandom.nextFloat() * 10f - 5f)).takeLast(4)
+                say("Hehe...", 1_200)
+            }
             delay(1_500)
             drives = drives.copy(boredom = drives.boredom - .4f).clamped()
             activity = Activity.WANDER
@@ -560,7 +577,7 @@ fun RobotPet(
             delay(3_000)
             scanning = false
             drives = drives.copy(curiosity = drives.curiosity - .4f).clamped()
-            activity = decide(drives, bond, musicPlaying, brainRandom)
+            activity = decide(drives, bond, musicNow, brainRandom)
             return@LaunchedEffect
         }
         while (true) {
@@ -637,7 +654,7 @@ fun RobotPet(
         if (!loaded) return@LaunchedEffect
         MediaListener.arrived.collect { pkg ->
             val n = System.currentTimeMillis()
-            if (!resumed || game != null || night || n - lastLetterAt < 20_000) return@collect
+            if (!resumed || game != null || nightNow || n - lastLetterAt < 20_000) return@collect
             lastLetterAt = n
             letterUntil = n + 2_800
             val label = runCatching {
@@ -649,14 +666,17 @@ fun RobotPet(
 
     // uma IA falando pelo Glitch (IRIS, Eloy...): sai num balão maior, com o nome de quem fala
     val incoming by com.brendon978.menulauncher.ai.SayReceiver.pending.collectAsState()
-    LaunchedEffect(incoming, resumed, loaded) {
+    LaunchedEffect(incoming, resumed, loaded, homeOnTop, hidden) {
         val sp = incoming ?: return@LaunchedEffect
-        if (!resumed || !loaded) return@LaunchedEffect
+        // busca ou ajustes por cima, ou escondido: guarda para quando dê para ver
+        if (!resumed || !loaded || !homeOnTop || hidden) return@LaunchedEffect
         com.brendon978.menulauncher.ai.SayReceiver.consumed(sp)
         // fala velha (mais de 10 min) não vale mais
         if (System.currentTimeMillis() - sp.at > 10 * 60_000L) return@LaunchedEffect
         val line = sp.from?.let { "$it: ${sp.text}" } ?: sp.text
+        aiSpeechUntil = 0L
         say(line, (2_500L + line.length * 45L).coerceAtMost(9_000L))
+        aiSpeechUntil = speechUntil
     }
 
     // rotina: bom dia de manhã, "vai dormir" de madrugada
@@ -850,10 +870,9 @@ fun RobotPet(
     } else 0f to 0f
     val pose = when {
         // desmaio dramático: tomba de lado e fica estendido
-        fainted -> RobotPose(face, facingLeft, armL = 70f, armR = -70f, tilt = 88f, lift = -2f, phase = t)
+        fainted && !held && !flying -> RobotPose(face, facingLeft, armL = 70f, armR = -70f, tilt = 88f, lift = -2f, phase = t)
         // greve: de costas, braços cruzados, parado com o cartaz
-        striking -> RobotPose(face, facingLeft, armL = 20f, armR = -20f, back = true, phase = t)
-        holdingLetter && !held && !flying -> RobotPose(face, facingLeft, armL = -40f, armR = 40f, lift = 2f * abs(sin(t * 6f)), blink = blink, phase = t, letter = true)
+        striking && !held && !flying -> RobotPose(face, facingLeft, armL = 20f, armR = -20f, back = true, phase = t)
         spinning -> RobotPose(face, facingLeft, armL = 110f, armR = -110f, rotation = spinDeg, phase = t)
         flinching -> RobotPose(face, facingLeft, armL = -150f, armR = 150f, lift = -4f, phase = t)
         jkCounting -> RobotPose(face, facingLeft, armL = 10f, armR = -70f + 25f * sin(t * 22f), phase = t)
@@ -887,6 +906,10 @@ fun RobotPet(
         marching -> {
             val s = sin(t * 9f)
             RobotPose(face, facingLeft, legL = 24f * s, legR = -24f * s, armL = -38f, armR = 22f, lift = 3.5f * abs(s), phase = t, gun = GunHold.MARCH)
+        }
+        holdingLetter && !held && !flying -> {
+            val s = if (walking) sin(t * 12f) else 0f
+            RobotPose(face, facingLeft, legL = 16f * s, legR = -16f * s, armL = -40f, armR = 40f, lift = 2f * abs(sin(t * 6f)), blink = blink, phase = t, letter = true)
         }
         reacting && reaction == Reaction.GIGGLE -> {
             val k = ((reactionUntil - now) / 900f).coerceIn(0f, 1f)
@@ -993,7 +1016,8 @@ fun RobotPet(
     fun onTap() {
         val tapNow = System.currentTimeMillis()
         // de greve não brinca nem acha graça
-        if (striking) { say(STRIKE_LINES.random(brainRandom), 1_600); lastTapAt = 0L; return }
+        // (lê os estados na hora: o gesto guarda o onTap da primeira composição)
+        if (tapNow < protestUntil && protestStage == ProtestStage.STRIKE) { say(STRIKE_LINES.random(brainRandom), 1_600); lastTapAt = 0L; return }
         // pega-pega: encostou, pegou
         if (game == GameKind.TAG) {
             game = null
@@ -1041,14 +1065,16 @@ fun RobotPet(
             if (activity == Activity.SEEK_ATTENTION) activity = Activity.WANDER
         }
         // cada vez que fica bravo conta para o protesto
+        var spoke = false
         if (r == Reaction.ANGRY && reaction != Reaction.ANGRY) {
             val (m, protest) = protestMeter.angry(tapNow)
             protestMeter = m
-            if (protest) startProtest(tapNow)
+            if (protest) { startProtest(tapNow); spoke = protestStage == ProtestStage.STRIKE }
             // às vezes, em vez de brigar, ele finge que morreu
             if (faints(bond, speechRandom)) {
                 faintUntil = tapNow + 2_800
                 say(DRAMA_LINES.random(speechRandom), 2_600)
+                spoke = true
             }
         }
         pokeExpect = expectPoke(pokeExpect, poked = r != Reaction.GIGGLE)
@@ -1056,7 +1082,7 @@ fun RobotPet(
         if (r == Reaction.FLEE) log { it.copy(fled = it.fled + 1) }
         reaction = r
         reactionUntil = tapNow + if (r == Reaction.GIGGLE) 900 else 1_200
-        angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
+        if (!spoke) angerLine(r, speechRandom)?.let { speech = it; speechUntil = tapNow + 1_800 }
         if (r == Reaction.FLEE) scope.launch { fleeSignal++ }
     }
 

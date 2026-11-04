@@ -29,4 +29,9 @@ class BackupTest {
         val s = LauncherSettings(customLabels = mapOf(a to "Ação = é\\n#1 ✓"))
         assertEquals(s.customLabels, Backup.decode(Backup.encode(s))!!.customLabels)
     }
+
+    @Test fun usoVaiNoBackup() {
+        val s = LauncherSettings(usage = mapOf(a to 3.5f, b to .25f))
+        assertEquals(s.usage, Backup.decode(Backup.encode(s))!!.usage)
+    }
 }

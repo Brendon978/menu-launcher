@@ -2,6 +2,7 @@ package com.brendon978.menulauncher.home
 
 import android.content.Intent
 import android.provider.AlarmClock
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -56,7 +58,13 @@ fun TopInfo(color: Color, modifier: Modifier = Modifier, showNextEvent: Boolean 
             val event by androidx.compose.runtime.produceState<String?>(null, now / 60_000) {
                 value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queryNextEvent(context) }
             }
-            event?.let { Text(it, color = color.copy(alpha = 0.85f), fontSize = 13.sp, maxLines = 1) }
+            event?.let {
+                Text(
+                    it, color = color.copy(alpha = 0.85f), fontSize = 13.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 200.dp),
+                )
+            }
         }
     }
 }

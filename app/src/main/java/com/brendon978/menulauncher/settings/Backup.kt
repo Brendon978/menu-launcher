@@ -33,6 +33,7 @@ object Backup {
         p["folders"] = s.folders.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
         p["doubleTapLock"] = s.doubleTapLock.toString()
         p["showMostUsed"] = s.showMostUsed.toString()
+        p["usage"] = s.usage.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
         p["showQuickActions"] = s.showQuickActions.toString()
         p["showNextEvent"] = s.showNextEvent.toString()
         extra.forEach { (k, v) -> p[k] = v }
@@ -68,6 +69,7 @@ object Backup {
             }.toMap(),
             doubleTapLock = p.getProperty("doubleTapLock")?.toBooleanStrictOrNull() ?: d.doubleTapLock,
             showMostUsed = p.getProperty("showMostUsed")?.toBooleanStrictOrNull() ?: d.showMostUsed,
+            usage = pairs("usage").mapNotNull { (k, v) -> v.toFloatOrNull()?.let { k to it } }.toMap(),
             showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,
             showNextEvent = p.getProperty("showNextEvent")?.toBooleanStrictOrNull() ?: d.showNextEvent,
         )

@@ -179,15 +179,13 @@ class MainActivity : ComponentActivity() {
             // enquanto a busca ou os Ajustes estão abertos por cima.
             Box(Modifier.fillMaxSize()) {
             HomeScreen(
+                    homeOnTop = screen.value == Screen.Home,
                     apps = visibleApps,
                     settings = settings,
                     renderer = renderer,
                     resetSignal = resetSignal.intValue,
                     onLaunch = {
-                        com.brendon978.menulauncher.pet.GlitchSignals.lastLaunch = it.key.packageName to System.currentTimeMillis()
-                        appRepo.launch(it.key)
-                        val k = it.key
-                        updateSettings { st -> st.copy(usage = com.brendon978.menulauncher.settings.Usage.bump(st.usage, k)) }
+                        launchCounted(it.key)
                     },
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
@@ -226,7 +224,7 @@ class MainActivity : ComponentActivity() {
                     settings = settings,
                     renderer = renderer,
                     onLaunch = {
-                        appRepo.launch(it.key)
+                        launchCounted(it.key)
                         screen.value = Screen.Home
                     },
                     onAppLongPress = { sheetFor.value = it },
@@ -313,6 +311,13 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /** Abre o app e registra: conta para "mais usados" e para o Glitch notar trabalho. */
+    private fun launchCounted(key: com.brendon978.menulauncher.apps.AppKey) {
+        com.brendon978.menulauncher.pet.GlitchSignals.lastLaunch = key.packageName to System.currentTimeMillis()
+        appRepo.launch(key)
+        updateSettings { st -> st.copy(usage = com.brendon978.menulauncher.settings.Usage.bump(st.usage, key)) }
     }
 
     private fun updateSettings(f: (LauncherSettings) -> LauncherSettings) {

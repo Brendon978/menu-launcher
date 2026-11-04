@@ -36,6 +36,7 @@ import com.brendon978.menulauncher.settings.LauncherSettings
 
 @Composable
 fun HomeScreen(
+    homeOnTop: Boolean,
     apps: List<AppEntry>,
     settings: LauncherSettings,
     renderer: IconRenderer,
@@ -130,7 +131,7 @@ fun HomeScreen(
                 )
             }
         }
-        if (settings.mode == HomeMode.ONE_HAND && settings.showPet) PetLayer(color, musicPlaying, settings.glitchAccessory)
+        if (settings.mode == HomeMode.ONE_HAND && settings.showPet) PetLayer(color, musicPlaying, settings.glitchAccessory, homeOnTop)
         overlay()
     }
     }
@@ -138,7 +139,7 @@ fun HomeScreen(
 
 /** Camada do robozinho: a tela inteira, menos o que está marcado como obstáculo (com folga). */
 @Composable
-private fun PetLayer(color: Color, musicPlaying: Boolean, accessory: String) {
+private fun PetLayer(color: Color, musicPlaying: Boolean, accessory: String, homeOnTop: Boolean) {
     val reg = LocalPetObstacles.current ?: return
     val density = LocalDensity.current
     var origin by remember { mutableStateOf(Offset.Zero) }
@@ -157,6 +158,7 @@ private fun PetLayer(color: Color, musicPlaying: Boolean, accessory: String) {
         RobotPet(
             color = color,
             musicPlaying = musicPlaying,
+            homeOnTop = homeOnTop,
             area = Area(margin, margin, size.width - margin, size.height - margin),
             obstacles = obstacles,
             accessory = runCatching { com.brendon978.menulauncher.pet.Accessory.valueOf(accessory) }.getOrDefault(com.brendon978.menulauncher.pet.Accessory.NONE),

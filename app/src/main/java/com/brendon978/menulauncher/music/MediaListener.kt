@@ -11,17 +11,17 @@ import kotlinx.coroutines.flow.asStateFlow
  * (sem as persistentes, como música e downloads, e sem as do próprio launcher).
  */
 class MediaListener : NotificationListenerService() {
-    override fun onListenerConnected() = recount()
+    override fun onListenerConnected() = recount(announce = false) // o que já estava lá não é novidade
     override fun onListenerDisconnected() { _count.value = null; _badges.value = emptySet() }
     override fun onNotificationPosted(sbn: StatusBarNotification?) = recount()
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = recount()
 
-    private fun recount() {
+    private fun recount(announce: Boolean = true) {
         val active = runCatching { activeNotifications }.getOrNull() ?: return
         val infos = active.map { NotifInfo(it.packageName, it.isClearable, it.isOngoing) }
         _count.value = realCount(infos, packageName)
         val now = badgePackages(infos, packageName)
-        newcomers(_badges.value, now).forEach { _arrived.tryEmit(it) }
+        if (announce) newcomers(_badges.value, now).forEach { _arrived.tryEmit(it) }
         _badges.value = now
     }
 

@@ -1,8 +1,5 @@
 package com.brendon978.menulauncher.apps
 
-import kotlin.math.abs
-import kotlin.math.roundToLong
-
 /**
  * Calculadora da busca: "12*7" dá "84". Só responde se o texto for uma conta de verdade
  * (com pelo menos uma operação); qualquer outra coisa dá null e a busca segue normal.
@@ -15,11 +12,9 @@ fun calc(text: String): String? {
     return format(v)
 }
 
-private fun format(v: Double): String {
-    val rounded = (v * 1_000_000).roundToLong() / 1_000_000.0
-    if (abs(rounded - rounded.roundToLong()) < 1e-9) return rounded.roundToLong().toString()
-    return rounded.toString().trimEnd('0').trimEnd('.').replace('.', ',')
-}
+/** Até 6 casas, sem notação científica. */
+private fun format(v: Double): String =
+    java.math.BigDecimal(v).setScale(6, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString().replace('.', ',')
 
 private class Parser(val s: String) {
     var i = 0

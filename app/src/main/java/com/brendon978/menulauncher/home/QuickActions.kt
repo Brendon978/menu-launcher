@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 /** Lanterna, Wi-Fi, internet e não perturbe, em contorno, embaixo da data. */
 @Composable
@@ -45,7 +46,8 @@ fun QuickActions(color: Color, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val torch = rememberTorch()
     val nm = remember { context.getSystemService(NotificationManager::class.java) }
-    var dnd by remember { mutableStateOf(nm.currentInterruptionFilter > NotificationManager.INTERRUPTION_FILTER_ALL) }
+    val dnd = com.brendon978.menulauncher.pet.rememberDoNotDisturb()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     Row(modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         QuickButton(color, active = torch.on, onClick = torch.toggle) { flashlight(it) }
         QuickButton(color, active = false, onClick = { context.startPanel(Settings.Panel.ACTION_WIFI) }) { wifi(it) }
@@ -54,7 +56,13 @@ fun QuickActions(color: Color, modifier: Modifier = Modifier) {
             if (nm.isNotificationPolicyAccessGranted) {
                 val next = if (dnd) NotificationManager.INTERRUPTION_FILTER_ALL else NotificationManager.INTERRUPTION_FILTER_PRIORITY
                 nm.setInterruptionFilter(next)
-                dnd = !dnd
+                // desde o Android 15 o app só controla a própria regra: o que veio da cortina ou de um agendamento segue ligado
+                if (dnd) scope.launch {
+                    kotlinx.coroutines.delay(600)
+                    if (nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) {
+                        Toast.makeText(context, "Esse não perturbe veio de fora: desligue pela cortina", Toast.LENGTH_LONG).show()
+                    }
+                }
             } else {
                 Toast.makeText(context, "Libere o acesso ao não perturbe para o menu-launcher", Toast.LENGTH_LONG).show()
                 context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class SayReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.trim().orEmpty()
+        val text = clean(intent.getStringExtra(Intent.EXTRA_TEXT).orEmpty())
         if (text.isEmpty()) return
         val from = intent.getStringExtra(AiContract.EXTRA_FROM)?.trim()?.take(24)?.ifEmpty { null }
-        _pending.value = Speech(from, clean(text), System.currentTimeMillis())
+        _pending.value = Speech(from, text, System.currentTimeMillis())
     }
 
     companion object {

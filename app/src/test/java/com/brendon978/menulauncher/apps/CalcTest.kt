@@ -32,4 +32,12 @@ class CalcTest {
     @Test fun divisaoPorZeroNaoQuebra() {
         assertNull(calc("5/0"))
     }
+
+    @Test fun numerosPequenosEGrandesSemNotacaoCientifica() {
+        assertEquals("0,0005", calc("1/2000"))
+        assertEquals("33333333,333333", calc("100000000/3"))
+        assertEquals("25000000000000", calc("5000000*5000000"))
+        assertEquals("12345678900,5", calc("12345678900+0,5"))
+        assertEquals("0,3", calc("0,1+0,2"))
+    }
 }

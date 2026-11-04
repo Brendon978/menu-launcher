@@ -75,7 +75,7 @@ fun rememberDoNotDisturb(): Boolean {
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context?, i: android.content.Intent?) { on = check() }
         }
-        context.registerReceiver(r, android.content.IntentFilter(android.app.NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED))
+        context.registerReceiver(r, android.content.IntentFilter(android.app.NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED), Context.RECEIVER_NOT_EXPORTED)
         onDispose { context.unregisterReceiver(r) }
     }
     return on
