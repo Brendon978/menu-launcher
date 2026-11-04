@@ -57,12 +57,16 @@ import com.brendon978.menulauncher.music.MusicControls
 import com.brendon978.menulauncher.music.MusicRepository
 import com.brendon978.menulauncher.onboarding.FirstRunScreen
 import com.brendon978.menulauncher.settings.FavoritesOps
+import com.brendon978.menulauncher.settings.GestureAction
+import com.brendon978.menulauncher.settings.GestureChoice
 import com.brendon978.menulauncher.settings.activeFavorites
 import com.brendon978.menulauncher.settings.currentProfile
+import com.brendon978.menulauncher.settings.doubleTapChoice
 import com.brendon978.menulauncher.settings.editFavorites
 import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
 import com.brendon978.menulauncher.settings.SettingsRepository
+import com.brendon978.menulauncher.settings.usesTorchGesture
 import com.brendon978.menulauncher.settingsui.SettingsScreen
 import com.brendon978.menulauncher.wallpaper.WallpaperApplier
 import com.brendon978.menulauncher.wallpaper.rotationDue
@@ -160,6 +164,8 @@ class MainActivity : ComponentActivity() {
             // voltou para a tela inicial por dentro do app (fechou os Ajustes, botão home)
             LaunchedEffect(screen.value) { rotateWallpaperIfDue() }
 
+            val torch = if (settings.usesTorchGesture()) com.brendon978.menulauncher.home.rememberTorch() else null
+
             if (loaded == null) return@run // evita piscar a primeira abertura antes de ler os ajustes
 
             if (!settings.firstRunDone) {
@@ -203,14 +209,9 @@ class MainActivity : ComponentActivity() {
                     onAppLongPress = { sheetFor.value = it },
                     onEmptyLongPress = { screen.value = Screen.Settings },
                     onSearch = { screen.value = Screen.Search },
-                    onSwipeDown = ::expandNotifications,
-                    onSwipeUp = { screen.value = Screen.Search },
-                    onEmptyDoubleTap = {
-                        if (!com.brendon978.menulauncher.system.LockService.lock()) {
-                            android.widget.Toast.makeText(this@MainActivity, "Ligue o menu-launcher em Acessibilidade para apagar a tela", android.widget.Toast.LENGTH_LONG).show()
-                            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                        }
-                    },
+                    onSwipeDown = { runGesture(settings.gestureDown, torch) },
+                    onSwipeUp = { runGesture(settings.gestureUp, torch) },
+                    onEmptyDoubleTap = { runGesture(settings.doubleTapChoice(), torch) },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
                     overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps, stroke) },
@@ -332,6 +333,30 @@ class MainActivity : ComponentActivity() {
         com.brendon978.menulauncher.pet.GlitchSignals.lastLaunch = key.packageName to System.currentTimeMillis()
         appRepo.launch(key)
         updateSettings { st -> st.copy(usage = com.brendon978.menulauncher.settings.Usage.bump(st.usage, key)) }
+    }
+
+    private fun runGesture(choice: GestureChoice, torch: com.brendon978.menulauncher.home.Torch?) {
+        when (choice.action) {
+            GestureAction.NOTIFICATIONS -> expandNotifications()
+            GestureAction.SEARCH -> screen.value = Screen.Search
+            GestureAction.LOCK -> lockScreen()
+            GestureAction.CAMERA -> runCatching {
+                startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }.onFailure { toast("Não achei o app de câmera") }
+            GestureAction.TORCH -> torch?.toggle?.invoke()
+            GestureAction.APP -> choice.app?.let { key ->
+                if (appRepo.activityInfo(key) == null) toast("Esse app não está mais instalado")
+                else runCatching { launchCounted(key) }
+            }
+            GestureAction.NONE -> Unit
+        }
+    }
+
+    private fun lockScreen() {
+        if (!com.brendon978.menulauncher.system.LockService.lock()) {
+            android.widget.Toast.makeText(this, "Ligue o menu-launcher em Acessibilidade para apagar a tela", android.widget.Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
     }
 
     private fun updateSettings(f: (LauncherSettings) -> LauncherSettings) {

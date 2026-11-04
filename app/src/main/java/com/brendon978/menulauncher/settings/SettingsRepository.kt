@@ -42,6 +42,9 @@ class SettingsRepository(private val context: Context) {
         val hidden = stringSetPreferencesKey("hidden_apps")
         val folders = stringSetPreferencesKey("folders")
         val doubleTapLock = booleanPreferencesKey("double_tap_lock")
+        val gestureDown = stringPreferencesKey("gesture_down")
+        val gestureUp = stringPreferencesKey("gesture_up")
+        val gestureDoubleTap = stringPreferencesKey("gesture_double_tap")
         val usage = stringSetPreferencesKey("usage")
         val showMostUsed = booleanPreferencesKey("show_most_used")
         val showQuickActions = booleanPreferencesKey("show_quick_actions")
@@ -88,6 +91,9 @@ class SettingsRepository(private val context: Context) {
             prefs[K.hidden] = next.hiddenApps.map { it.encode() }.toSet()
             prefs[K.folders] = next.folders.map { (name, keys) -> name + SEP + keys.joinToString("\n") { it.encode() } }.toSet()
             prefs[K.doubleTapLock] = next.doubleTapLock
+            prefs[K.gestureDown] = next.gestureDown.encode()
+            prefs[K.gestureUp] = next.gestureUp.encode()
+            if (next.gestureDoubleTap != null) prefs[K.gestureDoubleTap] = next.gestureDoubleTap.encode() else prefs.remove(K.gestureDoubleTap)
             prefs[K.usage] = next.usage.map { (k, v) -> "${k.encode()}$SEP$v" }.toSet()
             prefs[K.showMostUsed] = next.showMostUsed
             prefs[K.showQuickActions] = next.showQuickActions
@@ -152,6 +158,9 @@ class SettingsRepository(private val context: Context) {
                 if (i <= 0) null else entry.substring(0, i) to entry.substring(i + 1).split("\n").mapNotNull { AppKey.decode(it) }
             }?.toMap()?.toSortedMap() ?: d.folders,
             doubleTapLock = this[K.doubleTapLock] ?: d.doubleTapLock,
+            gestureDown = GestureChoice.decode(this[K.gestureDown]) ?: d.gestureDown,
+            gestureUp = GestureChoice.decode(this[K.gestureUp]) ?: d.gestureUp,
+            gestureDoubleTap = GestureChoice.decode(this[K.gestureDoubleTap]),
             usage = this[K.usage]?.mapNotNull { entry ->
                 val i = entry.indexOf(SEP)
                 if (i < 0) null else AppKey.decode(entry.substring(0, i))?.let { k -> entry.substring(i + 1).toFloatOrNull()?.let { k to it } }

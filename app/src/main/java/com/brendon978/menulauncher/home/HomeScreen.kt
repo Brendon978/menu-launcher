@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -33,6 +34,7 @@ import com.brendon978.menulauncher.apps.AppEntry
 import com.brendon978.menulauncher.icons.IconRenderer
 import com.brendon978.menulauncher.settings.HomeMode
 import com.brendon978.menulauncher.settings.LauncherSettings
+import com.brendon978.menulauncher.settings.listensDoubleTap
 
 @Composable
 fun HomeScreen(
@@ -58,6 +60,11 @@ fun HomeScreen(
 ) {
     val color = Color(strokeColor)
     val obstacles = remember { PetObstacles() }
+    // os gestos ficam escutando por muito tempo: sem isto rodaria a ação escolhida antes da troca nos Ajustes
+    val swipeDown by rememberUpdatedState(onSwipeDown)
+    val swipeUp by rememberUpdatedState(onSwipeUp)
+    val doubleTap by rememberUpdatedState(onEmptyDoubleTap)
+    val listensDoubleTap = settings.listensDoubleTap()
     CompositionLocalProvider(LocalPetObstacles provides obstacles) {
     Box(
         Modifier
@@ -73,21 +80,21 @@ fun HomeScreen(
                     }
                 }
             }
-            .pointerInput(settings.doubleTapLock) {
+            .pointerInput(listensDoubleTap) {
                 detectTapGestures(
                     onLongPress = { onEmptyLongPress() },
                     // só escuta toque duplo com a opção ligada (senão o toque simples nem espera)
-                    onDoubleTap = if (settings.doubleTapLock) ({ onEmptyDoubleTap() }) else null,
+                    onDoubleTap = if (listensDoubleTap) ({ doubleTap() }) else null,
                 )
             }
-            // deslizar para baixo: notificações; para cima: busca
+            // deslizar para baixo e para cima: a ação escolhida (padrão: notificações e busca)
             .pointerInput(Unit) {
                 var dy = 0f
                 detectVerticalDragGestures(
                     onDragStart = { dy = 0f },
                     onDragEnd = {
                         val min = 90.dp.toPx()
-                        if (dy > min) onSwipeDown() else if (dy < -min) onSwipeUp()
+                        if (dy > min) swipeDown() else if (dy < -min) swipeUp()
                     },
                 ) { _, d -> dy += d }
             }

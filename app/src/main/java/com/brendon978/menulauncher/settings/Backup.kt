@@ -36,6 +36,9 @@ object Backup {
         p["hiddenApps"] = s.hiddenApps.joinToString("\n") { it.encode() }
         p["folders"] = s.folders.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
         p["doubleTapLock"] = s.doubleTapLock.toString()
+        p["gestureDown"] = s.gestureDown.encode()
+        p["gestureUp"] = s.gestureUp.encode()
+        s.gestureDoubleTap?.let { p["gestureDoubleTap"] = it.encode() }
         p["showMostUsed"] = s.showMostUsed.toString()
         p["usage"] = s.usage.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
         p["showQuickActions"] = s.showQuickActions.toString()
@@ -86,6 +89,9 @@ object Backup {
                 if (i <= 0) null else l.substring(0, i) to l.substring(i + 1).split(",").mapNotNull { AppKey.decode(it) }
             }.toMap(),
             doubleTapLock = p.getProperty("doubleTapLock")?.toBooleanStrictOrNull() ?: d.doubleTapLock,
+            gestureDown = GestureChoice.decode(p.getProperty("gestureDown")) ?: d.gestureDown,
+            gestureUp = GestureChoice.decode(p.getProperty("gestureUp")) ?: d.gestureUp,
+            gestureDoubleTap = GestureChoice.decode(p.getProperty("gestureDoubleTap")),
             showMostUsed = p.getProperty("showMostUsed")?.toBooleanStrictOrNull() ?: d.showMostUsed,
             usage = pairs("usage").mapNotNull { (k, v) -> v.toFloatOrNull()?.let { k to it } }.toMap(),
             showQuickActions = p.getProperty("showQuickActions")?.toBooleanStrictOrNull() ?: d.showQuickActions,

@@ -120,6 +120,9 @@ fun SettingsScreen(
         NextEventToggle(settings.showNextEvent) { v -> onChange { it.copy(showNextEvent = v) } }
         ContactsToggle(settings.searchContacts) { v -> onChange { it.copy(searchContacts = v) } }
 
+        Section("Gestos no fundo")
+        GesturesSection(settings, apps, onChange)
+
         Section("Favoritos")
         ToggleRow("Favoritos por horário", "Listas diferentes de dia, no trabalho (seg. a sex., 8h às 18h) e à noite (19h às 7h).", settings.timeProfiles) { v -> onChange { it.copy(timeProfiles = v) } }
         var editing by rememberSaveable { mutableStateOf(com.brendon978.menulauncher.settings.currentProfile()) }
@@ -208,17 +211,6 @@ fun SettingsScreen(
 
         Section("Sistema")
         UpdateRow()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Dois toques no fundo apagam a tela", color = Color.White)
-                Text(
-                    "Precisa ligar o menu-launcher em Configurações → Acessibilidade (ele só apaga a tela, não lê nada).",
-                    color = Color.White.copy(alpha = .5f),
-                    fontSize = 12.sp,
-                )
-            }
-            Switch(settings.doubleTapLock, onCheckedChange = { v -> onChange { it.copy(doubleTapLock = v) } })
-        }
         Text(
             "Definir como tela inicial padrão",
             color = Color.White,

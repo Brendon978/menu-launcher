@@ -125,11 +125,11 @@ private fun DrawScope.moon(c: Color) {
     }, c, style = st())
 }
 
-private class Torch(val on: Boolean, val toggle: () -> Unit)
+internal class Torch(val on: Boolean, val toggle: () -> Unit)
 
 /** Lanterna: liga e desliga pela câmera com flash; acompanha se outro app mexer. */
 @Composable
-private fun rememberTorch(): Torch {
+internal fun rememberTorch(): Torch {
     val context = LocalContext.current
     val cm = remember { context.getSystemService(CameraManager::class.java) }
     val id = remember {

@@ -27,12 +27,19 @@ class BackupTest {
             wallpaperFolder = "content://x/tree/primary%3AFundos", wallpaperInterval = WallpaperInterval.SIX_HOURS,
             wallpaperLastChange = 1_800_000_000_000L, wallpaperLastImage = "praia.jpg",
             strokeAuto = StrokeAuto.BY_TIME, strokeDay = 0xFF7FB7A4.toInt(), strokeNight = 0xFFC9A27E.toInt(),
+            gestureDown = GestureChoice(GestureAction.TORCH), gestureUp = GestureChoice(GestureAction.APP, b),
+            gestureDoubleTap = GestureChoice(GestureAction.CAMERA),
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
     }
 
     @Test fun backupAntigoCaiNosPadroes() {
         assertEquals(LauncherSettings(), Backup.decode("menu-launcher-backup=1"))
+    }
+
+    @Test fun backupAntigoComDoisToquesContinuaApagando() {
+        val s = Backup.decode("menu-launcher-backup=1\ndoubleTapLock=true")!!
+        assertEquals(GestureAction.LOCK, s.doubleTapChoice().action)
     }
 
     @Test fun arquivoEstranhoNaoQuebra() {

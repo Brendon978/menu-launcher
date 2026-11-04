@@ -37,6 +37,12 @@ data class LauncherSettings(
     val folders: Map<String, List<AppKey>> = emptyMap(),
     /** Tocar duas vezes no fundo apaga a tela (precisa do serviço de acessibilidade ligado). */
     val doubleTapLock: Boolean = false,
+    /** Deslizar para baixo no fundo. */
+    val gestureDown: GestureChoice = GestureChoice(GestureAction.NOTIFICATIONS),
+    /** Deslizar para cima no fundo. */
+    val gestureUp: GestureChoice = GestureChoice(GestureAction.SEARCH),
+    /** Dois toques no fundo; null = ainda não escolhido (vale [doubleTapLock], ver doubleTapChoice). */
+    val gestureDoubleTap: GestureChoice? = null,
     /** Quanto você usa cada app (para a linha de mais usados). */
     val usage: Map<AppKey, Float> = emptyMap(),
     /** Linha com os apps mais usados em cima dos favoritos. */
