@@ -76,4 +76,10 @@ class GlitchPlayTest {
         assertEquals(800f, flyStep(s, 1f, world, Random(1)).y)
         assertTrue(flyTap(s, world).started)
     }
+
+    @Test fun tetoNaoDerruba() {
+        val r = flyStep(FlyState(1f, vy = -2_000f), .05f, world, Random(1))
+        assertFalse(r.crashed)
+        assertEquals(0f, r.y)
+    }
 }

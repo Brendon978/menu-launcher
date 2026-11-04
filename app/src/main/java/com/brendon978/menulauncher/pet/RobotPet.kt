@@ -1243,6 +1243,7 @@ fun RobotPet(
         }
         fly = null
         flyWorld = null
+        spot(null, 0f)?.let { glitchTo(it) } // acabou o voo: não fica em cima de nada
     }
     // falas espontâneas, de vez em quando
     LaunchedEffect(resumed, loaded) {

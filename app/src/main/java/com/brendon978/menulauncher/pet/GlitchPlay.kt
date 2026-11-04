@@ -104,8 +104,9 @@ fun flyTap(s: FlyState, world: FlyWorld): FlyState = s.copy(vy = world.thrust, s
 fun flyStep(s: FlyState, dt: Float, world: FlyWorld, random: Random): FlyState {
     if (!s.started) return s // parado no ar até o primeiro toque
     val a = world.area
-    val vy = s.vy + world.gravity * dt
-    val y = s.y + vy * dt
+    val rising = s.vy + world.gravity * dt
+    val y = (s.y + rising * dt).coerceAtLeast(a.t) // o teto segura, não derruba
+    val vy = if (y <= a.t && rising < 0f) 0f else rising
     var score = s.score
     var walls = s.walls.map { it.copy(x = it.x - world.speed * dt) }.filter { it.x + world.wall > a.l }
     walls = walls.map { w ->
@@ -121,7 +122,7 @@ fun flyStep(s: FlyState, dt: Float, world: FlyWorld, random: Random): FlyState {
         val inX = world.x + world.w * .8f > w.x && world.x + world.w * .2f < w.x + world.wall
         inX && (top + world.h * .08f < w.gapY - world.gap / 2 || bottom - world.h * .08f > w.gapY + world.gap / 2)
     }
-    return FlyState(y.coerceIn(a.t, a.b - world.h), vy, walls, score, hit || y < a.t || bottom > a.b)
+    return FlyState(y.coerceIn(a.t, a.b - world.h), vy, walls, score, hit || bottom > a.b)
 }
 
 fun DrawScope.drawFlyWalls(color: Color, s: FlyState, world: FlyWorld) {
