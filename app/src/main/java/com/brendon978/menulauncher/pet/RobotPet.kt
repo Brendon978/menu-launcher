@@ -297,6 +297,7 @@ fun RobotPet(
     // brincadeiras que você começa (toque duplo no Glitch)
     var game by remember { mutableStateOf<GameKind?>(null) }
     var pendingGame by remember { mutableStateOf<GameKind?>(null) }
+    var pendingProtest by remember { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var lastTapAt by remember { mutableLongStateOf(0L) }
     var lastBallTouch by remember { mutableLongStateOf(0L) }
@@ -325,6 +326,12 @@ fun RobotPet(
     var flinchUntil by remember { mutableLongStateOf(0L) }
     var letterUntil by remember { mutableLongStateOf(0L) }
     var lastLetterAt by remember { mutableLongStateOf(0L) }
+    // protesto em estágios, rancor, drama e medo da placa
+    var protestTimes by remember { mutableStateOf(listOf<Long>()) }
+    var protestStage by remember { mutableStateOf(ProtestStage.COMPLAINT) }
+    var grudge by remember { mutableLongStateOf(0L) }
+    var faintUntil by remember { mutableLongStateOf(0L) }
+    var papers by remember { mutableStateOf(listOf<Body>()) }
     var rootBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
     // ---- andar ----
@@ -342,10 +349,13 @@ fun RobotPet(
     val celebrating = now < fireworksUntil
     val sad = activity == Activity.SAD && mood == Mood.NORMAL
     val playing = activity == Activity.PLAY && mood == Mood.NORMAL
+    val fainted = now < faintUntil
+    val striking = protesting && protestStage == ProtestStage.STRIKE
+    val revolting = protesting && protestStage == ProtestStage.REVOLUTION
     val working = now < workUntil
     val hidden = game == GameKind.HIDE && hideSpot != null
     val flinching = now < flinchUntil
-    val stillMood = menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
+    val stillMood = fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
     fun spot(from: Offset?, minDistance: Float): Offset? =
@@ -415,6 +425,14 @@ fun RobotPet(
             val a = currentArea
             val corners = listOf(Offset(a.l, a.t), Offset(a.r, a.t), Offset(a.l, a.b), Offset(a.r, a.b))
             corners.mapNotNull { spotNear(it)?.let { s2 -> s2 to (s2 - it).getDistance() } }.minByOrNull { it.second }?.first?.let { walkTo(it) }
+            // deixa um bilhete triste do lado (um por vez)
+            if (notes.none { it.text in SAD_NOTES }) {
+                val nw = with(density) { 110.dp.toPx() }
+                val nh = with(density) { 60.dp.toPx() }
+                val nx = (pos.value.x + (if (pos.value.x > (a.l + a.r) / 2) -nw else widthPx)).coerceIn(a.l, a.r - nw)
+                val ny = pos.value.y.coerceIn(a.t, a.b - nh)
+                notes = (notes + PostItNote(++noteSeq, SAD_NOTES.random(brainRandom), nx, ny, brainRandom.nextFloat() * 8f - 4f)).takeLast(4)
+            }
             return@LaunchedEffect
         }
         if (!marching && !protesting && activity == Activity.PRANK && game == null) {
@@ -575,7 +593,12 @@ fun RobotPet(
             game != null -> "Brincando: ${game!!.label}"
             System.currentTimeMillis() < workUntil -> "Trabalhando junto"
             punishment?.active(System.currentTimeMillis()) == true -> "De castigo"
-            System.currentTimeMillis() < protestUntil -> "Em protesto"
+            System.currentTimeMillis() < faintUntil -> "Fingindo que morreu"
+            System.currentTimeMillis() < protestUntil -> when (protestStage) {
+                ProtestStage.COMPLAINT -> "Em protesto"
+                ProtestStage.STRIKE -> "De greve"
+                ProtestStage.REVOLUTION -> "Fazendo revolução"
+            }
             menacing -> "Apontando a arma pra você"
             marching -> "Marchando, bravo"
             dnd -> "Dormindo (não perturbe)"
@@ -605,7 +628,7 @@ fun RobotPet(
             delay(2_200)
             punishSign = null
         }
-        if (!p.over) say("Tá, aprendi. Posso sair?", 2_000)
+        if (!p.over) { say("Tá, aprendi. Posso sair?", 2_000); grudge = grudgeUntil(System.currentTimeMillis()) }
         if (!held) corner = null
     }
 
@@ -698,6 +721,32 @@ fun RobotPet(
         }
     }
 
+    // levou ele até a placa: "Não! Lá não!"
+    LaunchedEffect(overCorner) { if (overCorner) say(CORNER_FEAR_LINES.random(brainRandom), 1_400) }
+
+    // revolução: atira bolinhas de papel na sua direção (só visual)
+    LaunchedEffect(revolting) {
+        if (!revolting) { papers = emptyList(); return@LaunchedEffect }
+        var last = 0L
+        var nextThrow = 0L
+        while (true) {
+            androidx.compose.runtime.withFrameNanos { nanos ->
+                val dt = if (last == 0L) 1f / 60f else ((nanos - last) / 1e9f).coerceIn(0f, .05f)
+                last = nanos
+                val n = System.currentTimeMillis()
+                if (n > nextThrow) {
+                    nextThrow = n + 900
+                    val a = currentArea
+                    val from = pos.value + Offset(widthPx / 2, heightPx * .2f)
+                    val tx = (a.l + a.r) / 2 + (brainRandom.nextFloat() - .5f) * (a.r - a.l) * .8f
+                    papers = papers + Body(from.x, from.y, (tx - from.x) * 1.1f, -500f - brainRandom.nextFloat() * 300f)
+                }
+                val a = currentArea
+                papers = papers.map { b -> b.copy(x = b.x + b.vx * dt, y = b.y + b.vy * dt, vy = b.vy + GRAVITY * .45f * dt) }.filter { it.y < a.b + 40f }
+            }
+        }
+    }
+
     // bola: cai, quica e rola (a não ser que você esteja segurando)
     LaunchedEffect(ball != null) {
         if (ball == null) return@LaunchedEffect
@@ -738,7 +787,11 @@ fun RobotPet(
                 "triste" -> { drives = drives.copy(longing = 1f, boredom = 1f); activity = Activity.SAD }
                 "bola" -> { drives = drives.copy(boredom = .8f, energy = .9f, longing = 0f); activity = Activity.PLAY }
                 "fogos" -> { fireworksUntil = System.currentTimeMillis() + 2_400; say(CELEBRATE_LINES.random(brainRandom)) }
-                "protesto" -> { protestUntil = System.currentTimeMillis() + PROTEST_MS; protestSign = PROTEST_SIGNS.random(brainRandom) }
+                "protesto" -> pendingProtest++
+                "greve" -> { protestTimes = listOf(System.currentTimeMillis()); pendingProtest++ }
+                "revolucao" -> { protestTimes = List(2) { System.currentTimeMillis() }; pendingProtest++ }
+                "drama" -> { faintUntil = System.currentTimeMillis() + 2_800; say(DRAMA_LINES.random(brainRandom), 2_600) }
+                "rancor" -> grudge = grudgeUntil(System.currentTimeMillis())
                 "menu" -> menuOpen = true
                 "bola2" -> pendingGame = GameKind.PASS
                 "esconde" -> pendingGame = GameKind.HIDE
@@ -758,6 +811,7 @@ fun RobotPet(
     // ---- rosto e pose ----
     val jkRevealing = jkGlitch != null && now < jkRevealUntil
     val face = when {
+        fainted -> Face.DIZZY
         jkRevealing -> when (jkGlitch) { Hand.ROCK -> Face.ROCK; Hand.PAPER -> Face.PAPER; else -> Face.SCISSORS }
         flinching || spinning -> Face.SURPRISED
         working -> Face.SCAN
@@ -786,7 +840,19 @@ fun RobotPet(
     val blinkCycle = t % 4f
     val blink = if (blinkCycle in 3.75f..3.9f) .1f else 1f
     val holdingLetter = now < letterUntil
+    // olhos seguem o último toque na tela por uns segundos
+    val touch = GlitchSignals.lastTouch
+    val lookFrom = rootBounds.center
+    val (lookX, lookY) = if (touch != null && now - touch.third < 2_500) {
+        val dx = (touch.first - lookFrom.x) / 300f
+        val dy = (touch.second - lookFrom.y) / 400f
+        (if (facingLeft) -dx else dx).coerceIn(-1f, 1f) to dy.coerceIn(-1f, 1f)
+    } else 0f to 0f
     val pose = when {
+        // desmaio dramático: tomba de lado e fica estendido
+        fainted -> RobotPose(face, facingLeft, armL = 70f, armR = -70f, tilt = 88f, lift = -2f, phase = t)
+        // greve: de costas, braços cruzados, parado com o cartaz
+        striking -> RobotPose(face, facingLeft, armL = 20f, armR = -20f, back = true, phase = t)
         holdingLetter && !held && !flying -> RobotPose(face, facingLeft, armL = -40f, armR = 40f, lift = 2f * abs(sin(t * 6f)), blink = blink, phase = t, letter = true)
         spinning -> RobotPose(face, facingLeft, armL = 110f, armR = -110f, rotation = spinDeg, phase = t)
         flinching -> RobotPose(face, facingLeft, armL = -150f, armR = 150f, lift = -4f, phase = t)
@@ -913,8 +979,21 @@ fun RobotPet(
 
     LaunchedEffect(pendingGame) { pendingGame?.let { pendingGame = null; startGame(it) } }
 
+    fun startProtest(at: Long) {
+        protestTimes = recentProtests(protestTimes, at) + at
+        protestStage = protestStage(protestTimes.size)
+        when (protestStage) {
+            ProtestStage.COMPLAINT -> { protestUntil = at + PROTEST_MS; protestSign = PROTEST_SIGNS.random(brainRandom) }
+            ProtestStage.STRIKE -> { protestUntil = at + 60_000; protestSign = STRIKE_SIGNS.random(brainRandom); say(STRIKE_LINES.random(brainRandom), 2_000) }
+            ProtestStage.REVOLUTION -> { protestUntil = at + 30_000; protestSign = REVOLUTION_SIGNS.random(brainRandom) }
+        }
+    }
+    LaunchedEffect(pendingProtest) { if (pendingProtest > 0) startProtest(System.currentTimeMillis()) }
+
     fun onTap() {
         val tapNow = System.currentTimeMillis()
+        // de greve não brinca nem acha graça
+        if (striking) { say(STRIKE_LINES.random(brainRandom), 1_600); lastTapAt = 0L; return }
         // pega-pega: encostou, pegou
         if (game == GameKind.TAG) {
             game = null
@@ -937,15 +1016,24 @@ fun RobotPet(
             if (fled) {
                 bond = (bond - .05f).coerceIn(0f, 1f); save()
                 say("Fui! Castigo é o caramba!", 2_000)
+                grudge = grudgeUntil(tapNow)
                 scope.launch { fleeSignal++ }
             } else say(PUNISH_LINES.random(brainRandom), 1_400)
             return
         }
         val (next, r) = annoyance.tap(tapNow, bond)
         annoyance = next
+        // com rancor, não acha graça: sem risadinha e sem ganhar vínculo
+        if (r == Reaction.GIGGLE && holdsGrudge(grudge, tapNow)) {
+            reaction = Reaction.SERIOUS
+            reactionUntil = tapNow + 1_200
+            say(GRUDGE_LINES.random(speechRandom), 1_600)
+            return
+        }
         val prevBond = bond
         bond = bondAfter(bond, r)
         save() // o vínculo é o que mais importa não perder
+        if (r == Reaction.FLEE) grudge = grudgeUntil(tapNow)
         if (celebrates(prevBond, bond)) { fireworksUntil = tapNow + 2_400; say(CELEBRATE_LINES.random(brainRandom)) }
         if (r == Reaction.GIGGLE) {
             drives = onEvent(drives, GlitchEvent.GENTLE_TAP)
@@ -956,7 +1044,12 @@ fun RobotPet(
         if (r == Reaction.ANGRY && reaction != Reaction.ANGRY) {
             val (m, protest) = protestMeter.angry(tapNow)
             protestMeter = m
-            if (protest) { protestUntil = tapNow + PROTEST_MS; protestSign = PROTEST_SIGNS.random(brainRandom) }
+            if (protest) startProtest(tapNow)
+            // às vezes, em vez de brigar, ele finge que morreu
+            if (faints(bond, speechRandom)) {
+                faintUntil = tapNow + 2_800
+                say(DRAMA_LINES.random(speechRandom), 2_600)
+            }
         }
         pokeExpect = expectPoke(pokeExpect, poked = r != Reaction.GIGGLE)
         if (r != Reaction.GIGGLE) log { it.copy(poked = it.poked + 1) }
@@ -975,6 +1068,8 @@ fun RobotPet(
         reaction = null
         marchUntil = 0L
         protestUntil = 0L
+        faintUntil = 0L
+        grudge = 0L
         punishment?.let { if (it.active(System.currentTimeMillis())) say("Desculpa... tô perdoado?", 1_800) }
         punishment = punishment?.forgiven()
         punishSign = null
@@ -1278,7 +1373,7 @@ fun RobotPet(
                 }
             },
     ) {
-        val dressed = pose.copy(accessory = when {
+        val dressed = pose.copy(lookX = lookX, lookY = lookY, accessory = when {
             dnd && face == Face.SLEEP -> Accessory.SLEEP_MASK
             headset -> Accessory.HEADPHONES
             else -> accessory
@@ -1327,6 +1422,19 @@ fun RobotPet(
                 },
         ) {
             Canvas(Modifier.size(with(density) { ballPx.toDp() })) { drawBall(color, ballSpin) }
+        }
+    }
+
+    // bolinhas de papel da revolução
+    if (papers.isNotEmpty()) {
+        Canvas(Modifier.fillMaxSize()) {
+            papers.forEach { b ->
+                val c = Offset(b.x, b.y)
+                val r = 9f
+                drawCircle(color, r, c, style = androidx.compose.ui.graphics.drawscope.Stroke(2f))
+                drawLine(color, c + Offset(-r * .6f, -r * .2f), c + Offset(r * .3f, r * .5f), 1.6f)
+                drawLine(color, c + Offset(-r * .1f, -r * .7f), c + Offset(r * .6f, r * .1f), 1.6f)
+            }
         }
     }
 

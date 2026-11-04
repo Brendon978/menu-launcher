@@ -59,6 +59,9 @@ data class RobotPose(
     val accessory: Accessory = Accessory.NONE,
     /** Segurando uma cartinha (chegou notificação). */
     val letter: Boolean = false,
+    /** Para onde os olhos olham (-1 a 1 em cada eixo): seguem o seu dedo pela tela. */
+    val lookX: Float = 0f,
+    val lookY: Float = 0f,
 )
 
 enum class GunHold { NONE, AIM, MARCH }
@@ -298,7 +301,9 @@ private fun DrawScope.face(c: Color, pose: RobotPose) {
     when (pose.face) {
         Face.NORMAL -> {
             val h = 9f * pose.blink.coerceIn(.1f, 1f)
-            px(47f, 56.5f - h / 2, 8f, h); px(65f, 56.5f - h / 2, 8f, h)
+            val dx = pose.lookX * 3.5f
+            val dy = pose.lookY * 3f
+            px(47f + dx, 56.5f - h / 2 + dy, 8f, h); px(65f + dx, 56.5f - h / 2 + dy, 8f, h)
             px(56f, 69f, 8f, 2f, .7f)
         }
         Face.SLEEP -> { px(45f, 57f, 10f, 2.6f); px(65f, 57f, 10f, 2.6f) }

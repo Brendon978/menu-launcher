@@ -78,4 +78,6 @@ data class PostItNote(val id: Int, val text: String, val x: Float, val y: Float,
 /** Último app aberto pelo launcher (para o "trabalhar junto"). */
 object GlitchSignals {
     @Volatile var lastLaunch: Pair<String, Long>? = null
+    /** Último toque na tela inicial (coordenadas da janela), para os olhos dele seguirem. */
+    @Volatile var lastTouch: Triple<Float, Float, Long>? = null
 }

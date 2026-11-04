@@ -123,3 +123,14 @@ Nome escolhido pelo Brendon: **Glitch**. Inspirado nas ideias do projeto Pestinh
 - **Reações ao celular**: carregando, aparece um cabinho saindo das costas até a base da tela, com faísca de energia, e ele recarrega energia ("Nham, energia!"); carga completa dá fogos. Fone conectado: ele põe fone sozinho. Sem internet: "?" na telinha de vez em quando e "Cadê a internet?".
 - **Rotina**: bom dia uma vez por dia entre 6h e 11h; de madrugada (0h–5h) manda você dormir, no máximo a cada 30 min.
 - **Diário de hoje** nos Ajustes, na voz dele: quantas vezes você fez carinho, jogou, cutucou, brincou e fez ele fugir.
+
+## Temperamento (2026-11-03, ideias do Pestinha)
+
+Nada aqui bloqueia app: é só reação visual na tela inicial (decisão do Brendon: nenhum modo foco nem disputa para abrir apps).
+
+- **Protesto em estágios**, contando os protestos da última hora: o primeiro é reclamação (30 s marchando com cartaz); o segundo é **greve** (60 s parado, de costas, com cartaz, recusando toque e menu); do terceiro em diante é **revolução** (30 s marchando e atirando bolinhas de papel, só visual). Carinho encerra qualquer um.
+- **Rancor**: depois de castigo ou fuga, por 3 min a risadinha vira cara séria com resmungo e não ganha vínculo. Carinho perdoa antes.
+- **Medo da placa**: levar ele no colo até a placa do castigo faz ele reclamar uma vez a cada aproximação.
+- **Dramático**: com vínculo abaixo de 70%, a raiva às vezes (12%) vira um desmaio fingido, deitado com tontura por 2,8 s.
+- **Bilhete triste**: quando fica triste, deixa um post-it perto do canto, um por vez.
+- **Olhos que seguem**: por 2,5 s depois de um toque em qualquer ponto da tela inicial, os olhos olham para lá. O toque é só observado, nunca consumido.

@@ -59,6 +59,17 @@ fun HomeScreen(
     Box(
         Modifier
             .fillMaxSize()
+            // só observa os toques (não consome): os olhos do Glitch seguem o seu dedo
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val ev = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                        ev.changes.firstOrNull()?.let {
+                            com.brendon978.menulauncher.pet.GlitchSignals.lastTouch = Triple(it.position.x, it.position.y, System.currentTimeMillis())
+                        }
+                    }
+                }
+            }
             .pointerInput(settings.doubleTapLock) {
                 detectTapGestures(
                     onLongPress = { onEmptyLongPress() },
