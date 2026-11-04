@@ -20,6 +20,13 @@ import kotlin.math.sin
 /** SURPRISED: pego no colo/voando; DIZZY: tonto depois do arremesso; BLISS: derretendo de carinho. */
 enum class Face { NORMAL, SLEEP, MUSIC, HEART, TIRED, SCAN, GIGGLE, SERIOUS, ANGRY, SURPRISED, DIZZY, BLISS, SAD, ROCK, PAPER, SCISSORS, CONFUSED }
 
+/** Rostos que são um desenho na telinha, não olhos: nada pode ficar por cima. */
+fun Face.isPicture(): Boolean = this in setOf(Face.HEART, Face.MUSIC, Face.ROCK, Face.PAPER, Face.SCISSORS, Face.CONFUSED)
+
+/** Os óculos ficam em cima da tela e têm a mesma cor do rosto: com desenho, eles saem até os olhos voltarem. */
+fun visibleAccessory(a: Accessory, face: Face): Accessory =
+    if (a == Accessory.SUNGLASSES && face.isPicture()) Accessory.NONE else a
+
 /** Acessórios do Glitch (tudo liberado, escolhe nos Ajustes). */
 enum class Accessory(val label: String, val choosable: Boolean = true) {
     NONE("Nenhum"), CAP("Boné"), SUNGLASSES("Óculos escuros"), HEADPHONES("Fone"), HELMET("Capacete"), SCARF("Cachecol"), BOWTIE("Gravatinha"),
@@ -130,7 +137,7 @@ fun DrawScope.drawRobot(color: Color, pose: RobotPose) {
                         // cabeça maior: nesse tamanho é o rosto que dá personalidade
                         translate(0f, -8f) {
                             head(color, pose, line)
-                            headAccessory(color, pose.accessory, pose.back)
+                            headAccessory(color, visibleAccessory(pose.accessory, pose.face), pose.back)
                             if (pose.face == Face.SLEEP && !pose.back) zzz(color, pose.phase)
                         }
                     }

@@ -30,4 +30,19 @@ class SleepGearTest {
     @Test fun acordadoDeNoiteNaoUsaGorro() {
         assertEquals(Accessory.CAP, sleepAccessory(Face.ANGRY, 23, false, Accessory.CAP))
     }
+
+    @Test fun oculosSaemQuandoATelaMostraDesenho() {
+        listOf(Face.HEART, Face.MUSIC, Face.ROCK, Face.PAPER, Face.SCISSORS, Face.CONFUSED).forEach {
+            assertEquals(it.name, Accessory.NONE, visibleAccessory(Accessory.SUNGLASSES, it))
+        }
+    }
+
+    @Test fun oculosFicamNosRostosComOlhos() {
+        assertEquals(Accessory.SUNGLASSES, visibleAccessory(Accessory.SUNGLASSES, Face.NORMAL))
+        assertEquals(Accessory.SUNGLASSES, visibleAccessory(Accessory.SUNGLASSES, Face.ANGRY))
+    }
+
+    @Test fun outrosAcessoriosNaoMudamComDesenho() {
+        assertEquals(Accessory.CAP, visibleAccessory(Accessory.CAP, Face.HEART))
+    }
 }
