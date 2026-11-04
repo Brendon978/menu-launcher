@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.key
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.positionChange
@@ -344,6 +345,7 @@ fun RobotPet(
     var grudge by remember { mutableLongStateOf(0L) }
     var faintUntil by remember { mutableLongStateOf(0L) }
     var papers by remember { mutableStateOf(listOf<Body>()) }
+    var signHeight by remember { mutableIntStateOf(0) }
     var rootBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
     // ---- andar ----
@@ -1456,10 +1458,26 @@ fun RobotPet(
         Canvas(Modifier.fillMaxSize()) {
             papers.forEach { b ->
                 val c = Offset(b.x, b.y)
-                val r = 9f
-                drawCircle(color, r, c, style = androidx.compose.ui.graphics.drawscope.Stroke(2f))
-                drawLine(color, c + Offset(-r * .6f, -r * .2f), c + Offset(r * .3f, r * .5f), 1.6f)
-                drawLine(color, c + Offset(-r * .1f, -r * .7f), c + Offset(r * .6f, r * .1f), 1.6f)
+                // papel amassado: contorno irregular com vincos, girando no ar
+                val r = 8.dp.toPx()
+                val turn = (b.x + b.y) * .012f
+                fun at(deg: Float, k: Float): Offset {
+                    val a = Math.toRadians(deg.toDouble()).toFloat() + turn
+                    return c + Offset(kotlin.math.cos(a) * r * k, sin(a) * r * k)
+                }
+                val edge = listOf(1f, .72f, .98f, .68f, 1.05f, .76f, .92f, .7f, 1f)
+                val ball = androidx.compose.ui.graphics.Path().apply {
+                    edge.forEachIndexed { i, k ->
+                        val o = at(i * 40f, k)
+                        if (i == 0) moveTo(o.x, o.y) else lineTo(o.x, o.y)
+                    }
+                    close()
+                }
+                drawPath(ball, Color(0xE60C0C0E))
+                drawPath(ball, color, style = androidx.compose.ui.graphics.drawscope.Stroke(1.6.dp.toPx()))
+                drawLine(color, at(200f, .7f), at(20f, .3f), 1.1.dp.toPx())
+                drawLine(color, at(20f, .3f), at(95f, .75f), 1.1.dp.toPx())
+                drawLine(color, at(20f, .3f), at(300f, .7f), 1.1.dp.toPx())
             }
         }
     }
@@ -1478,13 +1496,14 @@ fun RobotPet(
 
     // cartaz: protesto (sempre) e castigo (de vez em quando)
     val signText = if (protesting) protestSign else if (punished) punishSign else null
-    if (signText != null && visible > 0f) {
+    val signShown = signText != null && visible > 0f
+    if (signShown) {
         val cx = pos.value.x + widthPx / 2
         val top = pos.value.y + with(density) { 6.dp.toPx() }
         Placard(
-            signText,
+            signText!!,
             color,
-            Modifier.layout { m, c ->
+            Modifier.onSizeChanged { signHeight = it.height }.layout { m, c ->
                 val pl = m.measure(c.copy(minWidth = 0, minHeight = 0))
                 layout(pl.width, pl.height) {
                     val x = (cx - pl.width / 2).coerceIn(area.l, (area.r - pl.width).coerceAtLeast(area.l))
@@ -1549,7 +1568,8 @@ fun RobotPet(
     val line = speech
     if (line != null && now < speechUntil && visible > 0f) {
         val cx = pos.value.x + widthPx / 2
-        val top = pos.value.y - with(density) { 2.dp.toPx() }
+        // com cartaz na mão, o balão sai acima do cartaz
+        val top = if (signShown) pos.value.y + with(density) { 6.dp.toPx() } - signHeight else pos.value.y - with(density) { 2.dp.toPx() }
         SpeechBubble(
             text = line,
             color = color,
@@ -1558,7 +1578,8 @@ fun RobotPet(
                 layout(p.width, p.height) {
                     // centralizado em cima da cabeça, sem sair da tela
                     val x = (cx - p.width / 2).coerceIn(area.l, (area.r - p.width).coerceAtLeast(area.l))
-                    val y = (top - p.height).coerceAtLeast(0f)
+                    // sem espaço acima do cartaz: vai para baixo dele, para não cobrir
+                    val y = if (signShown && top - p.height < 0f) pos.value.y + heightPx else (top - p.height).coerceAtLeast(0f)
                     p.place(x.roundToInt(), y.roundToInt())
                 }
             },
