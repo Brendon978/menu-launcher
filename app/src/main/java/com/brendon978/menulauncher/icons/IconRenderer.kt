@@ -45,7 +45,9 @@ class IconRenderer(
         val key = CacheKey(source, sizePx, color)
         cache.get(key)?.let { return it }
         val bmp = when (source) {
-            is IconSource.Lawnicon -> renderSvg(source.name, sizePx, color)
+            is IconSource.Lawnicon -> renderSvg("lawnicons/svgs/${source.name}.svg", sizePx, color)
+                ?: renderInitial('?', sizePx, color)
+            is IconSource.Own -> renderSvg("proprios/${source.name}.svg", sizePx, color)
                 ?: renderInitial('?', sizePx, color)
             is IconSource.Monochrome -> monochromeOf(source.key)?.let { renderMonochrome(it, sizePx, color) }
                 ?: renderInitial('?', sizePx, color)
@@ -61,8 +63,8 @@ class IconRenderer(
 
     private fun monochromeOf(key: AppKey): Drawable? = monoCache.get(key)
 
-    private fun renderSvg(name: String, sizePx: Int, color: Int): Bitmap? {
-        val svg = runCatching { SVG.getFromAsset(context.assets, "lawnicons/svgs/$name.svg") }.getOrNull()
+    private fun renderSvg(path: String, sizePx: Int, color: Int): Bitmap? {
+        val svg = runCatching { SVG.getFromAsset(context.assets, path) }.getOrNull()
             ?: return null
         if (svg.documentViewBox == null) {
             svg.setDocumentViewBox(0f, 0f, svg.documentWidth.coerceAtLeast(1f), svg.documentHeight.coerceAtLeast(1f))

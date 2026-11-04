@@ -154,6 +154,17 @@ fun SettingsScreen(
         BackupSection(settings, onChange)
 
         Section("Sistema")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Dois toques no fundo apagam a tela", color = Color.White)
+                Text(
+                    "Precisa ligar o menu-launcher em Configurações → Acessibilidade (ele só apaga a tela, não lê nada).",
+                    color = Color.White.copy(alpha = .5f),
+                    fontSize = 12.sp,
+                )
+            }
+            Switch(settings.doubleTapLock, onCheckedChange = { v -> onChange { it.copy(doubleTapLock = v) } })
+        }
         Text(
             "Definir como tela inicial padrão",
             color = Color.White,

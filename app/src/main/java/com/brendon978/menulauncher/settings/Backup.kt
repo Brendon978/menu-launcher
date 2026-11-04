@@ -30,6 +30,8 @@ object Backup {
         p["glitchAccessory"] = s.glitchAccessory
         p["customLabels"] = s.customLabels.entries.joinToString("\n") { "${it.key.encode()}$SEP${it.value}" }
         p["hiddenApps"] = s.hiddenApps.joinToString("\n") { it.encode() }
+        p["folders"] = s.folders.entries.joinToString("\n") { (name, keys) -> name + SEP + keys.joinToString(",") { it.encode() } }
+        p["doubleTapLock"] = s.doubleTapLock.toString()
         extra.forEach { (k, v) -> p[k] = v }
         return StringWriter().also { p.store(it, "menu-launcher") }.toString()
     }
@@ -57,6 +59,11 @@ object Backup {
             glitchAccessory = p.getProperty("glitchAccessory") ?: d.glitchAccessory,
             customLabels = pairs("customLabels"),
             hiddenApps = lines("hiddenApps").mapNotNull { AppKey.decode(it) }.toSet(),
+            folders = lines("folders").mapNotNull { l ->
+                val i = l.indexOf(SEP)
+                if (i <= 0) null else l.substring(0, i) to l.substring(i + 1).split(",").mapNotNull { AppKey.decode(it) }
+            }.toMap(),
+            doubleTapLock = p.getProperty("doubleTapLock")?.toBooleanStrictOrNull() ?: d.doubleTapLock,
         )
     }
 

@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
     private val screen = mutableStateOf<Screen>(Screen.Home)
     private val sheetFor = mutableStateOf<AppEntry?>(null)
     private val renaming = mutableStateOf<AppEntry?>(null)
+    private val foldering = mutableStateOf<AppEntry?>(null)
     private val isDefaultHome = mutableStateOf(false)
     private val hasMusicAccess = mutableStateOf(false)
 
@@ -191,6 +192,12 @@ class MainActivity : ComponentActivity() {
                     onSearch = { screen.value = Screen.Search },
                     onSwipeDown = ::expandNotifications,
                     onSwipeUp = { screen.value = Screen.Search },
+                    onEmptyDoubleTap = {
+                        if (!com.brendon978.menulauncher.system.LockService.lock()) {
+                            android.widget.Toast.makeText(this@MainActivity, "Ligue o menu-launcher em Acessibilidade para apagar a tela", android.widget.Toast.LENGTH_LONG).show()
+                            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                    },
                     musicPlaying = music?.playing == true,
                     // Na grade o símbolo fica no meio dos ícones e parece parte do fundo: só no modo uma mão.
                     overlay = { if (settings.mode == HomeMode.ONE_HAND) AiOverlay(settings, apps) },
@@ -272,12 +279,22 @@ class MainActivity : ComponentActivity() {
                     onUninstall = { uninstall(entry.key) },
                     onDismiss = { sheetFor.value = null },
                     isHidden = entry.key in settings.hiddenApps,
+                    folderName = settings.folders.entries.firstOrNull { entry.key in it.value }?.key,
+                    onFolder = { foldering.value = entry },
+                    onLeaveFolder = { updateSettings { it.copy(folders = com.brendon978.menulauncher.settings.FolderOps.remove(it.folders, entry.key)) } },
                     onRename = { renaming.value = entry },
                     onToggleHidden = {
                         updateSettings { st ->
                             st.copy(hiddenApps = if (entry.key in st.hiddenApps) st.hiddenApps - entry.key else st.hiddenApps + entry.key)
                         }
                     },
+                )
+            }
+            foldering.value?.let { entry ->
+                com.brendon978.menulauncher.menu.FolderDialog(
+                    existing = settings.folders.keys.toList(),
+                    onPick = { name -> updateSettings { it.copy(folders = com.brendon978.menulauncher.settings.FolderOps.put(it.folders, name, entry.key)) } },
+                    onDismiss = { foldering.value = null },
                 )
             }
             renaming.value?.let { entry ->

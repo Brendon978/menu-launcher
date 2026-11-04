@@ -15,6 +15,7 @@ class BackupTest {
             iconOverrides = mapOf(a to "google_chrome"), showMusic = false, firstRunDone = true,
             aiPackage = "com.brendon.iris", aiActivity = "x.Main", aiX = .3f, aiY = .7f,
             showPet = false, glitchAccessory = "CAP", customLabels = mapOf(b to "Meu B"), hiddenApps = setOf(a),
+            folders = mapOf("Jogos" to listOf(a, b)), doubleTapLock = true,
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
     }

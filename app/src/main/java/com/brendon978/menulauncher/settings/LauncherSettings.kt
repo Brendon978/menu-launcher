@@ -26,4 +26,8 @@ data class LauncherSettings(
     val customLabels: Map<AppKey, String> = emptyMap(),
     /** Apps escondidos da lista e da grade (a busca ainda acha). */
     val hiddenApps: Set<AppKey> = emptySet(),
+    /** Pastas do modo grade: nome -> apps (na ordem em que entraram). */
+    val folders: Map<String, List<AppKey>> = emptyMap(),
+    /** Tocar duas vezes no fundo apaga a tela (precisa do serviço de acessibilidade ligado). */
+    val doubleTapLock: Boolean = false,
 )

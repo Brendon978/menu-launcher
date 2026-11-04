@@ -48,6 +48,7 @@ fun HomeScreen(
     onSearch: () -> Unit = {},
     onSwipeDown: () -> Unit = {},
     onSwipeUp: () -> Unit = {},
+    onEmptyDoubleTap: () -> Unit = {},
     musicPlaying: Boolean = false,
     /** Desenhado por cima de tudo (símbolo flutuante da IA). */
     overlay: @Composable () -> Unit = {},
@@ -58,7 +59,13 @@ fun HomeScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .pointerInput(Unit) { detectTapGestures(onLongPress = { onEmptyLongPress() }) }
+            .pointerInput(settings.doubleTapLock) {
+                detectTapGestures(
+                    onLongPress = { onEmptyLongPress() },
+                    // só escuta toque duplo com a opção ligada (senão o toque simples nem espera)
+                    onDoubleTap = if (settings.doubleTapLock) ({ onEmptyDoubleTap() }) else null,
+                )
+            }
             // deslizar para baixo: notificações; para cima: busca
             .pointerInput(Unit) {
                 var dy = 0f

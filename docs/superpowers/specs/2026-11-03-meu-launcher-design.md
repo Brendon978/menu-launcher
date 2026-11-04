@@ -107,4 +107,6 @@ Desenho (minha decisão; quem constrói pode ajustar os nomes, mas não a forma)
 - **Renomear e esconder apps** pelo toque longo no app. Escondidos somem da lista e da grade, mas a busca ainda acha; voltam em Ajustes → Apps escondidos.
 - **Backup**: Ajustes → Backup exporta e importa um arquivo de texto com os ajustes e a memória do Glitch.
 - **Contorno de progresso** na caixa da música.
-- Fica para depois: tocar duas vezes no fundo para apagar a tela (precisa de serviço de acessibilidade) e pastas.
+- **Ícones próprios** (assets/proprios) para os apps que o Lawnicons não tem: IRIS, Glitch (este launcher), Build Garage, Apenas Mais Um Nerd, Patronus, barbearia, Sicredi, SouGov, HDQWalls, jogo da Netflix, Promedico, Tofu Drifter, Hangar. Entram depois do Lawnicons e antes do monocromático.
+- **Pastas** no modo grade: segurar um app → Colocar em pasta (nova ou existente); a pasta mostra até 4 mini ícones e abre numa folha; "Tirar da pasta" desfaz; pasta vazia some.
+- **Dois toques no fundo apagam a tela**: opcional (Ajustes → Sistema), desligado por padrão; usa um serviço de acessibilidade que só apaga a tela e não lê nada. Se o serviço não estiver ligado, o toque duplo abre as configurações de acessibilidade.
