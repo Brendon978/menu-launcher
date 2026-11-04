@@ -1358,11 +1358,6 @@ fun RobotPet(
 
     fun onTap() {
         val tapNow = System.currentTimeMillis()
-        // nos jogos de toque, encostar nele conta como jogada
-        if (game == GameKind.DUEL || game == GameKind.BUGS) {
-            gameTap(pos.value + Offset(widthPx / 2, heightPx / 2))
-            return
-        }
         // cutucou depois da travessura: ele arruma
         if (GlitchMischief.current.value != null) {
             GlitchMischief.current.value = null
@@ -1664,6 +1659,12 @@ fun RobotPet(
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     down.consume()
+                    // nos jogos de reflexo o toque vale ao encostar, não ao soltar
+                    if (game == GameKind.DUEL || game == GameKind.BUGS) {
+                        gameTap(placedAt + down.position)
+                        while (awaitPointerEvent().changes.any { c -> c.consume(); c.pressed }) Unit
+                        return@awaitEachGesture
+                    }
                     if (flinches(pokeExpect) && game == null) {
                         flinchUntil = System.currentTimeMillis() + 450
                         if (brainRandom.nextInt(3) == 0) say("Ai! Não!", 900)
