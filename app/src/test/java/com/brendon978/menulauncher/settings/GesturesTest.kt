@@ -18,18 +18,13 @@ class GesturesTest {
         assertFalse(s.listensDoubleTap())
     }
 
-    @Test fun interruptorAntigoAindaApagaATela() {
-        val s = LauncherSettings(doubleTapLock = true)
-        assertEquals(GestureAction.LOCK, s.doubleTapChoice().action)
-        assertTrue(s.listensDoubleTap())
+    @Test fun gestoSalvoDeApagarTelaNaoQuebra() {
+        assertEquals(null, GestureChoice.decode("LOCK"))
     }
 
-    @Test fun escolhaNosGestosVenceOInterruptor() {
-        val s = LauncherSettings(doubleTapLock = true).withDoubleTap(GestureChoice(GestureAction.CAMERA))
+    @Test fun escolhaNosGestosValeNosDoisToques() {
+        val s = LauncherSettings().withDoubleTap(GestureChoice(GestureAction.CAMERA))
         assertEquals(GestureAction.CAMERA, s.doubleTapChoice().action)
-        assertFalse(s.doubleTapLock)
-        assertEquals(GestureAction.NONE, LauncherSettings(doubleTapLock = true).withDoubleTap(GestureChoice(GestureAction.NONE)).doubleTapChoice().action)
-        assertTrue(LauncherSettings().withDoubleTap(GestureChoice(GestureAction.LOCK)).doubleTapLock)
     }
 
     @Test fun idaEVoltaDoTexto() {

@@ -16,7 +16,7 @@ class BackupTest {
             iconOverrides = mapOf(a to "google_chrome"), showMusic = false, firstRunDone = true,
             aiPackage = "com.brendon.iris", aiActivity = "x.Main", aiX = .3f, aiY = .7f,
             showPet = false, glitchAccessory = "CAP", customLabels = mapOf(b to "Meu B"), hiddenApps = setOf(a),
-            folders = mapOf("Jogos" to listOf(a, b)), doubleTapLock = true,
+            folders = mapOf("Jogos" to listOf(a, b)),
             showMostUsed = true, showQuickActions = true, showNextEvent = true,
         )
         assertEquals(s, Backup.decode(Backup.encode(s)))
@@ -39,9 +39,9 @@ class BackupTest {
         assertEquals(LauncherSettings(), Backup.decode("menu-launcher-backup=1"))
     }
 
-    @Test fun backupAntigoComDoisToquesContinuaApagando() {
+    @Test fun backupAntigoComApagarTelaViraNada() {
         val s = Backup.decode("menu-launcher-backup=1\ndoubleTapLock=true")!!
-        assertEquals(GestureAction.LOCK, s.doubleTapChoice().action)
+        assertEquals(GestureAction.NONE, s.doubleTapChoice().action)
     }
 
     @Test fun arquivoEstranhoNaoQuebra() {

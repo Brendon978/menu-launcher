@@ -11,8 +11,8 @@ android {
         applicationId = "com.brendon978.menulauncher"
         minSdk = 35
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     buildFeatures {
@@ -38,4 +38,5 @@ dependencies {
     implementation(libs.coroutines.android)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
 }

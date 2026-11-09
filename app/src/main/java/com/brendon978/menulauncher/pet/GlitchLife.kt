@@ -106,7 +106,7 @@ val MISCHIEF_FIXED_LINES = listOf("Tá, tá, arrumei.", "Foi sem querer!", "Tava
 
 val POSE_LINES = listOf("Saí bem?", "Pega meu lado bom!", "Manda pro grupo!", "Xiiis!")
 
-/** Pose depois de um print comum: o aviso só chega com a foto já tirada. Para sair na foto, use "Tirar foto". */
+/** Pose depois de um print comum: o aviso só chega com a foto já tirada. Para sair na foto, use "Posar para foto". */
 const val POSE_MS = 3_000L
 
 /** Maior das duas, para o aviso não encurtar outro que já está na tela. */
@@ -202,3 +202,12 @@ fun photoPose(kind: PhotoPose, facingLeft: Boolean, t: Float): RobotPose = when 
     PhotoPose.TOUGH -> RobotPose(Face.ANGRY, facingLeft, legL = 10f, legR = -10f, armL = 26f, armR = -26f, phase = t)
 }
 
+
+// ---- bateria ----
+
+/** Intervalo entre quadros do relógio do Glitch: quadro a quadro só quando você está mexendo com ele. */
+fun clockGapMs(interactive: Boolean, sleeping: Boolean): Long = when {
+    interactive -> 0L
+    sleeping -> 100L
+    else -> 33L
+}

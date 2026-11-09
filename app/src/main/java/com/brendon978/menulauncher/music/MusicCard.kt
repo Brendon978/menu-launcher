@@ -75,10 +75,13 @@ fun MusicCard(state: MusicState, color: Color, modifier: Modifier = Modifier) {
  */
 private fun Modifier.songProgressOutline(state: MusicState, color: Color): Modifier = composed {
     var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    // só anda quadro a quadro enquanto toca (e a tela está visível)
+    // a linha anda poucos pixels por segundo: 4 vezes por segundo basta (e só com a tela visível)
     LaunchedEffect(state.playing, state.updatedAt) {
         now = SystemClock.elapsedRealtime()
-        while (state.playing) withFrameMillis { now = SystemClock.elapsedRealtime() }
+        while (state.playing) {
+            withFrameMillis { now = SystemClock.elapsedRealtime() }
+            kotlinx.coroutines.delay(250)
+        }
     }
     val progress = songProgress(state.positionMs, state.durationMs, state.updatedAt, now, state.speed, state.playing)
     drawWithContent {

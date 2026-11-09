@@ -1,0 +1,21 @@
+name = "glitch-visitas"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "glitch-visitas"
+database_id = "ef3bef37-bcbb-495b-925b-0ca44437aebf"
+migrations_dir = "migrations"
+
+# Trava de abuso por IP: criar Glitch custa caro, o resto é folgado.
+[[ratelimits]]
+name = "LIMITE_CRIAR"
+namespace_id = "1001"
+simple = { limit = 5, period = 60 }
+
+[[ratelimits]]
+name = "LIMITE_GERAL"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }

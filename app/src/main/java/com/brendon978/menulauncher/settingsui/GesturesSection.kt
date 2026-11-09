@@ -39,15 +39,6 @@ fun GesturesSection(
     GestureRow("Deslizar para baixo", settings.gestureDown, apps) { c -> onChange { it.copy(gestureDown = c) } }
     GestureRow("Deslizar para cima", settings.gestureUp, apps) { c -> onChange { it.copy(gestureUp = c) } }
     GestureRow("Dois toques no fundo", settings.doubleTapChoice(), apps) { c -> onChange { it.withDoubleTap(c) } }
-    val usesLock = listOf(settings.gestureDown, settings.gestureUp, settings.doubleTapChoice()).any { it.action == GestureAction.LOCK }
-    if (usesLock) {
-        Text(
-            "Apagar a tela precisa ligar o menu-launcher em Configurações → Acessibilidade (ele só apaga a tela, não lê nada).",
-            color = Color.White.copy(alpha = .5f),
-            fontSize = 12.sp,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

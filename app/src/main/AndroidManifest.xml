@@ -109,19 +109,6 @@
                 android:resource="@xml/animated_wallpaper" />
         </service>
 
-        <service
-            android:name=".system.LockService"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/lock_service" />
-        </service>
-
         <!-- Uma IA (IRIS, Eloy...) pode falar pelo Glitch: ver docs/plugue-ia.md -->
         <receiver android:name=".ai.SayReceiver" android:exported="true">
             <intent-filter>

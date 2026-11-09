@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -115,13 +118,23 @@ fun RobotPet(
     }
 
     // ---- relógio de animação (só corre com a tela inicial visível) ----
+    // Cada volta redesenha o Glitch inteiro: quadro a quadro só quando você mexe com ele (ver clockGapMs).
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var t by remember { mutableFloatStateOf(0f) }
+    var clockGap by remember { mutableLongStateOf(33L) }
     LaunchedEffect(Unit) {
         val start = withFrameMillis { it }
-        while (true) withFrameMillis { frame ->
-            t = (frame - start) / 1000f
-            now = System.currentTimeMillis()
+        while (true) {
+            val frameAt = withFrameMillis { frame ->
+                t = (frame - start) / 1000f
+                now = System.currentTimeMillis()
+                frame
+            }
+            val gap = clockGap
+            if (gap > 0L) {
+                val spent = withFrameMillis { it } - frameAt
+                if (gap - spent > 0L) delay(gap - spent)
+            }
         }
     }
     // sente o celular, pose de print, data especial
@@ -139,6 +152,7 @@ fun RobotPet(
     val talking = GlitchTalk.state.value
     // visita de outro Glitch
     var visitor by remember { mutableStateOf<Visitor?>(null) }
+    var visitsWaiting by remember { mutableStateOf<List<Visitor>>(emptyList()) }
     var visitScene by remember { mutableStateOf<VisitScene?>(null) }
     var visitAt by remember { mutableLongStateOf(0L) }
     var guestStand by remember { mutableStateOf(Offset.Zero) }
@@ -287,7 +301,7 @@ fun RobotPet(
         var n = 0
         while (true) {
             delay(1_000)
-            if (!resumed) continue
+            if (!resumed) { snapshotFlow { resumed }.first { it }; continue }
             drives = tick(drives, 1f, TickCtx(napping = activity == Activity.NAP || nightNow, night = nightNow, batteryLow = tiredNow, music = musicNow))
             if (chargingNow) drives = drives.copy(energy = drives.energy + 1f / 300f).clamped()
             if (++n % 30 == 0) save()
@@ -297,6 +311,7 @@ fun RobotPet(
     LaunchedEffect(loaded) {
         if (!loaded) return@LaunchedEffect
         while (true) {
+            if (!resumed) snapshotFlow { resumed }.first { it }
             if (activity != Activity.PERCH && activity != Activity.EAT && activity != Activity.SHOW) activity = nextActivity(activity, drives, bond, musicNow, brainRandom).let { a ->
                 when {
                     a != Activity.WANDER || game != null -> a
@@ -480,6 +495,11 @@ fun RobotPet(
     val tickled = now < tickleUntil
     val asleep = mood == Mood.SLEEPING
     val visiting = visitor != null
+    val clockGapNow = clockGapMs(
+        interactive = game != null || held || flying || petting || spinning || ball != null || visitor != null,
+        sleeping = mood == Mood.SLEEPING && game == null,
+    )
+    SideEffect { clockGap = clockGapNow }
     val stillMood = visiting || shoved || tickled || dueling || eating || tiltShown != Tilt.LEVEL || posing || fainted || striking || menuOpen || game == GameKind.JOKENPO || hidden || working || spinning || flinching || punished || celebrating || debugHold || petting || held || flying || dizzy || menacing || (!marching && game == null && (mood == Mood.SLEEPING || mood == Mood.TIRED || mood == Mood.DANCING || sulking))
     val random = remember { Random(System.nanoTime()) }
 
@@ -1062,8 +1082,8 @@ fun RobotPet(
         }
     }
     // sem internet: fica confuso de vez em quando
-    LaunchedEffect(online, loaded) {
-        if (online || !loaded) return@LaunchedEffect
+    LaunchedEffect(online, loaded, resumed) {
+        if (online || !loaded || !resumed) return@LaunchedEffect
         while (true) {
             say(listOf("Cadê a internet?", "Caiu a net?!", "Sem sinal...").random(brainRandom), 2_000)
             delay(brainRandom.nextLong(20_000, 40_000))
@@ -1144,6 +1164,23 @@ fun RobotPet(
             }
         }
         GlitchSignals.lastLaunch = null
+    }
+
+    // visitas de amigos: busca com a tela inicial à vista; a que chegar espera ele ficar livre
+    val colorNow by rememberUpdatedState(color)
+    val accessoryNow by rememberUpdatedState(accessory)
+    val buddyNow by rememberUpdatedState(buddy)
+    LaunchedEffect(homeOnTop) {
+        while (homeOnTop) {
+            if (visitsWaiting.isEmpty()) visitsWaiting = GlitchVisits.check(context, colorNow, accessoryNow, buddyNow, System.currentTimeMillis())
+            delay(60_000)
+        }
+    }
+    LaunchedEffect(visitsWaiting, visitor, game, mood, homeOnTop) {
+        if (visitsWaiting.isEmpty() || visitor != null || game != null || mood == Mood.SLEEPING || !homeOnTop) return@LaunchedEffect
+        delay(2_000)
+        visitor = visitsWaiting.first()
+        visitsWaiting = visitsWaiting.drop(1)
     }
 
     // visita: o outro Glitch chega, fazem as cenas sorteadas e ele vai embora
@@ -1432,6 +1469,7 @@ fun RobotPet(
                 "susto" -> { pendingShow = Show.SCARE; activity = Activity.SHOW }
                 "derruba" -> { towerBlocks = maxOf(towerBlocks, 3); pendingShow = Show.KNOCK; activity = Activity.SHOW }
                 "soneca" -> { pendingShow = Show.NAP_TOGETHER; activity = Activity.SHOW }
+                "visitas" -> brainScope.launch { visitsWaiting = GlitchVisits.check(context, color, accessory, buddy, System.currentTimeMillis(), force = true) }
                 "visita" -> if (visitor == null) visitor = Visitor("Bit", androidx.compose.ui.graphics.Color(0xFF7FB7A4), Accessory.CAP, Buddy.CAT)
                 "brincar" -> { pendingShow = Show.BUDDY; activity = Activity.SHOW }
                 "clones" -> { debugBattle = true; pendingShow = Show.CLONES; activity = Activity.SHOW }
@@ -1627,24 +1665,20 @@ fun RobotPet(
     val pad = with(density) { TOUCH_PAD.toPx() }
     var placedAt by remember { mutableStateOf(Offset.Zero) }
 
-    /** Ele conta, faz pose e tira o print: sai de primeira, sem balão na frente. */
+    /** Ele avisa, conta e segura a pose sem balão na frente: o print é você quem tira. */
     fun takePhoto() {
         menuOpen = false
-        photoUntil = System.currentTimeMillis() + 7_000
+        photoUntil = System.currentTimeMillis() + 10_000
         poseUntil = photoUntil
         photoPoseKind = pickPhotoPose(photoPoseKind, brainRandom)
         brainScope.launch {
+            say("Prepara o print!", 1_500)
+            delay(1_500)
             for (n in listOf("3", "2", "1")) { say(n, 900); delay(900) }
             speechUntil = 0L
-            delay(350)
-            if (!com.brendon978.menulauncher.system.LockService.screenshot()) {
-                poseUntil = 0L
-                say("Liga a acessibilidade do launcher pra eu tirar foto!", 3_000)
-            } else {
-                delay(1_200)
-                poseUntil = 0L
-                say(POSE_LINES.random(brainRandom), 2_400)
-            }
+            delay(5_000)
+            poseUntil = 0L
+            say(POSE_LINES.random(brainRandom), 2_400)
         }
     }
 
@@ -2138,6 +2172,8 @@ fun RobotPet(
                 }
                 buddyAt = if (buddyAt.isSpecified) buddyAt + (goal - buddyAt) * (dt * 3.5f).coerceAtMost(1f) else goal
             }
+            // segue o mesmo ritmo do relógio: quadro a quadro só com você mexendo nele
+            if (clockGap > 0L) delay(clockGap)
         }
     }
     if (buddy != Buddy.NONE && buddyAt.isSpecified && visible > 0f && !hidden) {

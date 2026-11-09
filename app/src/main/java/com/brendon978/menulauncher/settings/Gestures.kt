@@ -6,7 +6,6 @@ import com.brendon978.menulauncher.apps.AppKey
 enum class GestureAction(val label: String) {
     NOTIFICATIONS("Cortina"),
     SEARCH("Busca"),
-    LOCK("Apagar a tela"),
     CAMERA("Câmera"),
     TORCH("Lanterna"),
     APP("Abrir um app"),
@@ -28,13 +27,10 @@ data class GestureChoice(val action: GestureAction, val app: AppKey? = null) {
     }
 }
 
-/** Dois toques: enquanto ninguém escolheu nos Gestos, vale o interruptor antigo (ajustes e backups de antes). */
-fun LauncherSettings.doubleTapChoice(): GestureChoice =
-    gestureDoubleTap ?: GestureChoice(if (doubleTapLock) GestureAction.LOCK else GestureAction.NONE)
+/** Dois toques: enquanto ninguém escolheu nos Gestos, não fazem nada. */
+fun LauncherSettings.doubleTapChoice(): GestureChoice = gestureDoubleTap ?: GestureChoice(GestureAction.NONE)
 
-/** Escolhe a ação dos dois toques e mantém o interruptor antigo coerente. */
-fun LauncherSettings.withDoubleTap(choice: GestureChoice): LauncherSettings =
-    copy(gestureDoubleTap = choice, doubleTapLock = choice.action == GestureAction.LOCK)
+fun LauncherSettings.withDoubleTap(choice: GestureChoice): LauncherSettings = copy(gestureDoubleTap = choice)
 
 /** Com "Nada" o toque simples nem espera pelo segundo toque. */
 fun LauncherSettings.listensDoubleTap(): Boolean = doubleTapChoice().action != GestureAction.NONE

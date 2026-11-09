@@ -1,9 +1,7 @@
 package com.brendon978.menulauncher.ai
 
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -69,12 +67,12 @@ fun AiSymbol(
         val holdEnd = rememberUpdatedState(onHoldEnd)
         val moved = rememberUpdatedState(onMoved)
 
-        val pulse by rememberInfiniteTransition(label = "ai-pulse").animateFloat(
-            initialValue = 1f,
-            targetValue = 1.18f,
-            animationSpec = infiniteRepeatable(tween(520), RepeatMode.Reverse),
-            label = "ai-pulse-scale",
-        )
+        // pulsa só ouvindo: animação infinita parada pedia quadro à tela para sempre
+        val pulse = remember { androidx.compose.animation.core.Animatable(1f) }
+        LaunchedEffect(listening) {
+            if (!listening) { pulse.snapTo(1f); return@LaunchedEffect }
+            pulse.animateTo(1.18f, infiniteRepeatable(tween(520), RepeatMode.Reverse))
+        }
 
         Box(
             contentAlignment = Alignment.Center,
@@ -83,7 +81,7 @@ fun AiSymbol(
                 .size(size)
                 .petObstacle("ai")
                 .graphicsLayer {
-                    val s = if (listening) pulse else 1f
+                    val s = pulse.value
                     scaleX = s
                     scaleY = s
                 }

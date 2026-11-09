@@ -1,0 +1,10 @@
+# Igual ao wrangler.toml, sem os limites por IP: os testes criam muitos Glitches em sequência.
+name = "glitch-visitas"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "glitch-visitas"
+database_id = "local"
+migrations_dir = "migrations"

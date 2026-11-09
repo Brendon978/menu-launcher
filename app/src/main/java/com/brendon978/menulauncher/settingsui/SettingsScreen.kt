@@ -52,6 +52,7 @@ fun SettingsScreen(
     onChange: ((LauncherSettings) -> LauncherSettings) -> Unit,
     hasUsageAccess: Boolean,
     onSetDefaultLauncher: () -> Unit,
+    visitColor: Color,
     aiSection: @Composable () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -194,6 +195,11 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             GlitchReset()
+        }
+
+        if (settings.showPet) {
+            Section("Visitas")
+            VisitsSection(visitColor, settings.glitchAccessory, settings.glitchBuddy)
         }
 
         Section("IA")

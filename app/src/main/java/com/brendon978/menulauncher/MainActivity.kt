@@ -266,6 +266,7 @@ class MainActivity : ComponentActivity() {
                     onChange = ::updateSettings,
                     hasUsageAccess = hasUsageStats.value,
                     onSetDefaultLauncher = ::requestHomeRole,
+                    visitColor = Color(stroke),
                     aiSection = {
                         val candidates = remember { aiRepo.discover() }
                         AiChooser(candidates, apps, settings.aiPackage) { pkg, act ->
@@ -356,7 +357,6 @@ class MainActivity : ComponentActivity() {
         when (choice.action) {
             GestureAction.NOTIFICATIONS -> expandNotifications()
             GestureAction.SEARCH -> screen.value = Screen.Search
-            GestureAction.LOCK -> lockScreen()
             GestureAction.CAMERA -> runCatching {
                 startActivity(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }.onFailure { toast("Não achei o app de câmera") }
@@ -366,13 +366,6 @@ class MainActivity : ComponentActivity() {
                 else runCatching { launchCounted(key) }
             }
             GestureAction.NONE -> Unit
-        }
-    }
-
-    private fun lockScreen() {
-        if (!com.brendon978.menulauncher.system.LockService.lock()) {
-            android.widget.Toast.makeText(this, "Ligue o menu-launcher em Acessibilidade para apagar a tela", android.widget.Toast.LENGTH_LONG).show()
-            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
     }
 
